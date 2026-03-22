@@ -14,9 +14,9 @@
 
         <ImageView
             android:id="@+id/logo_title"
-            android:layout_width="120dp"
+            android:layout_width="240dp"
             android:layout_height="120dp"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="20dp"
             android:adjustViewBounds="true"
             android:contentDescription="Logo"
             android:scaleType="centerInside"
@@ -25,7 +25,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Group tiêu đề -->
         <LinearLayout
             android:id="@+id/layout_title"
             android:layout_width="wrap_content"
