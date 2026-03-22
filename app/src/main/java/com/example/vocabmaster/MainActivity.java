@@ -3,11 +3,13 @@ package com.example.vocabmaster;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
@@ -36,13 +38,19 @@ public class MainActivity extends AppCompatActivity {
         if (navHostFragment != null) {
             NavController navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(binding.navView, navController);
-            
-            // Handle bottom nav visibility for deep screens
-            navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-                // Example: Hide nav on specific screens if needed
-                // if (destination.getId() == R.id.navigation_full_screen) binding.bottomNavContainer.setVisibility(View.GONE);
-                // else binding.bottomNavContainer.setVisibility(View.VISIBLE);
-            });
         }
+
+        // Fix: Adjust bottom margin based on system navigation bar height
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavContainer, (v, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+            
+            // Keep the 16dp margin and add the navigation bar height
+            int margin16dp = (int) (16 * getResources().getDisplayMetrics().density);
+            mlp.bottomMargin = insets.bottom + margin16dp;
+            v.setLayoutParams(mlp);
+            
+            return WindowInsetsCompat.CONSUMED;
+        });
     }
 }

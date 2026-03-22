@@ -5,10 +5,10 @@
     android:id="@+id/main_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light"
+    android:background="@color/white"
     tools:context=".MainActivity">
 
-    <!-- Immersive Fragment Container -->
+    <!-- Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"
@@ -21,26 +21,27 @@
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_graph" />
 
-    <!-- Modern Glass Bottom Navigation -->
+    <!-- Fix: Floating Bottom Navigation Container -->
     <androidx.cardview.widget.CardView
         android:id="@+id/bottom_nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/spacing_16"
-        android:layout_marginBottom="@dimen/spacing_16"
-        app:cardCornerRadius="@dimen/radius_huge"
-        app:cardElevation="@dimen/elevation_medium"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/nav_view"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/bar_height"
+            android:layout_height="64dp"
             android:background="@color/white"
-            app:itemIconTint="@color/brand_primary"
-            app:itemTextColor="@color/brand_primary"
+            app:itemIconTint="@color/primary"
+            app:itemTextColor="@color/primary"
             app:labelVisibilityMode="labeled"
-            app:menu="@menu/bottom_nav_menu" />
+            app:menu="@menu/bottom_nav_menu"
+            app:paddingBottomSystemWindowInsets="false" />
     </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
