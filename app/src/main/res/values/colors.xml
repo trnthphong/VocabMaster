@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Core Brand -->
+    <color name="brand_primary">#6366F1</color> <!-- Indigo -->
+    <color name="brand_secondary">#EC4899</color> <!-- Pink -->
+    <color name="brand_accent">#8B5CF6</color> <!-- Violet -->
+
+    <!-- Neutrals (Standard) -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="surface_dark">#0F172A</color>
+    <color name="surface_light">#F8FAFC</color>
+
+    <!-- Glass System -->
+    <color name="glass_white_20">#33FFFFFF</color>
+    <color name="glass_white_40">#66FFFFFF</color>
+    <color name="glass_black_10">#1A000000</color>
+    <color name="glass_black_20">#33000000</color>
+
+    <!-- Gradients -->
+    <color name="grad_indigo_start">#6366F1</color>
+    <color name="grad_indigo_end">#4F46E5</color>
+    <color name="grad_purple_start">#A855F7</color>
+    <color name="grad_purple_end">#9333EA</color>
+    <color name="grad_rose_start">#F43F5E</color>
+    <color name="grad_rose_end">#E11D48</color>
+
+    <!-- Semantic -->
+    <color name="success">#22C55E</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    <color name="info">#3B82F6</color>
+
+    <!-- UI Elements -->
+    <color name="shimmer_base">#E2E8F0</color>
+    <color name="shimmer_highlight">#F1F5F9</color>
+    <color name="card_border">#E2E8F0</color>
+
+    <!-- Legacy / Compatibility (Mapped to new system) -->
+    <color name="primary">@color/brand_primary</color>
+    <color name="primary_dark">#4F46E5</color>
+    <color name="primary_light">#C7D2FE</color>
+    <color name="secondary">@color/brand_secondary</color>
+    <color name="secondary_dark">#BE185D</color>
+    <color name="accent_orange">#F97316</color>
+    <color name="accent_red">@color/error</color>
+    <color name="accent_yellow">#EAB308</color>
+    <color name="gray_text">#64748B</color>
+    <color name="gray_light">#CBD5E1</color>
+    <color name="gray_background">@color/surface_light</color>
+    <color name="card_stroke">@color/card_border</color>
+    <color name="card_shadow">#0D000000</color>
+</resources>

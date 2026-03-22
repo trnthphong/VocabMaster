@@ -1,0 +1,81 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.VocabMaster" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Brand Colors -->
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorSecondary">@color/brand_secondary</item>
+        <item name="colorTertiary">@color/brand_accent</item>
+        <item name="android:windowBackground">@color/surface_light</item>
+        <item name="android:statusBarColor">@color/surface_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Typography -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.VocabMaster.Display</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.VocabMaster.H1</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.VocabMaster.H2</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.VocabMaster.H3</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.VocabMaster.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.VocabMaster.BodyMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.VocabMaster.Caption</item>
+
+        <!-- Shape -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.VocabMaster.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.VocabMaster.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.VocabMaster.Large</item>
+    </style>
+
+    <style name="Theme.VocabMaster" parent="Base.Theme.VocabMaster" />
+
+    <!-- Typography Styles -->
+    <style name="TextAppearance.VocabMaster.Display" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:textSize">@dimen/text_display</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/surface_dark</item>
+    </style>
+
+    <style name="TextAppearance.VocabMaster.H1" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">@dimen/text_h1</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/surface_dark</item>
+    </style>
+
+    <style name="TextAppearance.VocabMaster.H2" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textSize">@dimen/text_h2</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/surface_dark</item>
+    </style>
+
+    <style name="TextAppearance.VocabMaster.H3" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">@dimen/text_h3</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/surface_dark</item>
+    </style>
+
+    <style name="TextAppearance.VocabMaster.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">@dimen/text_body_large</item>
+        <item name="android:textColor">@color/gray_text</item>
+    </style>
+
+    <style name="TextAppearance.VocabMaster.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">@dimen/text_body_medium</item>
+        <item name="android:textColor">@color/gray_text</item>
+    </style>
+
+    <style name="TextAppearance.VocabMaster.Caption" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">@dimen/text_caption</item>
+        <item name="android:textColor">@color/gray_text</item>
+    </style>
+
+    <!-- Shape Styles -->
+    <style name="ShapeAppearance.VocabMaster.Small" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerSize">@dimen/radius_small</item>
+    </style>
+
+    <style name="ShapeAppearance.VocabMaster.Medium" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerSize">@dimen/radius_medium</item>
+    </style>
+
+    <style name="ShapeAppearance.VocabMaster.Large" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerSize">@dimen/radius_large</item>
+    </style>
+</resources>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient_main"
+    android:padding="@dimen/spacing_24">
+
+    <!-- Celebration Header -->
+    <TextView
+        android:id="@+id/text_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_64"
+        android:text="Session Complete!"
+        android:textAppearance="@style/TextAppearance.VocabMaster.H1"
+        android:textColor="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Visual Achievement (Illustration Placeholder) -->
+    <ImageView
+        android:id="@+id/img_trophy"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="@dimen/spacing_32"
+        android:src="@android:drawable/btn_star_big_on"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_title"
+        app:tint="@color/warning" />
+
+    <!-- Main Results Card (Glass) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_results"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_48"
+        app:cardBackgroundColor="@color/glass_white_20"
+        app:cardCornerRadius="@dimen/radius_huge"
+        app:layout_constraintTop_toBottomOf="@id/img_trophy"
+        app:strokeColor="@color/glass_white_40"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_32">
+
+            <TextView
+                android:id="@+id/text_accuracy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="92%"
+                android:textColor="@color/white"
+                android:textSize="64sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="ACCURACY"
+                android:textColor="@color/glass_white_40"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="@dimen/spacing_24"
+                android:background="@color/glass_white_20" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:id="@+id/stats_left"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:id="@+id/text_correct"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="14/15"
+                        android:textColor="@color/white"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Correct"
+                        android:textColor="@color/glass_white_40"
+                        android:textSize="@dimen/text_caption" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/stats_right"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:id="@+id/text_xp_earned"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+75 XP"
+                        android:textColor="@color/brand_secondary"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Earned"
+                        android:textColor="@color/glass_white_40"
+                        android:textSize="@dimen/text_caption" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:id="@+id/text_hearts_impact"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/spacing_24"
+                android:drawableStart="@android:drawable/ic_delete"
+                android:drawablePadding="8dp"
+                android:text="Hearts lost: 0"
+                android:textColor="@color/error"
+                android:textSize="@dimen/text_body_medium"
+                app:drawableTint="@color/error" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_done"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginBottom="@dimen/spacing_32"
+        android:text="CONTINUE"
+        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+        app:backgroundTint="@color/white"
+        app:cornerRadius="@dimen/radius_large"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:textColor="@color/brand_primary" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
