@@ -32,13 +32,17 @@ public class LoginActivity extends AppCompatActivity {
             finish();
         }
 
+        // Chuyển sang trang Register khi nhấn tab Sign Up hoặc dòng text bên dưới
+        View.OnClickListener goToRegister = v -> {
+            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+        };
+        
+        binding.btnSignupTab.setOnClickListener(goToRegister);
+        binding.textRegister.setOnClickListener(goToRegister);
+
         binding.btnLogin.setOnClickListener(v -> loginUser());
         binding.textForgotPassword.setOnClickListener(v ->
                 startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
-
-        binding.textRegister.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
-        });
     }
 
     private void loginUser() {

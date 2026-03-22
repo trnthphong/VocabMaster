@@ -33,8 +33,16 @@ public class RegisterActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         MotionSystem.applyPressState(binding.btnRegister);
 
+        // Chuyển sang trang Login khi nhấn tab Login hoặc dòng text bên dưới
+        View.OnClickListener goToLogin = v -> {
+            startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+            finish();
+        };
+
+        binding.btnLoginTab.setOnClickListener(goToLogin);
+        binding.textLogin.setOnClickListener(goToLogin);
+
         binding.btnRegister.setOnClickListener(v -> registerUser());
-        binding.textLogin.setOnClickListener(v -> finish());
     }
 
     private void registerUser() {

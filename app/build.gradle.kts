@@ -66,4 +66,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    //3d
+    implementation("nl.dionsegijn:konfetti-xml:2.0.5")
 }

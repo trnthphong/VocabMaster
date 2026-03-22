@@ -33,6 +33,10 @@
         <activity android:name=".ui.study.StudySummaryActivity" />
         <activity android:name=".ui.analytics.AnalyticsActivity" />
 
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+
     </application>
 
 </manifest>

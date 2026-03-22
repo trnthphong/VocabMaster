@@ -50,4 +50,7 @@
     <color name="gray_background">@color/surface_light</color>
     <color name="card_stroke">@color/card_border</color>
     <color name="card_shadow">#0D000000</color>
+
+    <!--BACKGROUND-->
+    <color name="bg_grey">#191919</color>
 </resources>
