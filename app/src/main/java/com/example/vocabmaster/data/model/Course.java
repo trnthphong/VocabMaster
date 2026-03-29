@@ -10,16 +10,27 @@ public class Course {
     private String firestoreId;
     private String title;
     private String description;
+    private String theme;
     private String creatorId;
-    public Course() {
-    }
-
     private boolean isPublic;
     private int flashcardCount;
 
+    public Course() {
+    }
+
+    // Constructor cũ để tương thích với LibraryFragment
     public Course(String title, String description, String creatorId, boolean isPublic) {
         this.title = title;
         this.description = description;
+        this.creatorId = creatorId;
+        this.isPublic = isPublic;
+        this.flashcardCount = 0;
+    }
+
+    public Course(String title, String description, String theme, String creatorId, boolean isPublic) {
+        this.title = title;
+        this.description = description;
+        this.theme = theme;
         this.creatorId = creatorId;
         this.isPublic = isPublic;
         this.flashcardCount = 0;
@@ -34,6 +45,8 @@ public class Course {
     public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getTheme() { return theme; }
+    public void setTheme(String theme) { this.theme = theme; }
     public String getCreatorId() { return creatorId; }
     public void setCreatorId(String creatorId) { this.creatorId = creatorId; }
     public boolean isPublic() { return isPublic; }

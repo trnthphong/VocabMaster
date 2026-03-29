@@ -1,104 +1,312 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_glass_card"
-    android:backgroundTint="@color/white"
-    android:padding="@dimen/spacing_24">
+    android:backgroundTint="@color/white">
 
-    <View
-        android:id="@+id/handle"
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:background="@color/gray_light"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/text_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_24"
-        android:text="Create New Course"
-        android:textAppearance="@style/TextAppearance.VocabMaster.H1"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/handle" />
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/input_layout_name"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_24"
-        android:hint="Course Name (e.g. IELTS 7.5)"
-        app:boxCornerRadiusBottomEnd="@dimen/radius_medium"
-        app:boxCornerRadiusBottomStart="@dimen/radius_medium"
-        app:boxCornerRadiusTopEnd="@dimen/radius_medium"
-        app:boxCornerRadiusTopStart="@dimen/radius_medium"
-        app:layout_constraintTop_toBottomOf="@id/text_title">
+        android:padding="@dimen/spacing_24">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/edit_course_name"
+        <View
+            android:id="@+id/handle"
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:background="@color/gray_light"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/text_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_24"
+            android:text="Tạo khóa học mới"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/handle" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/input_layout_name"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_24"
+            android:hint="Tên khóa học (VD: Tiếng Anh giao tiếp)"
+            app:boxCornerRadiusBottomEnd="@dimen/radius_medium"
+            app:boxCornerRadiusBottomStart="@dimen/radius_medium"
+            app:boxCornerRadiusTopEnd="@dimen/radius_medium"
+            app:boxCornerRadiusTopStart="@dimen/radius_medium"
+            app:layout_constraintTop_toBottomOf="@id/text_title">
 
-    <TextView
-        android:id="@+id/label_theme"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_24"
-        android:text="Select Theme"
-        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/input_layout_name" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_course_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <LinearLayout
-        android:id="@+id/theme_picker"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_12"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/label_theme">
+        <TextView
+            android:id="@+id/label_theme"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_24"
+            android:text="Chọn chủ đề bạn thích"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/input_layout_name" />
 
-        <View
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="@dimen/spacing_12"
-            android:background="@drawable/bg_glass_card"
-            android:backgroundTint="@color/grad_indigo_start" />
+        <LinearLayout
+            android:id="@+id/layout_themes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_12"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/label_theme">
 
-        <View
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="@dimen/spacing_12"
-            android:background="@drawable/bg_glass_card"
-            android:backgroundTint="@color/grad_purple_start" />
+        <!-- Row 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-        <View
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="@dimen/spacing_12"
-            android:background="@drawable/bg_glass_card"
-            android:backgroundTint="@color/grad_rose_start" />
+            <LinearLayout
+                android:id="@+id/chip_career"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/spacing_4"
+                android:layout_marginBottom="@dimen/spacing_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
 
-        <View
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_glass_card"
-            android:backgroundTint="@color/success" />
-    </LinearLayout>
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/career" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_create"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginTop="@dimen/spacing_32"
-        android:text="Create Course"
-        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-        app:cornerRadius="@dimen/radius_large"
-        app:layout_constraintTop_toBottomOf="@id/theme_picker" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Nghề nghiệp"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <LinearLayout
+                android:id="@+id/chip_school"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_4"
+                android:layout_marginBottom="@dimen/spacing_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/school" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Trường học"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Row 2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/chip_culture"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/spacing_4"
+                android:layout_marginBottom="@dimen/spacing_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/culture" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Văn hóa"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/chip_travel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_4"
+                android:layout_marginBottom="@dimen/spacing_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/travel" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Du lịch"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Row 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/chip_food"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/spacing_4"
+                android:layout_marginBottom="@dimen/spacing_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/food" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Thức ăn"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/chip_brain"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_4"
+                android:layout_marginBottom="@dimen/spacing_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/brain" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Luyện trí não"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Row 4 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/chip_other"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/spacing_4"
+                android:layout_weight="1"
+                android:background="@drawable/bg_toggle_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:padding="@dimen/spacing_12">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/another" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    android:text="Khác"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/surface_dark" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_4"
+                android:layout_weight="1" />
+        </LinearLayout>
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_create"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="@dimen/spacing_32"
+            android:text="Khởi tạo"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            app:cornerRadius="@dimen/radius_large"
+            app:layout_constraintTop_toBottomOf="@id/layout_themes" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

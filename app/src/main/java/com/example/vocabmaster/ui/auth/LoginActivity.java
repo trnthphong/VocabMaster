@@ -36,8 +36,6 @@ public class LoginActivity extends AppCompatActivity {
         View.OnClickListener goToRegister = v -> {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         };
-        
-        binding.btnSignupTab.setOnClickListener(goToRegister);
         binding.textRegister.setOnClickListener(goToRegister);
 
         binding.btnLogin.setOnClickListener(v -> loginUser());

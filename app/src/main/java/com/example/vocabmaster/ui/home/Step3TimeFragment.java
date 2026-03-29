@@ -1,0 +1,36 @@
+package com.example.vocabmaster.ui.home;
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.RadioGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.example.vocabmaster.R;
+
+public class Step3TimeFragment extends Fragment {
+    private RadioGroup radioGroup;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_step_time, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        radioGroup = view.findViewById(R.id.radio_group_time);
+        radioGroup.check(R.id.radio_10min); // Mặc định 10 phút
+    }
+
+    public int getSelectedTime() {
+        int id = radioGroup.getCheckedRadioButtonId();
+        if (id == R.id.radio_5min) return 5;
+        if (id == R.id.radio_15min) return 15;
+        return 10;
+    }
+}

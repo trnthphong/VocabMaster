@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_24">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mục tiêu hàng ngày"
+        android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_8"
+        android:text="Dành ít phút mỗi ngày để đạt kết quả tốt nhất"
+        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+    <RadioGroup
+        android:id="@+id/radio_group_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_32">
+
+        <RadioButton
+            android:id="@+id/radio_5min"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginBottom="@dimen/spacing_16"
+            android:background="@drawable/bg_toggle_pill"
+            android:button="@null"
+            android:gravity="center"
+            android:text="5 phút / ngày\n(Dễ dàng)"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+        <RadioButton
+            android:id="@+id/radio_10min"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginBottom="@dimen/spacing_16"
+            android:background="@drawable/bg_toggle_pill"
+            android:button="@null"
+            android:gravity="center"
+            android:text="10 phút / ngày\n(Vừa sức)"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+        <RadioButton
+            android:id="@+id/radio_15min"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="@drawable/bg_toggle_pill"
+            android:button="@null"
+            android:gravity="center"
+            android:text="15 phút / ngày\n(Cố gắng)"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+    </RadioGroup>
+
+</LinearLayout>

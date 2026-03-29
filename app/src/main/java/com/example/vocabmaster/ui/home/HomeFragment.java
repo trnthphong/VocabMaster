@@ -12,12 +12,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
-import com.example.vocabmaster.ui.analytics.AnalyticsActivity;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.study.MiniGameActivity;
 import com.example.vocabmaster.ui.study.StudyActivity;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -59,7 +57,6 @@ public class HomeFragment extends Fragment {
         binding.statsGrid.animate().alpha(1f).scaleX(1f).setDuration(700).setStartDelay(200).setInterpolator(new DecelerateInterpolator()).start();
         binding.labelActions.animate().alpha(1f).setDuration(500).setStartDelay(400).start();
         
-        // Staggered list entrance
         binding.btnStartFlashcards.animate().translationX(0).alpha(1f).setDuration(600).setStartDelay(500).start();
         binding.btnPlayMiniGame.animate().translationX(0).alpha(1f).setDuration(600).setStartDelay(600).start();
     }
@@ -76,16 +73,12 @@ public class HomeFragment extends Fragment {
 
         binding.btnPlayMiniGame.setOnClickListener(v -> openMiniGame());
 
-        binding.fabAdd.setOnClickListener(v -> showAddCourseBottomSheet());
-    }
-
-    private void showAddCourseBottomSheet() {
-        UiFeedback.performHaptic(requireContext(), 20);
-        BottomSheetDialog bottomSheet = new BottomSheetDialog(requireContext());
-        // We'll define this layout in the next step to match the visual system
-        View view = getLayoutInflater().inflate(com.example.vocabmaster.R.layout.dialog_add_course_modern, null);
-        bottomSheet.setContentView(view);
-        bottomSheet.show();
+        binding.fabAdd.setOnClickListener(v -> {
+            UiFeedback.performHaptic(requireContext(), 20);
+            // Mở luồng tạo khóa học mới thay vì BottomSheet
+            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -117,7 +110,6 @@ public class HomeFragment extends Fragment {
 
             int dailyGoal = goal == null ? 20 : goal.intValue();
             int currentXp = (xp == null ? 0 : xp.intValue());
-            // Logic for daily progress (simplified: reset every dailyGoal)
             int earned = currentXp % (dailyGoal + 1); 
             
             binding.progressDaily.setMax(dailyGoal);

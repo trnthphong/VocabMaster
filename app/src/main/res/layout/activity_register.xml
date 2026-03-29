@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_sky"
+    android:background="#ffffff"
     android:fillViewport="true"
     tools:context=".ui.auth.RegisterActivity">
 
@@ -14,13 +14,13 @@
 
         <ImageView
             android:id="@+id/logo_title"
-            android:layout_width="240dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="20dp"
+            android:layout_width="250dp"
+            android:layout_height="180dp"
+            android:layout_marginTop="40dp"
             android:adjustViewBounds="true"
             android:contentDescription="Logo"
             android:scaleType="centerInside"
-            android:src="@drawable/logo"
+            android:src="@drawable/vocab"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -33,27 +33,7 @@
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/logo_title">
-
-            <TextView
-                android:id="@+id/text_title_vocab"
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:fontFamily="@font/poppins_bold"
-                android:text="VOCAB"
-                android:textColor="#FFFFFF"
-                android:textSize="40sp" />
-
-            <TextView
-                android:id="@+id/text_title_master"
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:layout_marginStart="8dp"
-                android:fontFamily="@font/poppins_bold"
-                android:text="MASTER"
-                android:textColor="#0072ff"
-                android:textSize="40sp" />
-        </LinearLayout>
+            app:layout_constraintTop_toBottomOf="@id/logo_title" />
 
         <TextView
             android:id="@+id/text_subtitle"
@@ -61,51 +41,27 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="40dp"
             android:gravity="center"
+            app:fontFamily="@font/adlam_display"
             android:text="Join us to start your vocabulary journey."
-            android:textColor="@color/gray_text"
+            android:textColor="#000000"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/layout_title" />
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/toggle_group"
+        <TextView
+            android:id="@+id/text_wel"
             android:layout_width="wrap_content"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            app:fontFamily="@font/adlam_display"
+            android:text="WELCOME!"
+            android:textSize="35dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/bg_toggle_pill"
-            app:checkedButton="@id/btn_signup_tab"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_subtitle"
-            app:selectionRequired="true"
-            app:singleSelection="true">
+            />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_login_tab"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="120dp"
-                android:layout_height="match_parent"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:text="Login"
-                android:textAllCaps="false"
-                android:textColor="@color/selector_toggle_text"
-                app:backgroundTint="@color/selector_toggle_bg"
-                app:cornerRadius="22dp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_signup_tab"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="120dp"
-                android:layout_height="match_parent"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:text="Sign Up"
-                android:textAllCaps="false"
-                android:textColor="@color/selector_toggle_text"
-                app:backgroundTint="@color/selector_toggle_bg"
-                app:cornerRadius="22dp" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_register"
@@ -118,7 +74,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/toggle_group"
+            app:layout_constraintTop_toBottomOf="@id/text_wel"
             app:layout_constraintVertical_bias="1.0"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Card.TopOnly">
 
@@ -137,7 +93,7 @@
                     app:boxStrokeColor="#0072ff"
                     app:hintTextColor="#0072ff"
                     app:startIconDrawable="@drawable/ic_person"
-                    app:startIconTint="#4A70A9">
+                    app:startIconTint="#3b24bb">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_name"
@@ -156,7 +112,7 @@
                     app:boxStrokeColor="#0072ff"
                     app:hintTextColor="#0072ff"
                     app:startIconDrawable="@drawable/ic_email"
-                    app:startIconTint="#4A70A9">
+                    app:startIconTint="#3b24bb">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_email"
@@ -176,7 +132,7 @@
                     app:endIconMode="password_toggle"
                     app:hintTextColor="#0072ff"
                     app:startIconDrawable="@drawable/ic_lock"
-                    app:startIconTint="#4A70A9">
+                    app:startIconTint="#3b24bb">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_password"
@@ -194,7 +150,7 @@
                     android:layout_marginTop="24dp"
                     android:text="Create account"
                     android:textColor="#FFFFFF"
-                    app:backgroundTint="#4A70A9"
+                    app:backgroundTint="#3b24bb"
                     app:cornerRadius="28dp" />
 
                 <TextView

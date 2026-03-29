@@ -39,7 +39,6 @@ public class RegisterActivity extends AppCompatActivity {
             finish();
         };
 
-        binding.btnLoginTab.setOnClickListener(goToLogin);
         binding.textLogin.setOnClickListener(goToLogin);
 
         binding.btnRegister.setOnClickListener(v -> registerUser());

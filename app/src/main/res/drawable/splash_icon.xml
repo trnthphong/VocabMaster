@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- LỚP 1: Hiệu ứng Glow (Mờ sáng xanh dưới cùng) -->
+    <!-- Lớp này lớn hơn khung trắng một chút để lộ phần mờ ra ngoài -->
+    <item android:gravity="center">
+        <shape android:shape="rectangle">
+            <size android:width="230dp" android:height="230dp"/>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="115dp"
+                android:startColor="#4D0072FF"
+                android:centerX="50%"
+                android:centerY="50%"
+                android:endColor="#00000000" /> <!-- Kết thúc bằng trong suốt để tạo độ nhòe -->
+            <corners android:radius="50dp"/>
+        </shape>
+    </item>
+
+    <!-- LỚP 2: Khung hình vuông trắng bo tròn -->
+    <item android:gravity="center">
+        <shape android:shape="rectangle">
+            <size android:width="170dp" android:height="170dp"/>
+            <solid android:color="#FFFFFF"/> <!-- Màu trắng nguyên bản -->
+            <corners android:radius="30dp"/> <!-- Bo góc hiện đại -->
+        </shape>
+    </item>
+
+    <!-- LỚP 3: Logo Vocab chính -->
+    <item
+        android:drawable="@drawable/vocab"
+        android:width="110dp"
+        android:height="110dp"
+        android:gravity="center" />
+
+</layer-list>

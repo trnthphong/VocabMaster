@@ -52,6 +52,7 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.firebase.database)
+    implementation(libs.core.splashscreen)
     annotationProcessor(libs.room.compiler)
 
     // Firebase
