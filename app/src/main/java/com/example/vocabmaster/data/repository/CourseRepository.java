@@ -13,6 +13,7 @@ import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
@@ -27,6 +28,9 @@ public class CourseRepository {
     private final ExecutorService executorService;
     private final FirebaseFirestore firestore;
     private final CollectionReference coursesRef;
+    
+    private final MutableLiveData<List<Course>> firestoreCoursesLiveData = new MutableLiveData<>();
+    private ListenerRegistration coursesListener;
 
     public CourseRepository(Application application) {
         AppDatabase db = AppDatabase.getDatabase(application);
@@ -35,6 +39,33 @@ public class CourseRepository {
         executorService = Executors.newFixedThreadPool(4);
         firestore = FirebaseFirestore.getInstance();
         coursesRef = firestore.collection("courses");
+        
+        startListeningToCourses();
+    }
+
+    private void startListeningToCourses() {
+        if (coursesListener != null) return;
+        
+        coursesListener = coursesRef.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.e(TAG, "Listen failed.", error);
+                return;
+            }
+
+            if (value != null) {
+                List<Course> courses = new ArrayList<>();
+                for (QueryDocumentSnapshot document : value) {
+                    try {
+                        Course course = document.toObject(Course.class);
+                        course.setFirestoreId(document.getId());
+                        courses.add(course);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing course: " + document.getId(), e);
+                    }
+                }
+                firestoreCoursesLiveData.setValue(courses);
+            }
+        });
     }
 
     public LiveData<List<Course>> getAllCourses() {
@@ -53,24 +84,14 @@ public class CourseRepository {
         executorService.execute(() -> courseDao.update(course));
     }
 
-    /**
-     * Thêm khóa học mới vào Firestore, sau đó lưu ngược lại vào Local Room với ID đồng bộ
-     */
     public void addCourseAndSync(Course course) {
-        Log.d(TAG, "Attempting to add course to Firestore: " + course.getTitle());
         coursesRef.add(course)
                 .addOnSuccessListener(documentReference -> {
                     String firestoreId = documentReference.getId();
                     course.setFirestoreId(firestoreId);
-                    // Sau khi có ID từ Firestore, mới lưu vào local Room
                     insertCourseLocal(course);
-                    Log.d(TAG, "Successfully pushed to Firestore. ID: " + firestoreId);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "FAILED to push to Firestore: " + e.getMessage(), e);
-                    // Vẫn lưu local nếu fail network để người dùng không mất dữ liệu
-                    insertCourseLocal(course); 
-                });
+                .addOnFailureListener(e -> insertCourseLocal(course));
     }
 
     public void addCourseToFirestore(Course course) {
@@ -78,8 +99,6 @@ public class CourseRepository {
                 .addOnSuccessListener(documentReference -> {
                     String firestoreId = documentReference.getId();
                     course.setFirestoreId(firestoreId);
-                    Log.d(TAG, "Course added to Firestore with ID: " + firestoreId);
-                    // Cập nhật lại local với firestoreId nếu đã tồn tại local
                     if (course.getId() > 0) {
                         updateCourseLocal(course);
                     }
@@ -88,25 +107,7 @@ public class CourseRepository {
     }
 
     public LiveData<List<Course>> getCoursesFromFirestore() {
-        MutableLiveData<List<Course>> liveData = new MutableLiveData<>();
-        coursesRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                List<Course> courses = new ArrayList<>();
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    try {
-                        Course course = document.toObject(Course.class);
-                        course.setFirestoreId(document.getId());
-                        courses.add(course);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error parsing course: " + document.getId(), e);
-                    }
-                }
-                liveData.setValue(courses);
-            } else {
-                Log.e(TAG, "Error getting courses from Firestore: ", task.getException());
-            }
-        });
-        return liveData;
+        return firestoreCoursesLiveData;
     }
 
     public void updateCourseInFirestore(Course course) {
@@ -114,8 +115,6 @@ public class CourseRepository {
             coursesRef.document(course.getFirestoreId()).set(course)
                     .addOnSuccessListener(aVoid -> Log.d(TAG, "Course updated in Firestore"))
                     .addOnFailureListener(e -> Log.e(TAG, "Error updating course in Firestore", e));
-        } else {
-            Log.w(TAG, "Cannot update Firestore: firestoreId is null");
         }
     }
 

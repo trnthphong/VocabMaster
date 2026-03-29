@@ -1,12 +1,15 @@
 package com.example.vocabmaster.ui.library;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -18,8 +21,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,7 +85,6 @@ public class CourseDetailActivity extends AppCompatActivity {
                     if (!querySnapshot.isEmpty()) {
                         List<DocumentSnapshot> docs = new ArrayList<>(querySnapshot.getDocuments());
                         
-                        // Sửa lỗi Crash: Kiểm tra kiểu dữ liệu của createdAt
                         Collections.sort(docs, (d1, d2) -> {
                             long t1 = getTimestampLong(d1, "createdAt");
                             long t2 = getTimestampLong(d2, "createdAt");
@@ -208,11 +210,70 @@ public class CourseDetailActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_course_detail, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
+        } else if (item.getItemId() == R.id.action_delete_course) {
+            confirmDeleteCourse();
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void confirmDeleteCourse() {
+        new AlertDialog.Builder(this)
+                .setTitle("Xóa khóa học")
+                .setMessage("Bạn có chắc chắn muốn xóa khóa học này cùng tất cả bài học bên trong không? Hành động này không thể hoàn tác.")
+                .setPositiveButton("Xóa", (dialog, which) -> deleteCourseData())
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void deleteCourseData() {
+        if (courseId == null) return;
+        binding.progressRoadmap.setVisibility(View.VISIBLE);
+
+        // Logic xóa khóa học: Xóa Course -> Xóa các Unit của Course đó -> Xóa các Lesson của các Unit đó
+        db.collection("units").whereEqualTo("courseId", courseId).get().addOnSuccessListener(unitSnapshots -> {
+            WriteBatch batch = db.batch();
+            
+            // 1. Xóa các Units và Lessons
+            List<Task<QuerySnapshot>> lessonFetchTasks = new ArrayList<>();
+            for (DocumentSnapshot unitDoc : unitSnapshots) {
+                batch.delete(unitDoc.getReference());
+                lessonFetchTasks.add(db.collection("lessons").whereEqualTo("unitId", unitDoc.getId()).get());
+            }
+
+            Tasks.whenAllComplete(lessonFetchTasks).addOnCompleteListener(t -> {
+                for (Task<QuerySnapshot> lessonTask : lessonFetchTasks) {
+                    if (lessonTask.isSuccessful()) {
+                        for (DocumentSnapshot lessonDoc : lessonTask.getResult()) {
+                            batch.delete(lessonDoc.getReference());
+                        }
+                    }
+                }
+
+                // 2. Xóa chính khóa học
+                batch.delete(db.collection("courses").document(courseId));
+
+                // 3. Thực thi batch
+                batch.commit().addOnSuccessListener(aVoid -> {
+                    binding.progressRoadmap.setVisibility(View.GONE);
+                    Toast.makeText(this, "Đã xóa khóa học thành công", Toast.LENGTH_SHORT).show();
+                    finish();
+                }).addOnFailureListener(e -> {
+                    binding.progressRoadmap.setVisibility(View.GONE);
+                    Log.e(TAG, "Error deleting course", e);
+                    Toast.makeText(this, "Lỗi khi xóa khóa học", Toast.LENGTH_SHORT).show();
+                });
+            });
+        });
     }
 }
