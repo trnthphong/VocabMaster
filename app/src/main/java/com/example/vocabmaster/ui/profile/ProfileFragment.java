@@ -57,7 +57,10 @@ public class ProfileFragment extends Fragment {
         
         binding.cardAvatar.setOnClickListener(v -> showAvatarSelectionDialog());
         binding.btnSaveProfile.setOnClickListener(v -> saveProfile());
-        binding.btnUpgradePremium.setOnClickListener(v -> upgradePremium());
+        
+        // Navigate to Premium Page
+        binding.btnUpgradePremium.setOnClickListener(v -> 
+                NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_premium));
 
 
         // Navigation to Social
@@ -302,22 +305,6 @@ public class ProfileFragment extends Fragment {
                 .addOnSuccessListener(unused -> {
                     if (isAdded()) UiFeedback.showSnack(binding.getRoot(), "Settings saved");
                 });
-    }
-
-    private void upgradePremium() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
-        UiFeedback.showConfirmDialog(requireContext(), "Upgrade to Premium", "Start your monthly Premium plan now?", () -> {
-            db.collection("users").document(uid).update("premium", true).addOnSuccessListener(unused -> {
-                Map<String, Object> sub = new HashMap<>();
-                sub.put("userId", uid);
-                sub.put("plan", "monthly");
-                sub.put("createdAt", System.currentTimeMillis());
-                db.collection("subscriptions").add(sub);
-                UiFeedback.showSnack(binding.getRoot(), "Premium activated");
-                loadProfile();
-            });
-        });
     }
 
     private void logout() {

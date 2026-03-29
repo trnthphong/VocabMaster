@@ -2,18 +2,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/navigation_home"
-        android:icon="@android:drawable/ic_menu_today"
+        android:icon="@drawable/home"
         android:title="Home" />
     <item
         android:id="@+id/navigation_library"
-        android:icon="@android:drawable/ic_menu_agenda"
+        android:icon="@drawable/library"
         android:title="Library" />
     <item
+        android:id="@+id/navigation_premium"
+        android:icon="@drawable/star"
+        android:title="Premium" />
+    <item
         android:id="@+id/navigation_social"
-        android:icon="@android:drawable/ic_menu_share"
+        android:icon="@drawable/share"
         android:title="Social" />
     <item
         android:id="@+id/navigation_profile"
-        android:icon="@android:drawable/ic_menu_myplaces"
+        android:icon="@drawable/user"
         android:title="Profile" />
 </menu>

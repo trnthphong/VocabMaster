@@ -16,9 +16,10 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.data.model.Course;
-import com.example.vocabmaster.databinding.DialogAddCourseBinding;
+
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.ui.home.CreateCourseFlowActivity;
 import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -46,7 +47,6 @@ public class LibraryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        // Sửa: Mở CourseDetailActivity khi nhấn vào khóa học
         adapter = new CourseAdapter(course -> {
             Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
             intent.putExtra("course_id", course.getFirestoreId());
@@ -58,7 +58,11 @@ public class LibraryFragment extends Fragment {
         binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerCourses.setAdapter(adapter);
         
-        binding.fabAddCourse.setOnClickListener(v -> showAddCourseDialog());
+        binding.fabAddCourse.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
+            startActivity(intent);
+        });
+
         binding.btnAiCreateCourse.setOnClickListener(v -> createCourseByAi());
         
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -95,35 +99,7 @@ public class LibraryFragment extends Fragment {
         });
     }
 
-    private void showAddCourseDialog() {
-        DialogAddCourseBinding dialogBinding = DialogAddCourseBinding.inflate(getLayoutInflater());
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Create new study set")
-                .setView(dialogBinding.getRoot())
-                .setPositiveButton("Create", (dialog, which) -> {
-                    String title = Objects.requireNonNull(dialogBinding.editCourseTitle.getText()).toString().trim();
-                    String description = Objects.requireNonNull(dialogBinding.editCourseDescription.getText()).toString().trim();
-                    int selectedChipId = dialogBinding.chipGroupThemes.getCheckedChipId();
-                    
-                    if (title.isEmpty()) {
-                        UiFeedback.showSnack(binding.getRoot(), "Title cannot be empty");
-                        return;
-                    }
-                    
-                    String theme = "";
-                    if (selectedChipId != View.NO_ID) {
-                        Chip selectedChip = dialogBinding.chipGroupThemes.findViewById(selectedChipId);
-                        theme = selectedChip.getText().toString();
-                    }
 
-                    Course course = new Course(title, description, theme, FirebaseAuth.getInstance().getUid(), true);
-                    viewModel.addCourseToFirestore(course);
-                    UiFeedback.showSnack(binding.getRoot(), "Study set created");
-                    refreshData();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
 
     private void refreshData() {
         observeViewModel();
@@ -147,7 +123,7 @@ public class LibraryFragment extends Fragment {
         new AlertDialog.Builder(requireContext())
                 .setTitle(course.getTitle())
                 .setItems(actions, (dialog, which) -> {
-                    if (which == 0) showEditDialog(course);
+
                     if (which == 1) deleteCourse(course);
                     if (which == 2) duplicateCourse(course);
                     if (which == 3) shareCourse(course);
@@ -155,40 +131,7 @@ public class LibraryFragment extends Fragment {
                 .show();
     }
 
-    private void showEditDialog(Course course) {
-        DialogAddCourseBinding dialogBinding = DialogAddCourseBinding.inflate(getLayoutInflater());
-        dialogBinding.editCourseTitle.setText(course.getTitle());
-        dialogBinding.editCourseDescription.setText(course.getDescription());
-        
-        if (course.getTheme() != null) {
-            for (int i = 0; i < dialogBinding.chipGroupThemes.getChildCount(); i++) {
-                Chip chip = (Chip) dialogBinding.chipGroupThemes.getChildAt(i);
-                if (chip.getText().toString().equals(course.getTheme())) {
-                    chip.setChecked(true);
-                    break;
-                }
-            }
-        }
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Edit study set")
-                .setView(dialogBinding.getRoot())
-                .setPositiveButton("Save", (dialog, which) -> {
-                    course.setTitle(Objects.requireNonNull(dialogBinding.editCourseTitle.getText()).toString().trim());
-                    course.setDescription(Objects.requireNonNull(dialogBinding.editCourseDescription.getText()).toString().trim());
-                    int selectedChipId = dialogBinding.chipGroupThemes.getCheckedChipId();
-                    if (selectedChipId != View.NO_ID) {
-                        Chip selectedChip = dialogBinding.chipGroupThemes.findViewById(selectedChipId);
-                        course.setTheme(selectedChip.getText().toString());
-                    }
-
-                    viewModel.updateCourseInFirestore(course);
-                    UiFeedback.showSnack(binding.getRoot(), "Study set updated");
-                    refreshData();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
 
     private void deleteCourse(Course course) {
         viewModel.deleteCourseFromFirestore(course.getFirestoreId());

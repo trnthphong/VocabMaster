@@ -53,6 +53,8 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.firebase.database)
     implementation(libs.core.splashscreen)
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
     annotationProcessor(libs.room.compiler)
 
     // Gson

@@ -37,7 +37,7 @@
             android:ellipsize="end"
             android:singleLine="true"
             app:layout_constraintBottom_toTopOf="@id/study_progress"
-            app:layout_constraintEnd_toStartOf="@id/text_streak"
+            app:layout_constraintEnd_toStartOf="@id/layout_stats"
             app:layout_constraintStart_toEndOf="@id/btn_close"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_chainStyle="packed"
@@ -51,7 +51,7 @@
             android:layout_marginTop="4dp"
             app:indicatorColor="@color/brand_secondary"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/text_streak"
+            app:layout_constraintEnd_toStartOf="@id/layout_stats"
             app:layout_constraintStart_toEndOf="@id/btn_close"
             app:layout_constraintTop_toBottomOf="@id/text_header_title"
             app:trackColor="@color/glass_white_20"
@@ -59,18 +59,38 @@
             app:trackThickness="10dp"
             android:progress="30" />
 
-        <TextView
-            android:id="@+id/text_streak"
+        <LinearLayout
+            android:id="@+id/layout_stats"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableStart="@android:drawable/btn_star_big_on"
-            android:drawablePadding="4dp"
-            android:text="12"
-            android:textColor="@color/white"
-            android:textStyle="bold"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/text_hearts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:drawableStart="@drawable/heart"
+                android:drawablePadding="4dp"
+                android:text="5"
+                android:textColor="@color/error"
+                android:textStyle="bold"
+                app:drawableTint="@color/error" />
+
+            <TextView
+                android:id="@+id/text_streak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableStart="@android:drawable/btn_star_big_on"
+                android:drawablePadding="4dp"
+                android:text="12"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -85,7 +105,7 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_controls"
         app:layout_constraintTop_toBottomOf="@id/top_bar">
 
-        <!-- Flashcard View (Default) -->
+        <!-- Flashcard View -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_flashcard"
             android:layout_width="match_parent"
@@ -193,7 +213,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Dynamic Task Views will be inflated here -->
+        <!-- Dynamic Task Views -->
         <FrameLayout
             android:id="@+id/dynamic_task_layout"
             android:layout_width="match_parent"

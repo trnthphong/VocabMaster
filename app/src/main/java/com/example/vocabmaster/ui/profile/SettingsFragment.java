@@ -45,6 +45,8 @@ public class SettingsFragment extends Fragment {
             saveSetting("dailyGoal", goal);
         });
 
+        binding.btnCancelPremium.setOnClickListener(v -> cancelPremium());
+
         loadSettings();
     }
 
@@ -57,9 +59,27 @@ public class SettingsFragment extends Fragment {
             
             Long dailyGoal = snapshot.getLong("dailyGoal");
             Boolean darkMode = snapshot.getBoolean("darkMode");
+            Boolean isPremium = snapshot.getBoolean("premium");
 
             binding.editDailyGoal.setText(String.valueOf(dailyGoal == null ? 20 : dailyGoal));
             binding.switchDarkMode.setChecked(Boolean.TRUE.equals(darkMode));
+            
+            // Show/Hide Premium section
+            binding.cardSubscription.setVisibility(Boolean.TRUE.equals(isPremium) ? View.VISIBLE : View.GONE);
+        });
+    }
+
+    private void cancelPremium() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        UiFeedback.showConfirmDialog(requireContext(), "Hủy Premium", "Bạn có chắc chắn muốn hủy gói Premium? Các tính năng đặc biệt sẽ bị khóa.", () -> {
+            db.collection("users").document(uid).update("premium", false).addOnSuccessListener(unused -> {
+                if (isAdded()) {
+                    UiFeedback.showSnack(binding.getRoot(), "Đã hủy gói Premium thành công");
+                    binding.cardSubscription.setVisibility(View.GONE);
+                }
+            });
         });
     }
 

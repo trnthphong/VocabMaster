@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="@dimen/spacing_8"
@@ -16,50 +17,40 @@
         android:layout_height="wrap_content"
         android:padding="@dimen/spacing_16">
 
-        <View
-            android:id="@+id/view_indicator"
-            android:layout_width="4dp"
-            android:layout_height="0dp"
-            android:background="@drawable/bg_glass_card"
-            android:backgroundTint="@color/brand_primary"
-            app:layout_constraintBottom_toBottomOf="@id/text_course_description"
+        <ImageView
+            android:id="@+id/img_course_flag"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/eng"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/text_course_title" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/text_course_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_12"
-            android:text="IELTS Vocabulary"
+            android:layout_marginStart="@dimen/spacing_16"
+            android:text="Tiếng Anh"
             android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            app:layout_constraintBottom_toTopOf="@id/layout_stats"
             app:layout_constraintEnd_toStartOf="@id/icon_more"
-            app:layout_constraintStart_toEndOf="@id/view_indicator"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/text_course_description"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_12"
-            android:layout_marginTop="4dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:text="Comprehensive set for IELTS academic preparation."
-            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/view_indicator"
-            app:layout_constraintTop_toBottomOf="@id/text_course_title" />
+            app:layout_constraintStart_toEndOf="@id/img_course_flag"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" />
 
         <LinearLayout
             android:id="@+id/layout_stats"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_12"
+            android:layout_marginStart="@dimen/spacing_16"
+            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="@id/text_course_description"
-            app:layout_constraintTop_toBottomOf="@id/text_course_description">
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/img_course_flag"
+            app:layout_constraintTop_toBottomOf="@id/text_course_title">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -74,7 +65,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:src="@android:drawable/ic_menu_today"
+                    android:src="@drawable/diamond"
                     app:tint="@color/brand_primary" />
 
                 <TextView
@@ -89,6 +80,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/layout_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -102,7 +94,7 @@
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:src="@drawable/gem"
+                    android:src="@drawable/level"
                     app:tint="@color/brand_secondary" />
 
                 <TextView

@@ -2,22 +2,18 @@ package com.example.vocabmaster.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.widget.RadioButton;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Lesson;
 import com.example.vocabmaster.data.model.Unit;
 import com.example.vocabmaster.databinding.ActivityCreateCourseFlowBinding;
 import com.example.vocabmaster.ui.library.CourseDetailActivity;
-import com.example.vocabmaster.ui.library.LibraryViewModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -29,10 +25,9 @@ import java.util.Date;
 import java.util.List;
 
 public class CreateCourseFlowActivity extends AppCompatActivity {
-    private static final String TAG = "CreateCourseFlow";
     private ActivityCreateCourseFlowBinding binding;
-    private List<Fragment> fragments = new ArrayList<>();
-    private LibraryViewModel viewModel;
+    private int currentStep = 1;
+    private final int totalSteps = 4;
     
     private String selectedLanguage = "";
     private String selectedTheme = "";
@@ -45,10 +40,8 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding = ActivityCreateCourseFlowBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
-
         checkPremiumStatus();
-        setupViewPager();
+        updateStepUI();
         setupListeners();
     }
 
@@ -62,83 +55,77 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         }
     }
 
-    private void setupViewPager() {
-        fragments.add(new Step1LanguageFragment());
-        fragments.add(new Step2ThemeFragment());
-        fragments.add(new Step3TimeFragment());
-        fragments.add(new Step4PremiumFragment());
-
-        binding.viewPagerFlow.setAdapter(new FragmentStateAdapter(this) {
-            @NonNull
-            @Override
-            public Fragment createFragment(int position) {
-                return fragments.get(position);
-            }
-
-            @Override
-            public int getItemCount() {
-                return fragments.size();
-            }
-        });
-
-        binding.viewPagerFlow.setUserInputEnabled(false);
-        binding.progressFlow.setMax(fragments.size());
-        binding.progressFlow.setProgress(1);
-    }
-
     private void setupListeners() {
         binding.btnBackFlow.setOnClickListener(v -> {
-            int current = binding.viewPagerFlow.getCurrentItem();
-            if (current > 0) {
-                binding.viewPagerFlow.setCurrentItem(current - 1);
-                binding.progressFlow.setProgress(current);
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepUI();
             } else {
                 finish();
             }
         });
 
         binding.btnNextFlow.setOnClickListener(v -> {
-            int current = binding.viewPagerFlow.getCurrentItem();
-            
-            if (current == 0) {
-                selectedLanguage = ((Step1LanguageFragment) fragments.get(0)).getSelectedLanguage();
-                if (selectedLanguage.isEmpty()) {
-                    Toast.makeText(this, "Vui lòng chọn ngôn ngữ", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            } else if (current == 1) {
-                selectedTheme = ((Step2ThemeFragment) fragments.get(1)).getSelectedTheme();
-                if (selectedTheme.isEmpty()) {
-                    Toast.makeText(this, "Vui lòng chọn chủ đề", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            } else if (current == 2) {
-                selectedTime = ((Step3TimeFragment) fragments.get(2)).getSelectedTime();
-                if (isPremiumUser) {
+            if (validateAndSaveStepData()) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateStepUI();
+                } else {
                     createCourseAndFinish();
-                    return;
-                }
-            } else if (current == 3) {
-                createCourseAndFinish();
-                return;
-            }
-
-            if (current < fragments.size() - 1) {
-                binding.viewPagerFlow.setCurrentItem(current + 1);
-                binding.progressFlow.setProgress(current + 2);
-                
-                if (current + 1 == fragments.size() - 1) {
-                    binding.btnNextFlow.setText("Hoàn tất");
                 }
             }
         });
+    }
+
+    private void updateStepUI() {
+        binding.layoutStep1.setVisibility(currentStep == 1 ? View.VISIBLE : View.GONE);
+        binding.layoutStep2.setVisibility(currentStep == 2 ? View.VISIBLE : View.GONE);
+        binding.layoutStep3.setVisibility(currentStep == 3 ? View.VISIBLE : View.GONE);
+        binding.layoutStep4.setVisibility(currentStep == 4 ? View.VISIBLE : View.GONE);
+
+        binding.progressFlow.setProgress(currentStep);
+        binding.progressFlow.setMax(totalSteps);
+
+        if (currentStep == totalSteps) {
+            binding.btnNextFlow.setText("Hoàn tất");
+        } else {
+            binding.btnNextFlow.setText("Tiếp tục");
+        }
+    }
+
+    private boolean validateAndSaveStepData() {
+        if (currentStep == 1) {
+            int checkedId = binding.radioGroupLanguage.getCheckedRadioButtonId();
+            if (checkedId == -1) {
+                Toast.makeText(this, "Vui lòng chọn ngôn ngữ", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            RadioButton rb = findViewById(checkedId);
+            selectedLanguage = rb.getText().toString();
+            return true;
+        } else if (currentStep == 2) {
+            int checkedId = binding.radioGroupThemes.getCheckedRadioButtonId();
+            if (checkedId == -1) {
+                Toast.makeText(this, "Vui lòng chọn chủ đề", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            RadioButton rb = findViewById(checkedId);
+            selectedTheme = rb.getText().toString();
+            return true;
+        } else if (currentStep == 3) {
+            int checkedId = binding.radioGroupTime.getCheckedRadioButtonId();
+            if (checkedId == R.id.radio_5min) selectedTime = 5;
+            else if (checkedId == R.id.radio_15min) selectedTime = 15;
+            else selectedTime = 10;
+            return true;
+        }
+        return true;
     }
 
     private void createCourseAndFinish() {
         String userId = FirebaseAuth.getInstance().getUid();
         if (userId == null) return;
 
-        // Hiển thị loading
         binding.btnNextFlow.setEnabled(false);
         binding.btnNextFlow.setText("Đang khởi tạo...");
 
@@ -162,9 +149,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
     }
 
     private void fetchVocabAndGenerateDuolingoPath(FirebaseFirestore db, String courseId, String theme, Course course) {
-        String topicKey = mapThemeToTopic(theme);
-        
-        // Lấy từ vựng theo chủ đề hoặc ngẫu nhiên
         db.collection("vocabularies")
                 .limit(100)
                 .get()
@@ -177,9 +161,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
                     
                     if (allWords.isEmpty()) {
                         allWords.add("Hello"); allWords.add("Goodbye"); allWords.add("Thank you");
-                        allWords.add("Apple"); allWords.add("Bread"); allWords.add("Water");
-                        allWords.add("Book"); allWords.add("Pen"); allWords.add("School");
-                        allWords.add("Teacher");
                     }
 
                     generateDuolingoUnits(db, courseId, theme, allWords, course);
@@ -209,9 +190,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         }
 
         batch.commit().addOnSuccessListener(aVoid -> {
-            Log.d(TAG, "Duolingo path created!");
-            
-            // Chuyển màn hình SAU KHI đã lưu thành công vào Firestore
             Intent intent = new Intent(this, CourseDetailActivity.class);
             intent.putExtra("course_id", courseId);
             intent.putExtra("course_title", course.getTitle());
@@ -219,7 +197,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }).addOnFailureListener(e -> {
-            Log.e(TAG, "Error committing batch", e);
             binding.btnNextFlow.setEnabled(true);
             binding.btnNextFlow.setText("Hoàn tất");
         });
@@ -229,16 +206,12 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         String[] lessonTitles = {"Từ vựng 1", "Luyện nghe", "Từ vựng 2", "Hội thoại", "Kiểm tra cuối chương"};
         String[] types = {"vocabulary", "listening", "vocabulary", "speaking", "quiz"};
         
-        // Lấy 10 từ vựng cho mỗi Unit
         int wordsPerUnit = 10;
         int startIdx = (unitIndex * wordsPerUnit) % allWords.size();
-        int endIdx = Math.min(startIdx + wordsPerUnit, allWords.size());
         
-        List<String> unitWords;
-        if (startIdx < endIdx) {
-            unitWords = new ArrayList<>(allWords.subList(startIdx, endIdx));
-        } else {
-            unitWords = new ArrayList<>(allWords.subList(0, Math.min(wordsPerUnit, allWords.size())));
+        List<String> unitWords = new ArrayList<>();
+        for (int k = 0; k < wordsPerUnit; k++) {
+            unitWords.add(allWords.get((startIdx + k) % allWords.size()));
         }
 
         for (int j = 0; j < lessonTitles.length; j++) {
@@ -250,18 +223,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             String lessonId = db.collection("lessons").document().getId();
             lesson.setLessonId(lessonId);
             batch.set(db.collection("lessons").document(lessonId), lesson);
-        }
-    }
-
-    private String mapThemeToTopic(String theme) {
-        if (theme == null) return "daily_life";
-        switch (theme) {
-            case "Nghề nghiệp": return "career";
-            case "Trường học": return "school";
-            case "Du lịch": return "travel";
-            case "Thức ăn": return "food";
-            case "Văn hóa": return "culture";
-            default: return "daily_life";
         }
     }
 }
