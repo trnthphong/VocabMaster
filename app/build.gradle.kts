@@ -55,6 +55,9 @@ dependencies {
     implementation(libs.core.splashscreen)
     annotationProcessor(libs.room.compiler)
 
+    // Gson
+    implementation(libs.gson)
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

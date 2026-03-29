@@ -35,6 +35,13 @@ public class LibraryViewModel extends AndroidViewModel {
         return repository.getCoursesFromFirestore();
     }
 
+    /**
+     * Đồng bộ khóa học lên Firestore sau đó mới lưu vào Local
+     */
+    public void addCourseAndSync(Course course) {
+        repository.addCourseAndSync(course);
+    }
+
     public void addCourseToFirestore(Course course) {
         repository.addCourseToFirestore(course);
     }

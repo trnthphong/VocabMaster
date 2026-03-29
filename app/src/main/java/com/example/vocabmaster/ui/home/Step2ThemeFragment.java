@@ -4,8 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,9 +34,9 @@ public class Step2ThemeFragment extends Fragment {
     private void setupThemeClick(View view, String theme) {
         view.setOnClickListener(v -> {
             if (lastSelectedView != null) {
-                lastSelectedView.setBackgroundResource(R.drawable.bg_toggle_pill);
+                lastSelectedView.setSelected(false);
             }
-            view.setBackgroundResource(R.drawable.button_primary); // Giả sử dùng màu primary khi chọn
+            view.setSelected(true);
             selectedTheme = theme;
             lastSelectedView = view;
         });

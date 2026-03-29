@@ -2,27 +2,30 @@ package com.example.vocabmaster.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
-import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.databinding.ActivityCreateCourseFlowBinding;
-import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.library.CourseDetailActivity;
+import com.example.vocabmaster.ui.library.LibraryViewModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class CreateCourseFlowActivity extends AppCompatActivity {
     private ActivityCreateCourseFlowBinding binding;
     private List<Fragment> fragments = new ArrayList<>();
+    private LibraryViewModel viewModel;
+    
     private String selectedLanguage = "";
     private String selectedTheme = "";
     private int selectedTime = 10;
@@ -33,6 +36,8 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityCreateCourseFlowBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
 
         checkPremiumStatus();
         setupViewPager();
@@ -68,7 +73,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             }
         });
 
-        binding.viewPagerFlow.setUserInputEnabled(false); // Không cho vuốt tay
+        binding.viewPagerFlow.setUserInputEnabled(false);
         binding.progressFlow.setMax(fragments.size());
         binding.progressFlow.setProgress(1);
     }
@@ -87,7 +92,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding.btnNextFlow.setOnClickListener(v -> {
             int current = binding.viewPagerFlow.getCurrentItem();
             
-            // Xử lý logic từng bước trước khi qua trang mới
             if (current == 0) {
                 selectedLanguage = ((Step1LanguageFragment) fragments.get(0)).getSelectedLanguage();
                 if (selectedLanguage.isEmpty()) {
@@ -102,13 +106,11 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
                 }
             } else if (current == 2) {
                 selectedTime = ((Step3TimeFragment) fragments.get(2)).getSelectedTime();
-                // Nếu đã là Premium thì bỏ qua bước 3 (Premium offer) và tạo luôn
                 if (isPremiumUser) {
                     createCourseAndFinish();
                     return;
                 }
             } else if (current == 3) {
-                // Bước Premium, nhấn "Tiếp tục" ở đây có thể coi là đồng ý hoặc bỏ qua tùy UI
                 createCourseAndFinish();
                 return;
             }
@@ -125,11 +127,58 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
     }
 
     private void createCourseAndFinish() {
-        // Giả lập tạo course thành công
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập lại", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Course course = new Course();
+        course.setTitle(selectedLanguage + " Course");
+        course.setDescription("Learning " + selectedLanguage + " with theme: " + selectedTheme);
+        course.setTheme(selectedTheme);
+        course.setCreatorId(userId);
+        course.setPublic(false);
+        
+        // Map data from schema
+        course.setTargetLanguageId(mapLanguageToId(selectedLanguage));
+        course.setSourceLanguageId(1); // Mặc định Tiếng Việt
+        course.setDailyTimeMinutes(selectedTime);
+        course.setProficiencyLevel("beginner");
+        course.setLearningGoal("Personal Growth");
+        course.setStatus("active");
+        course.setCreatedAt(new Date());
+        course.setUpdatedAt(new Date());
+        course.setStartDate(new Date());
+        course.setFlashcardCount(0);
+        course.setProgressPercentage(0.0);
+        course.setStreakDays(0);
+
+        // Đẩy lên Firestore và đồng bộ Local trong một quy trình
+        viewModel.addCourseAndSync(course);
+
+        // Cập nhật ngôn ngữ đang học cho User để hiển thị ở Profile
+        FirebaseFirestore.getInstance().collection("users").document(userId)
+                .update("language", selectedLanguage);
+
+        Toast.makeText(this, "Đang tạo khóa học...", Toast.LENGTH_SHORT).show();
+
         Intent intent = new Intent(this, CourseDetailActivity.class);
-        intent.putExtra("course_title", selectedLanguage + " - " + selectedTheme);
-        intent.putExtra("course_theme", selectedTheme);
+        intent.putExtra("course_title", course.getTitle());
+        intent.putExtra("course_theme", course.getTheme());
         startActivity(intent);
         finish();
+    }
+
+    private int mapLanguageToId(String language) {
+        if (language == null) return 0;
+        switch (language.toLowerCase()) {
+            case "english": case "tiếng anh": return 1;
+            case "japanese": case "tiếng nhật": return 2;
+            case "korean": case "tiếng hàn": return 3;
+            case "chinese": case "tiếng trung": return 4;
+            case "russia": case "tiếng nga": return 5;
+            default: return 0;
+        }
     }
 }

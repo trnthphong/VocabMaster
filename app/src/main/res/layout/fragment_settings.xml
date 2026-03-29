@@ -78,6 +78,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
                 android:text="Save Settings" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_logout"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_8"
+                android:text="Đăng xuất"
+                android:textColor="@color/error" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

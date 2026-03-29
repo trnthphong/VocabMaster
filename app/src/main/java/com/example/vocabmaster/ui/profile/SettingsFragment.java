@@ -1,5 +1,6 @@
 package com.example.vocabmaster.ui.profile;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.vocabmaster.databinding.FragmentSettingsBinding;
+import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -34,7 +36,7 @@ public class SettingsFragment extends Fragment {
         binding.btnBack.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
 
         binding.switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("darkMode", isChecked));
-        
+        binding.btnLogout.setOnClickListener(v -> logout());
         binding.btnSaveSettings.setOnClickListener(v -> {
             int goal = 20;
             try {
@@ -68,6 +70,12 @@ public class SettingsFragment extends Fragment {
                 .addOnSuccessListener(unused -> {
                     if (isAdded()) UiFeedback.showSnack(binding.getRoot(), "Settings saved");
                 });
+    }
+
+    private void logout() {
+        FirebaseAuth.getInstance().signOut();
+        startActivity(new Intent(requireContext(), LoginActivity.class));
+        requireActivity().finish();
     }
 
     @Override

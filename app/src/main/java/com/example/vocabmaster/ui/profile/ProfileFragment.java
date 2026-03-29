@@ -2,6 +2,7 @@ package com.example.vocabmaster.ui.profile;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +20,16 @@ import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.databinding.FragmentProfileBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ProfileFragment extends Fragment {
+    private static final String TAG = "ProfileFragment";
     private FragmentProfileBinding binding;
     private FirebaseFirestore db;
 
@@ -54,7 +58,7 @@ public class ProfileFragment extends Fragment {
         binding.cardAvatar.setOnClickListener(v -> showAvatarSelectionDialog());
         binding.btnSaveProfile.setOnClickListener(v -> saveProfile());
         binding.btnUpgradePremium.setOnClickListener(v -> upgradePremium());
-        binding.btnLogout.setOnClickListener(v -> logout());
+
 
         // Navigation to Social
         View.OnClickListener toSocial = v -> {
@@ -117,9 +121,100 @@ public class ProfileFragment extends Fragment {
             binding.adminPanel.setVisibility("admin".equals(role) ? View.VISIBLE : View.GONE);
             
             updateAvatarUI(avatar);
-            updateCourseUI(language);
+            
+            // Ưu tiên load từ courses collection để có thông tin mới nhất và chính xác nhất
+            loadLatestCourse(uid, language);
         });
         binding.btnAdminRefresh.setOnClickListener(v -> loadAdminData());
+    }
+
+    private void loadLatestCourse(String uid, String userLanguage) {
+        db.collection("courses")
+                .whereEqualTo("creatorId", uid)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null) return;
+                    
+                    if (querySnapshot.isEmpty()) {
+                        // Nếu không tìm thấy khóa học nào, dùng thông tin từ user profile làm fallback
+                        updateCourseUI(userLanguage);
+                        return;
+                    }
+                    
+                    DocumentSnapshot latestDoc = null;
+                    Date latestDate = null;
+                    
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Date updatedAt = doc.getDate("updatedAt");
+                        if (updatedAt != null) {
+                            if (latestDate == null || updatedAt.after(latestDate)) {
+                                latestDate = updatedAt;
+                                latestDoc = doc;
+                            }
+                        } else {
+                            // Nếu không có updatedAt, thử dùng createdAt
+                            Date createdAt = doc.getDate("createdAt");
+                            if (createdAt != null && (latestDate == null || createdAt.after(latestDate))) {
+                                latestDate = createdAt;
+                                latestDoc = doc;
+                            }
+                        }
+                    }
+                    
+                    if (latestDoc != null) {
+                        String title = latestDoc.getString("title");
+                        Long langId = latestDoc.getLong("targetLanguageId");
+                        
+                        Log.d(TAG, "Latest course found: " + title + ", langId: " + langId);
+
+
+                        
+                        // Cập nhật cờ
+                        int flagRes = -1;
+                        if (langId != null) {
+                            flagRes = getFlagForLanguageId(langId.intValue());
+                        } 
+                        
+                        if (flagRes == -1 && title != null) {
+                            flagRes = guessFlagFromText(title);
+                        }
+                        
+                        if (flagRes == -1 && userLanguage != null) {
+                            flagRes = guessFlagFromText(userLanguage);
+                        }
+
+                        if (flagRes == -1) flagRes = R.drawable.vietnam;
+
+                        binding.imageCourseFlag.setImageResource(flagRes);
+                        binding.imageStatCourse.setImageResource(flagRes);
+                    } else {
+                        updateCourseUI(userLanguage);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading courses", e);
+                    if (isAdded()) updateCourseUI(userLanguage);
+                });
+    }
+
+    private int getFlagForLanguageId(int langId) {
+        switch (langId) {
+            case 1: return R.drawable.eng;
+            case 2: return R.drawable.japan;
+            case 4: return R.drawable.china;
+            case 5: return R.drawable.russia;
+            default: return -1;
+        }
+    }
+
+    private int guessFlagFromText(String text) {
+        if (text == null) return -1;
+        String lower = text.toLowerCase();
+        if (lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
+        if (lower.contains("nhật") || lower.contains("japan") || lower.contains("japanese")) return R.drawable.japan;
+        if (lower.contains("trung") || lower.contains("china") || lower.contains("chinese")) return R.drawable.china;
+        if (lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
+        return -1;
     }
 
     private void updateAvatarUI(String avatarValue) {
@@ -144,25 +239,14 @@ public class ProfileFragment extends Fragment {
             courseName = "Chưa chọn khóa học";
         } else {
             courseName = language;
-            String langLower = language.toLowerCase();
-            if (langLower.contains("anh") || langLower.contains("english")) {
-                flagRes = R.drawable.eng;
-            } else if (langLower.contains("nhật") || langLower.contains("japan")) {
-                flagRes = R.drawable.japan;
-            } else if (langLower.contains("trung") || langLower.contains("china")) {
-                flagRes = R.drawable.china;
-            } else if (langLower.contains("nga") || langLower.contains("russia")) {
-                flagRes = R.drawable.russia;
-            } else {
-                flagRes = R.drawable.vietnam;
-            }
+            flagRes = guessFlagFromText(language);
+            if (flagRes == -1) flagRes = R.drawable.vietnam;
         }
 
         binding.imageCourseFlag.setImageResource(flagRes);
         binding.textCourseName.setText(courseName);
-        
-        // Also update flag in the stats card
         binding.imageStatCourse.setImageResource(flagRes);
+        binding.textStatsCourseTitle.setText(courseName);
     }
 
     private void showAvatarSelectionDialog() {
