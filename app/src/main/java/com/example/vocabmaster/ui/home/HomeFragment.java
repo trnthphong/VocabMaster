@@ -15,6 +15,7 @@ import com.example.vocabmaster.R;
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.ui.library.CourseDetailActivity;
 import com.example.vocabmaster.ui.study.MiniGameActivity;
 import com.example.vocabmaster.ui.study.StudyActivity;
 import com.google.firebase.auth.FirebaseAuth;
@@ -76,7 +77,9 @@ public class HomeFragment extends Fragment {
 
         binding.btnStartFlashcards.setOnClickListener(v -> {
             UiFeedback.performHaptic(requireContext(), 10);
-            MotionSystem.startScreen(requireActivity(), new Intent(requireContext(), StudyActivity.class));
+            // Click vào đây sẽ mở CourseDetailActivity để xem lộ trình
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            startActivity(intent);
         });
 
         binding.btnPlayMiniGame.setOnClickListener(v -> openMiniGame());
@@ -100,7 +103,7 @@ public class HomeFragment extends Fragment {
         db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
             if (binding == null || !isAdded()) return;
             
-            String name = snapshot.getString("name"); // Changed from displayName to name to match ProfileFragment
+            String name = snapshot.getString("name"); 
             if (name != null && !name.isEmpty()) {
                 binding.textUsername.setText(name + "!");
             }
@@ -141,7 +144,6 @@ public class HomeFragment extends Fragment {
             }
         }
         binding.imgProfile.setImageResource(resId);
-        binding.imgProfile.setPadding(8, 8, 8, 8); // Add padding like in profile to look consistent
     }
 
     private void openMiniGame() {

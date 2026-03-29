@@ -3,6 +3,7 @@
     <!-- Core Brand -->
     <color name="brand_primary">#6366F1</color> <!-- Indigo -->
     <color name="brand_secondary">#EC4899</color> <!-- Pink -->
+    <color name="brand_secondary_light">#FCE7F3</color> <!-- Light Pink -->
     <color name="brand_accent">#8B5CF6</color> <!-- Violet -->
 
     <!-- Neutrals (Standard) -->

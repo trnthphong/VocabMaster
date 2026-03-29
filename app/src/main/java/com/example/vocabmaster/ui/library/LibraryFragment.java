@@ -19,7 +19,6 @@ import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.databinding.DialogAddCourseBinding;
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
-import com.example.vocabmaster.ui.study.StudyActivity;
 import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -47,7 +46,15 @@ public class LibraryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        adapter = new CourseAdapter(course -> startActivity(new Intent(requireContext(), StudyActivity.class)), this::showCourseActionMenu);
+        // Sửa: Mở CourseDetailActivity khi nhấn vào khóa học
+        adapter = new CourseAdapter(course -> {
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            intent.putExtra("course_id", course.getFirestoreId());
+            intent.putExtra("course_title", course.getTitle());
+            intent.putExtra("course_theme", course.getTheme());
+            startActivity(intent);
+        }, this::showCourseActionMenu);
+        
         binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerCourses.setAdapter(adapter);
         
@@ -119,8 +126,6 @@ public class LibraryFragment extends Fragment {
     }
 
     private void refreshData() {
-        // Since we are using a simple LiveData that fetches once, we might need to re-observe or use a more reactive approach
-        // For now, let's just trigger another fetch by re-calling the observe method or updating the LiveData in VM
         observeViewModel();
     }
 
