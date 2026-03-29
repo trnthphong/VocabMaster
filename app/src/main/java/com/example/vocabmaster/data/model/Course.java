@@ -14,8 +14,10 @@ public class Course {
     private String creatorId;
     private boolean isPublic;
     private int flashcardCount;
+    private int level; // Cấp độ của khóa học
 
     public Course() {
+        this.level = 1;
     }
 
     // Constructor cũ để tương thích với LibraryFragment
@@ -25,6 +27,7 @@ public class Course {
         this.creatorId = creatorId;
         this.isPublic = isPublic;
         this.flashcardCount = 0;
+        this.level = 1;
     }
 
     public Course(String title, String description, String theme, String creatorId, boolean isPublic) {
@@ -34,6 +37,7 @@ public class Course {
         this.creatorId = creatorId;
         this.isPublic = isPublic;
         this.flashcardCount = 0;
+        this.level = 1;
     }
 
     // Getters and Setters
@@ -53,4 +57,6 @@ public class Course {
     public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
     public int getFlashcardCount() { return flashcardCount; }
     public void setFlashcardCount(int flashcardCount) { this.flashcardCount = flashcardCount; }
+    public int getLevel() { return level; }
+    public void setLevel(int level) { this.level = level; }
 }

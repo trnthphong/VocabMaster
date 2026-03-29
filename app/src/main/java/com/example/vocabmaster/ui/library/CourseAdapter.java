@@ -30,7 +30,8 @@ public class CourseAdapter extends ListAdapter<Course, CourseAdapter.CourseViewH
             @Override
             public boolean areContentsTheSame(@NonNull Course oldItem, @NonNull Course newItem) {
                 return oldItem.getTitle().equals(newItem.getTitle()) &&
-                        oldItem.getDescription().equals(newItem.getDescription());
+                        oldItem.getDescription().equals(newItem.getDescription()) &&
+                        oldItem.getLevel() == newItem.getLevel();
             }
         });
         this.listener = listener;
@@ -67,6 +68,7 @@ public class CourseAdapter extends ListAdapter<Course, CourseAdapter.CourseViewH
             binding.textCourseTitle.setText(course.getTitle());
             binding.textCourseDescription.setText(course.getDescription());
             binding.textFlashcardCount.setText(course.getFlashcardCount() + " Flashcards");
+            binding.textCourseLevel.setText("Lvl " + course.getLevel());
         }
     }
 }

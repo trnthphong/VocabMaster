@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.vocabmaster.R;
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
@@ -22,6 +23,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private FirebaseFirestore db;
+
+    private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
+    private final int[] avatarResIds = {
+            R.drawable.bear, R.drawable.cat, R.drawable.dog,
+            R.drawable.bird, R.drawable.snake, R.drawable.tiger,
+            R.drawable.rabbit
+    };
 
     @Nullable
     @Override
@@ -75,7 +83,6 @@ public class HomeFragment extends Fragment {
 
         binding.fabAdd.setOnClickListener(v -> {
             UiFeedback.performHaptic(requireContext(), 20);
-            // Mở luồng tạo khóa học mới thay vì BottomSheet
             Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
             startActivity(intent);
         });
@@ -91,9 +98,9 @@ public class HomeFragment extends Fragment {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
         db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
-            if (binding == null) return;
+            if (binding == null || !isAdded()) return;
             
-            String name = snapshot.getString("displayName");
+            String name = snapshot.getString("name"); // Changed from displayName to name to match ProfileFragment
             if (name != null && !name.isEmpty()) {
                 binding.textUsername.setText(name + "!");
             }
@@ -103,6 +110,7 @@ public class HomeFragment extends Fragment {
             Long hearts = snapshot.getLong("hearts");
             Long goal = snapshot.getLong("dailyGoal");
             Boolean premium = snapshot.getBoolean("premium");
+            String avatar = snapshot.getString("avatar");
 
             binding.textXp.setText(String.valueOf(xp == null ? 0 : xp));
             binding.textStreak.setText(String.valueOf(streak == null ? 0 : streak));
@@ -117,7 +125,23 @@ public class HomeFragment extends Fragment {
             binding.textGoalProgress.setText(earned + "/" + dailyGoal + " XP today");
             
             binding.textPremiumBadge.setVisibility(Boolean.TRUE.equals(premium) ? View.VISIBLE : View.GONE);
+            
+            updateAvatarUI(avatar);
         });
+    }
+
+    private void updateAvatarUI(String avatarValue) {
+        int resId = R.drawable.bear; // default
+        if (avatarValue != null) {
+            for (int i = 0; i < avatarValues.length; i++) {
+                if (avatarValues[i].equals(avatarValue)) {
+                    resId = avatarResIds[i];
+                    break;
+                }
+            }
+        }
+        binding.imgProfile.setImageResource(resId);
+        binding.imgProfile.setPadding(8, 8, 8, 8); // Add padding like in profile to look consistent
     }
 
     private void openMiniGame() {
