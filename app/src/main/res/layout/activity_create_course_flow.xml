@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_light">
+
+    <!-- Header -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header_flow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_16"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btn_back_flow"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/surface_dark" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress_flow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_16"
+            android:layout_marginEnd="@dimen/spacing_16"
+            app:indicatorColor="@color/brand_primary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/btn_back_flow"
+            app:layout_constraintTop_toTopOf="parent"
+            app:trackColor="@color/gray_light"
+            app:trackCornerRadius="4dp"
+            app:trackThickness="8dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_flow"
+        app:layout_constraintTop_toBottomOf="@id/header_flow">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/spacing_24">
+
+            <!-- Step 1: Language -->
+            <LinearLayout
+                android:id="@+id/layout_step_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bạn muốn học ngôn ngữ nào?"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:layout_marginBottom="@dimen/spacing_24"/>
+
+                <RadioGroup
+                    android:id="@+id/radio_group_language"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <RadioButton
+                        android:id="@+id/radio_en"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/eng"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Tiếng Anh"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_ja"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/japan"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Tiếng Nhật"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_rus"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/russia"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Tiếng Nga"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_zh"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/china"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Tiếng Trung"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Step 2: Theme -->
+            <LinearLayout
+                android:id="@+id/layout_step_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chọn chủ đề yêu thích"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:layout_marginBottom="@dimen/spacing_24"/>
+
+                <RadioGroup
+                    android:id="@+id/radio_group_themes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <RadioButton
+                        android:id="@+id/radio_career"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/career"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Nghề nghiệp"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_school"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/school"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Trường học"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_culture"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/culture"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Văn hóa"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_travel"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/travel"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Du lịch"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_food"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/food"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Thức ăn"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+
+                    <RadioButton
+                        android:id="@+id/radio_brain"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:drawableStart="@drawable/brain"
+                        android:drawablePadding="16dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="Luyện trí não"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/surface_dark" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Step 3: Time -->
+            <LinearLayout
+                android:id="@+id/layout_step_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mục tiêu hàng ngày?"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:layout_marginBottom="@dimen/spacing_24"/>
+
+                <RadioGroup
+                    android:id="@+id/radio_group_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <RadioButton android:id="@+id/radio_5min" android:layout_width="match_parent" android:layout_height="64dp" android:text="5 phút / ngày" android:paddingStart="16dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_card" android:button="@null" />
+                    <RadioButton android:id="@+id/radio_10min" android:layout_width="match_parent" android:layout_height="64dp" android:text="10 phút / ngày" android:checked="true" android:paddingStart="16dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_card" android:button="@null" />
+                    <RadioButton android:id="@+id/radio_15min" android:layout_width="match_parent" android:layout_height="64dp" android:text="15 phút / ngày" android:paddingStart="16dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_card" android:button="@null" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Step 4: Premium -->
+            <LinearLayout
+                android:id="@+id/layout_step_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/bg_gradient_main"
+                    android:layout_marginBottom="24dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mở khóa lộ trình tối ưu"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:textAlignment="center"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nâng cấp Pro để học không giới hạn và sử dụng AI cá nhân hóa"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textAlignment="center"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+        </FrameLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bottom_navigation_flow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_24"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_next_flow"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="Tiếp tục"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            app:cornerRadius="@dimen/radius_large"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

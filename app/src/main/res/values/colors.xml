@@ -2,7 +2,9 @@
 <resources>
     <!-- Core Brand -->
     <color name="brand_primary">#6366F1</color> <!-- Indigo -->
+    <color name="brand_primary_light">#EEF2FF</color> <!-- Very Light Indigo -->
     <color name="brand_secondary">#EC4899</color> <!-- Pink -->
+    <color name="brand_secondary_light">#FCE7F3</color> <!-- Light Pink -->
     <color name="brand_accent">#8B5CF6</color> <!-- Violet -->
 
     <!-- Neutrals (Standard) -->
@@ -47,7 +49,11 @@
     <color name="accent_yellow">#EAB308</color>
     <color name="gray_text">#64748B</color>
     <color name="gray_light">#CBD5E1</color>
+    <color name="gray_lighter">#F1F5F9</color>
     <color name="gray_background">@color/surface_light</color>
     <color name="card_stroke">@color/card_border</color>
     <color name="card_shadow">#0D000000</color>
+
+    <!--BACKGROUND-->
+    <color name="bg_grey">#191919</color>
 </resources>

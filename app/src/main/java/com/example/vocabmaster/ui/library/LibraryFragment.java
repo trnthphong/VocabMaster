@@ -12,42 +12,57 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.data.model.Course;
-import com.example.vocabmaster.databinding.DialogAddCourseBinding;
+
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
-import com.example.vocabmaster.ui.study.StudyActivity;
+import com.example.vocabmaster.ui.home.CreateCourseFlowActivity;
+import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class LibraryFragment extends Fragment {
     private FragmentLibraryBinding binding;
+    private LibraryViewModel viewModel;
     private CourseAdapter adapter;
-    private FirebaseFirestore db;
     private final List<Course> allCourses = new ArrayList<>();
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentLibraryBinding.inflate(inflater, container, false);
+        viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
         return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        db = FirebaseFirestore.getInstance();
-        adapter = new CourseAdapter(course -> startActivity(new Intent(requireContext(), StudyActivity.class)), this::showCourseActionMenu);
+        
+        adapter = new CourseAdapter(course -> {
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            intent.putExtra("course_id", course.getFirestoreId());
+            intent.putExtra("course_title", course.getTitle());
+            intent.putExtra("course_theme", course.getTheme());
+            startActivity(intent);
+        }, this::showCourseActionMenu);
+        
         binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerCourses.setAdapter(adapter);
-        binding.fabAddCourse.setOnClickListener(v -> showAddCourseDialog());
+        
+        binding.fabAddCourse.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
+            startActivity(intent);
+        });
+
         binding.btnAiCreateCourse.setOnClickListener(v -> createCourseByAi());
         
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -63,55 +78,35 @@ public class LibraryFragment extends Fragment {
                 return true;
             }
         });
+
+        observeViewModel();
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        loadCourses();
-    }
-
-    private void showAddCourseDialog() {
-        DialogAddCourseBinding dialogBinding = DialogAddCourseBinding.inflate(getLayoutInflater());
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Create new study set")
-                .setView(dialogBinding.getRoot())
-                .setPositiveButton("Create", (dialog, which) -> {
-                    String title = dialogBinding.editCourseTitle.getText().toString().trim();
-                    String description = dialogBinding.editCourseDescription.getText().toString().trim();
-                    if (!title.isEmpty()) {
-                        Course course = new Course(title, description, FirebaseAuth.getInstance().getUid(), true);
-                        db.collection("courses").add(course).addOnSuccessListener(unused -> {
-                            UiFeedback.showSnack(binding.getRoot(), "Study set created");
-                            loadCourses();
-                        });
-                    } else {
-                        UiFeedback.showSnack(binding.getRoot(), "Title cannot be empty");
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void loadCourses() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
+    private void observeViewModel() {
         binding.progressSkeleton.setVisibility(View.VISIBLE);
-        db.collection("courses").get().addOnSuccessListener(queryDocumentSnapshots -> {
+        viewModel.getCoursesFromFirestore().observe(getViewLifecycleOwner(), courses -> {
             allCourses.clear();
-            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                Course c = doc.toObject(Course.class);
-                c.setFirestoreId(doc.getId());
+            String uid = FirebaseAuth.getInstance().getUid();
+            for (Course c : courses) {
                 if (TextUtils.equals(c.getCreatorId(), uid) || c.isPublic()) {
                     allCourses.add(c);
                 }
             }
-            binding.progressSkeleton.setVisibility(View.GONE);
-            filterCourses(binding.searchView.getQuery() == null ? "" : binding.searchView.getQuery().toString());
+            if (binding != null) {
+                binding.progressSkeleton.setVisibility(View.GONE);
+                filterCourses(binding.searchView.getQuery().toString());
+            }
         });
     }
 
+
+
+    private void refreshData() {
+        observeViewModel();
+    }
+
     private void filterCourses(String query) {
+        if (binding == null) return;
         String q = query.toLowerCase(Locale.ROOT).trim();
         List<Course> result = new ArrayList<>();
         for (Course c : allCourses) {
@@ -128,7 +123,7 @@ public class LibraryFragment extends Fragment {
         new AlertDialog.Builder(requireContext())
                 .setTitle(course.getTitle())
                 .setItems(actions, (dialog, which) -> {
-                    if (which == 0) showEditDialog(course);
+
                     if (which == 1) deleteCourse(course);
                     if (which == 2) duplicateCourse(course);
                     if (which == 3) shareCourse(course);
@@ -136,39 +131,20 @@ public class LibraryFragment extends Fragment {
                 .show();
     }
 
-    private void showEditDialog(Course course) {
-        DialogAddCourseBinding dialogBinding = DialogAddCourseBinding.inflate(getLayoutInflater());
-        dialogBinding.editCourseTitle.setText(course.getTitle());
-        dialogBinding.editCourseDescription.setText(course.getDescription());
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Edit study set")
-                .setView(dialogBinding.getRoot())
-                .setPositiveButton("Save", (dialog, which) -> db.collection("courses")
-                        .document(course.getFirestoreId())
-                        .update("title", dialogBinding.editCourseTitle.getText().toString().trim(),
-                                "description", dialogBinding.editCourseDescription.getText().toString().trim())
-                        .addOnSuccessListener(unused -> {
-                            UiFeedback.showSnack(binding.getRoot(), "Study set updated");
-                            loadCourses();
-                        }))
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
+
 
     private void deleteCourse(Course course) {
-        db.collection("courses").document(course.getFirestoreId()).delete().addOnSuccessListener(unused -> {
-            UiFeedback.showSnack(binding.getRoot(), "Study set deleted");
-            loadCourses();
-        });
+        viewModel.deleteCourseFromFirestore(course.getFirestoreId());
+        UiFeedback.showSnack(binding.getRoot(), "Study set deleted");
+        refreshData();
     }
 
     private void duplicateCourse(Course course) {
-        Course copied = new Course(course.getTitle() + " (copy)", course.getDescription(), FirebaseAuth.getInstance().getUid(), false);
+        Course copied = new Course(course.getTitle() + " (copy)", course.getDescription(), course.getTheme(), FirebaseAuth.getInstance().getUid(), false);
         copied.setFlashcardCount(course.getFlashcardCount());
-        db.collection("courses").add(copied).addOnSuccessListener(unused -> {
-            UiFeedback.showSnack(binding.getRoot(), "Study set duplicated");
-            loadCourses();
-        });
+        viewModel.addCourseToFirestore(copied);
+        UiFeedback.showSnack(binding.getRoot(), "Study set duplicated");
+        refreshData();
     }
 
     private void shareCourse(Course course) {
@@ -181,17 +157,17 @@ public class LibraryFragment extends Fragment {
     private void createCourseByAi() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
+        FirebaseFirestore.getInstance().collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
             Boolean premium = snapshot.getBoolean("premium");
             if (!Boolean.TRUE.equals(premium)) {
                 UiFeedback.showErrorDialog(requireContext(), "Premium required", "Upgrade to Premium to use AI generation.");
                 return;
             }
-            Course ai = new Course("AI Set: TOEIC High-Frequency Vocabulary", "Auto-generated 60 cards for fast review", uid, false);
+            Course ai = new Course("AI Set: TOEIC High-Frequency Vocabulary", "Auto-generated 60 cards for fast review", "Education", uid, false);
             ai.setFlashcardCount(60);
-            db.collection("courses").add(ai).addOnSuccessListener(unused ->
-                    UiFeedback.showSnack(binding.getRoot(), "AI generated a new study set"));
-            loadCourses();
+            viewModel.addCourseToFirestore(ai);
+            UiFeedback.showSnack(binding.getRoot(), "AI generated a new study set");
+            refreshData();
         });
     }
 

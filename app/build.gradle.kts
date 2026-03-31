@@ -52,7 +52,13 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.firebase.database)
+    implementation(libs.core.splashscreen)
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
     annotationProcessor(libs.room.compiler)
+
+    // Gson
+    implementation(libs.gson)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
@@ -60,10 +66,17 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
 
+    // Glide
+    implementation(libs.glide)
+    annotationProcessor(libs.glide.compiler)
+
     // AI
     implementation(libs.generativeai)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    //3d
+    implementation("nl.dionsegijn:konfetti-xml:2.0.5")
 }

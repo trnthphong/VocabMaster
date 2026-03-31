@@ -61,6 +61,11 @@
         <item name="android:textColor">@color/gray_text</item>
     </style>
 
+    <style name="TextAppearance.VocabMaster.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/gray_text</item>
+    </style>
+
     <style name="TextAppearance.VocabMaster.Caption" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:textSize">@dimen/text_caption</item>
         <item name="android:textColor">@color/gray_text</item>
@@ -78,4 +83,20 @@
     <style name="ShapeAppearance.VocabMaster.Large" parent="ShapeAppearance.Material3.LargeComponent">
         <item name="cornerSize">@dimen/radius_large</item>
     </style>
-</resources>
+
+    <style name="ShapeAppearance.VocabMaster.Card.TopOnly" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>    <!-- Theme cho Splash Screen -->
+    <style name="Theme.App.Intro" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">@color/brand_primary</item>
+    </style>
+
+    <!-- Theme chính của app đã có sẵn của bạn -->
+    <!-- <style name="Theme.VocabMaster" parent="Theme.MaterialComponents.DayNight.NoActionBar"-->
+
+    </resources>

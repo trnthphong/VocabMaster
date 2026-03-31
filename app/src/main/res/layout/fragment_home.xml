@@ -18,27 +18,44 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_24">
 
-            <!-- Hero Section: Header -->
+            <nl.dionsegijn.konfetti.xml.KonfettiView
+                android:id="@+id/konfettiView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="0dp" />
+
+            <!-- Hero Section: Greeting Header -->
             <RelativeLayout
                 android:id="@+id/header_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/spacing_32">
+                android:layout_marginTop="@dimen/spacing_8"
+                android:layout_marginBottom="@dimen/spacing_24">
 
-                <TextView
-                    android:id="@+id/text_greeting"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Hi there,"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/text_username"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/text_greeting"
-                    android:text="Ready to learn?"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.Display" />
+                    <TextView
+                        android:id="@+id/text_greeting"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Good Morning,"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/gray_text" />
+
+                    <TextView
+                        android:id="@+id/text_user_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Student"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                        android:textColor="@color/surface_dark" />
+                </LinearLayout>
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/img_profile"
@@ -46,165 +63,373 @@
                     android:layout_height="56dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
+                    android:padding="2dp"
                     android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_myplaces"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Large"
-                    app:strokeColor="@color/brand_primary"
+                    android:src="@drawable/bear"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Medium"
+                    app:strokeColor="@color/brand_primary_light"
                     app:strokeWidth="2dp" />
+
             </RelativeLayout>
 
-            <!-- Stats Grid (Glass Design) -->
+            <!-- Stats Grid (Combined Course Progress & Global Stats) -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/stats_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_gradient_main"
-                android:padding="@dimen/spacing_24"
+                android:padding="@dimen/spacing_20"
                 android:elevation="@dimen/elevation_medium"
                 android:clipToPadding="false">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_xp"
-                    android:layout_width="0dp"
+                <!-- Top Row: Global Stats -->
+                <LinearLayout
+                    android:id="@+id/layout_global_stats"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/glass_white_20"
-                    app:cardCornerRadius="@dimen/radius_large"
-                    app:layout_constraintEnd_toStartOf="@id/card_streak"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:strokeColor="@color/glass_white_40"
-                    app:strokeWidth="1dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="16dp"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:id="@+id/layout_streak"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="@dimen/spacing_12">
-
+                        android:layout_weight="1"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/streak" />
                         <TextView
+                            android:id="@+id/tv_streak_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="XP"
-                            android:textColor="@color/white"
-                            android:textSize="@dimen/text_caption" />
-
-                        <TextView
-                            android:id="@+id/text_xp"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1,240"
-                            android:textColor="@color/white"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_streak"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_12"
-                    app:cardBackgroundColor="@color/glass_white_20"
-                    app:cardCornerRadius="@dimen/radius_large"
-                    app:layout_constraintEnd_toStartOf="@id/card_hearts"
-                    app:layout_constraintStart_toEndOf="@id/card_xp"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:strokeColor="@color/glass_white_40"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="@dimen/spacing_12">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Streak"
-                            android:textColor="@color/white"
-                            android:textSize="@dimen/text_caption" />
-
-                        <TextView
-                            android:id="@+id/text_streak"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
                             android:text="12"
-                            android:textColor="@color/white"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+                            android:textColor="#FF9800"
+                            android:textStyle="bold"
+                            android:textSize="14sp" />
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_hearts"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_12"
-                    app:cardBackgroundColor="@color/glass_white_20"
-                    app:cardCornerRadius="@dimen/radius_large"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/card_streak"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:strokeColor="@color/glass_white_40"
-                    app:strokeWidth="1dp">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:id="@+id/layout_xp"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="@dimen/spacing_12">
-
+                        android:layout_weight="1"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/exp" />
                         <TextView
+                            android:id="@+id/tv_xp_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Hearts"
+                            android:layout_marginStart="4dp"
+                            android:text="1250"
                             android:textColor="@color/white"
-                            android:textSize="@dimen/text_caption" />
+                            android:textStyle="bold"
+                            android:textSize="14sp" />
+                    </LinearLayout>
 
+                    <LinearLayout
+                        android:id="@+id/layout_heart"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical|end">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/heart" />
                         <TextView
                             android:id="@+id/text_hearts"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
                             android:text="5"
-                            android:textColor="@color/white"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+                            android:textColor="@color/error"
+                            android:textStyle="bold"
+                            android:textSize="14sp" />
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <View
+                    android:id="@+id/divider_stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/glass_white_20"
+                    app:layout_constraintTop_toBottomOf="@id/layout_global_stats" />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/img_current_course_flag"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/eng"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/divider_stats" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/img_current_course_flag"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/img_current_course_flag"
+                    app:layout_constraintTop_toTopOf="@id/img_current_course_flag">
+
+                    <TextView
+                        android:id="@+id/text_current_course_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tiếng Anh"
+                        android:textColor="@color/white"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                        android:alpha="0.8" />
+
+                    <TextView
+                        android:id="@+id/text_current_unit_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Chương 1: Khởi đầu"
+                        android:textColor="@color/white"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/progress_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_24"
+                    android:layout_marginTop="20dp"
                     android:orientation="vertical"
-                    app:layout_constraintTop_toBottomOf="@id/card_xp">
+                    app:layout_constraintTop_toBottomOf="@id/img_current_course_flag">
 
                     <TextView
-                        android:id="@+id/text_goal_progress"
+                        android:id="@+id/text_course_progress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8/20 XP today"
+                        android:text="Tiến độ chương: 0%"
                         android:textColor="@color/white"
                         android:textSize="@dimen/text_caption"
                         android:textStyle="bold" />
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/progress_daily"
+                        android:id="@+id/progress_course"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_8"
                         app:indicatorColor="@color/brand_secondary"
                         app:trackColor="@color/glass_white_40"
                         app:trackCornerRadius="@dimen/radius_full"
-                        app:trackThickness="12dp"
-                        android:progress="40" />
+                        app:trackThickness="10dp"
+                        android:progress="0" />
                 </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Main Actions -->
+            <!-- Heart Regeneration Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_heart_regen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_16"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="@dimen/radius_large"
+
+                app:strokeWidth="0dp"
+                tools:visibility="visible">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/spacing_16">
+
+                    <ImageView
+                        android:id="@+id/icon_heart_regen"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/heart"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/label_regen"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_16"
+                        android:text="Hồi phục tim tiếp theo"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/gray_text"
+                        app:layout_constraintStart_toEndOf="@id/icon_heart_regen"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/text_heart_timer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_16"
+                        android:text="04:59"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/error"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/icon_heart_regen"
+                        app:layout_constraintTop_toBottomOf="@id/label_regen" />
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/regen_progress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:indicatorColor="@color/error"
+                        app:indicatorSize="40dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:trackColor="@color/gray_lighter"
+                        app:trackThickness="4dp"
+                        android:progress="60" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- New Section: Start a new journey -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_32"
+                android:layout_marginBottom="@dimen/spacing_16"
+                android:text="START A NEW JOURNEY"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                android:textColor="@color/gray_text" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingBottom="@dimen/spacing_8">
+
+                    <!-- Theme Card 1: Business -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="140dp"
+                        android:layout_height="180dp"
+                        android:layout_marginEnd="@dimen/spacing_16"
+                        app:cardBackgroundColor="@color/white"
+                        app:cardCornerRadius="@dimen/radius_large"
+                        app:strokeWidth="0dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_16"
+                            android:gravity="center">
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/buss"
+                                 />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/spacing_12"
+                                android:text="Business"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textAlignment="center" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Pro terms"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textAlignment="center" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Theme Card 2: Travel -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="140dp"
+                        android:layout_height="180dp"
+                        android:layout_marginEnd="@dimen/spacing_16"
+                        app:cardCornerRadius="@dimen/radius_large"
+                        app:cardBackgroundColor="@color/white"
+                        app:strokeWidth="0dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_16"
+                            android:gravity="center">
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/trav"
+                                 />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/spacing_12"
+                                android:text="Travel"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textAlignment="center" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="World explorer"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textAlignment="center" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Theme Card 3: Academic -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="140dp"
+                        android:layout_height="180dp"
+                        app:cardCornerRadius="@dimen/radius_large"
+                        app:cardBackgroundColor="@color/white"
+                        app:strokeWidth="0dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_16"
+                            android:gravity="center">
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/acad"
+                                 />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/spacing_12"
+                                android:text="Academic"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textAlignment="center" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Exam prep"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textAlignment="center" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Main Actions (Daily Tasks) -->
             <TextView
                 android:id="@+id/label_actions"
                 android:layout_width="wrap_content"
@@ -219,9 +444,10 @@
                 android:id="@+id/btn_start_flashcards"
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
+                app:cardBackgroundColor="@color/white"
                 android:layout_marginBottom="@dimen/spacing_16"
                 app:cardCornerRadius="@dimen/radius_large"
-                app:cardElevation="@dimen/elevation_low">
+                app:strokeWidth="0dp">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
@@ -233,15 +459,15 @@
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:background="@drawable/bg_glass_card"
-                        android:backgroundTint="@color/brand_primary"
                         android:padding="8dp"
-                        android:src="@android:drawable/ic_menu_today"
+                        android:src="@drawable/planning"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/white" />
+                         />
 
                     <TextView
+                        android:id="@+id/text_cards_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_16"
@@ -261,7 +487,7 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toEndOf="@id/icon_cards"
-                        app:layout_constraintTop_toBottomOf="@id/sub_cards" />
+                        app:layout_constraintTop_toBottomOf="@id/text_cards_title" />
 
                     <ImageView
                         android:layout_width="24dp"
@@ -279,9 +505,10 @@
                 android:id="@+id/btn_play_mini_game"
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
+                app:cardBackgroundColor="@color/white"
                 android:layout_marginBottom="@dimen/spacing_16"
                 app:cardCornerRadius="@dimen/radius_large"
-                app:cardElevation="@dimen/elevation_low">
+                app:strokeWidth="0dp">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
@@ -293,15 +520,15 @@
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:background="@drawable/bg_glass_card"
-                        android:backgroundTint="@color/brand_secondary"
                         android:padding="8dp"
-                        android:src="@android:drawable/btn_star_big_on"
+                        android:src="@drawable/game"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/white" />
+                         />
 
                     <TextView
+                        android:id="@+id/text_games_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_16"
@@ -321,7 +548,7 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toEndOf="@id/icon_games"
-                        app:layout_constraintTop_toBottomOf="@id/sub_games" />
+                        app:layout_constraintTop_toBottomOf="@id/text_cards_title" />
 
                     <TextView
                         android:id="@+id/text_premium_badge"

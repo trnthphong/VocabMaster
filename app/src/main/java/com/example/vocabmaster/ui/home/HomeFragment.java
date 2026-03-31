@@ -2,6 +2,9 @@ package com.example.vocabmaster.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,19 +14,35 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.vocabmaster.R;
+
+import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
-import com.example.vocabmaster.ui.analytics.AnalyticsActivity;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.ui.library.CourseDetailActivity;
 import com.example.vocabmaster.ui.study.MiniGameActivity;
-import com.example.vocabmaster.ui.study.StudyActivity;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private FirebaseFirestore db;
+    private final Handler timerHandler = new Handler(Looper.getMainLooper());
+    private Runnable timerRunnable;
+    private User currentUser;
+
+    private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
+    private final int[] avatarResIds = {
+            R.drawable.bear, R.drawable.cat, R.drawable.dog,
+            R.drawable.bird, R.drawable.snake, R.drawable.tiger,
+            R.drawable.rabbit
+    };
 
     @Nullable
     @Override
@@ -59,7 +78,6 @@ public class HomeFragment extends Fragment {
         binding.statsGrid.animate().alpha(1f).scaleX(1f).setDuration(700).setStartDelay(200).setInterpolator(new DecelerateInterpolator()).start();
         binding.labelActions.animate().alpha(1f).setDuration(500).setStartDelay(400).start();
         
-        // Staggered list entrance
         binding.btnStartFlashcards.animate().translationX(0).alpha(1f).setDuration(600).setStartDelay(500).start();
         binding.btnPlayMiniGame.animate().translationX(0).alpha(1f).setDuration(600).setStartDelay(600).start();
     }
@@ -71,21 +89,17 @@ public class HomeFragment extends Fragment {
 
         binding.btnStartFlashcards.setOnClickListener(v -> {
             UiFeedback.performHaptic(requireContext(), 10);
-            MotionSystem.startScreen(requireActivity(), new Intent(requireContext(), StudyActivity.class));
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            startActivity(intent);
         });
 
         binding.btnPlayMiniGame.setOnClickListener(v -> openMiniGame());
 
-        binding.fabAdd.setOnClickListener(v -> showAddCourseBottomSheet());
-    }
-
-    private void showAddCourseBottomSheet() {
-        UiFeedback.performHaptic(requireContext(), 20);
-        BottomSheetDialog bottomSheet = new BottomSheetDialog(requireContext());
-        // We'll define this layout in the next step to match the visual system
-        View view = getLayoutInflater().inflate(com.example.vocabmaster.R.layout.dialog_add_course_modern, null);
-        bottomSheet.setContentView(view);
-        bottomSheet.show();
+        binding.fabAdd.setOnClickListener(v -> {
+            UiFeedback.performHaptic(requireContext(), 20);
+            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -94,56 +108,171 @@ public class HomeFragment extends Fragment {
         loadStats();
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopTimer();
+    }
+
     private void loadStats() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
         db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
-            if (binding == null) return;
+            if (binding == null || !isAdded()) return;
             
-            String name = snapshot.getString("displayName");
-            if (name != null && !name.isEmpty()) {
-                binding.textUsername.setText(name + "!");
-            }
+            currentUser = snapshot.toObject(User.class);
+            if (currentUser == null) return;
+            currentUser.setUid(uid);
 
-            Long xp = snapshot.getLong("xp");
-            Long streak = snapshot.getLong("streak");
-            Long hearts = snapshot.getLong("hearts");
-            Long goal = snapshot.getLong("dailyGoal");
-            Boolean premium = snapshot.getBoolean("premium");
-
-            binding.textXp.setText(String.valueOf(xp == null ? 0 : xp));
-            binding.textStreak.setText(String.valueOf(streak == null ? 0 : streak));
-            binding.textHearts.setText(String.valueOf(hearts == null ? 5 : hearts));
-
-            int dailyGoal = goal == null ? 20 : goal.intValue();
-            int currentXp = (xp == null ? 0 : xp.intValue());
-            // Logic for daily progress (simplified: reset every dailyGoal)
-            int earned = currentXp % (dailyGoal + 1); 
-            
-            binding.progressDaily.setMax(dailyGoal);
-            binding.progressDaily.setProgress(earned, true);
-            binding.textGoalProgress.setText(earned + "/" + dailyGoal + " XP today");
-            
-            binding.textPremiumBadge.setVisibility(Boolean.TRUE.equals(premium) ? View.VISIBLE : View.GONE);
+            updateProfileUI();
+            setupHeartTimer();
         });
     }
 
-    private void openMiniGame() {
+
+    private void updateProfileUI() {
+        if (currentUser == null || binding == null) return;
+
+        // Cập nhật Greeting và Tên User
+        binding.textGreeting.setText(getGreeting());
+        binding.textUserName.setText(currentUser.getName() != null ? currentUser.getName() : "Student");
+        updateAvatarUI(currentUser.getAvatar());
+
+        String heartCount = String.valueOf(currentUser.getHearts());
+        binding.textHearts.setText(heartCount);
+
+        if (binding.tvXpCount != null) {
+            binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
+        }
+        if (binding.tvStreakCount != null) {
+            binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
+        }
+
+        int dailyGoal = currentUser.getDailyGoal() <= 0 ? 20 : currentUser.getDailyGoal();
+        int earned = (int) (currentUser.getXp() % (dailyGoal + 1));
+        binding.progressCourse.setMax(dailyGoal);
+        binding.progressCourse.setProgress(Math.min(earned, dailyGoal), true);
+        binding.textCourseProgress.setText(String.format(Locale.getDefault(), "Tiến độ: %d/%d XP", earned, dailyGoal));
+    }
+
+    private String getGreeting() {
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 12) return "Good Morning,";
+        if (hour >= 12 && hour < 18) return "Good Afternoon,";
+        if (hour >= 18 && hour < 22) return "Good Evening,";
+        return "Good Night,";
+    }
+
+    private void setupHeartTimer() {
+        if (currentUser == null || currentUser.getHearts() >= 5) {
+            binding.cardHeartRegen.setVisibility(View.GONE);
+            stopTimer();
+            return;
+        }
+
+        binding.cardHeartRegen.setVisibility(View.VISIBLE);
+        startTimer();
+    }
+
+    private void startTimer() {
+        stopTimer();
+        timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateTimerUI();
+                timerHandler.postDelayed(this, 1000);
+            }
+        };
+        timerHandler.post(timerRunnable);
+    }
+
+    private void stopTimer() {
+        if (timerRunnable != null) {
+            timerHandler.removeCallbacks(timerRunnable);
+        }
+    }
+
+    private void updateTimerUI() {
+        if (currentUser == null || currentUser.getLastHeartRegen() == null || binding == null) return;
+
+        long REGEN_TIME_MS = 5 * 60 * 1000;
+        long now = System.currentTimeMillis();
+        long lastRegen = currentUser.getLastHeartRegen().toDate().getTime();
+        long diff = now - lastRegen;
+        
+        // Check if one or more hearts should have regenerated
+        if (diff >= REGEN_TIME_MS) {
+            int heartsToRegen = (int) (diff / REGEN_TIME_MS);
+            int newHearts = Math.min(5, currentUser.getHearts() + heartsToRegen);
+            
+            // Calculate new lastRegen timestamp (carrying over remaining time)
+            long remainingMs = diff % REGEN_TIME_MS;
+            long newLastRegenTime = now - remainingMs;
+
+            currentUser.setHearts(newHearts);
+            currentUser.setLastHeartRegen(new Timestamp(new Date(newLastRegenTime)));
+            
+            // Sync with Firestore
+            updateUserHeartsInFirestore(newHearts, currentUser.getLastHeartRegen());
+            
+            // Update UI immediately
+            String heartCount = String.valueOf(newHearts);
+            binding.textHearts.setText(heartCount);
+            
+            if (newHearts == 5) {
+                binding.cardHeartRegen.setVisibility(View.GONE);
+                stopTimer();
+                return;
+            }
+            
+            // Recalculate diff for smooth progress bar after update
+            diff = remainingMs;
+        }
+
+        // UI Countdown
+        long timeRemaining = REGEN_TIME_MS - (diff % REGEN_TIME_MS);
+        int minutes = (int) (timeRemaining / 1000) / 60;
+        int seconds = (int) (timeRemaining / 1000) % 60;
+        binding.textHeartTimer.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
+        
+        int progress = (int) ((diff * 100) / REGEN_TIME_MS);
+        binding.regenProgress.setProgress(progress, true);
+    }
+
+    private void updateUserHeartsInFirestore(int hearts, Timestamp lastRegen) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
-            Boolean premium = snapshot.getBoolean("premium");
-            if (Boolean.TRUE.equals(premium)) {
-                MotionSystem.startScreen(requireActivity(), new Intent(requireContext(), MiniGameActivity.class));
-            } else {
-                UiFeedback.showErrorDialog(requireContext(), "Upgrade to Pro", "Mini games are a Pro feature. Level up your learning experience!");
+        
+        db.collection("users").document(uid)
+                .update("hearts", hearts, "lastHeartRegen", lastRegen)
+                .addOnFailureListener(e -> Log.e("HomeFragment", "Error updating hearts", e));
+    }
+
+    private void updateAvatarUI(String avatarValue) {
+        int resId = R.drawable.bear; // default
+        if (avatarValue != null) {
+            for (int i = 0; i < avatarValues.length; i++) {
+                if (avatarValues[i].equals(avatarValue)) {
+                    resId = avatarResIds[i];
+                    break;
+                }
             }
-        });
+        }
+        binding.imgProfile.setImageResource(resId);
+    }
+
+    private void openMiniGame() {
+        if (currentUser != null && currentUser.isPremium()) {
+            MotionSystem.startScreen(requireActivity(), new Intent(requireContext(), MiniGameActivity.class));
+        } else {
+            UiFeedback.showErrorDialog(requireContext(), "Upgrade to Pro", "Mini games are a Pro feature. Level up your learning experience!");
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        stopTimer();
         binding = null;
     }
 }

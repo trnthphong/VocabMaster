@@ -2,7 +2,6 @@ package com.example.vocabmaster;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,18 +17,15 @@ import com.example.vocabmaster.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ActivityMainBinding binding;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Immersive System UI
+        
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
@@ -52,5 +48,10 @@ public class MainActivity extends AppCompatActivity {
             
             return WindowInsetsCompat.CONSUMED;
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }

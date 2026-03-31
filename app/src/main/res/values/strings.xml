@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">VocabMaster</string>
     <string name="app_tagline">Learn vocabulary with flashcards, games, and AI</string>
+    <string name="intro_tagline">Learn a language with real-life</string>
+    <string name="logo_description">VocabMaster Logo</string>
+    <string name="lesson_no_vocab">Bài học này chưa có từ vựng!</string>
+    <string name="vocab_data_not_found">Không tìm thấy dữ liệu từ vựng!</string>
+    <string name="task_what_is_this">What is this?</string>
+    <string name="task_listen_choose">Listen and choose the word</string>
+    <string name="please_select_answer">Please select an answer</string>
+    <string name="wrong_answer">Wrong! Correct: %1$s</string>
+    <string name="added_to_flashcards">Added to your flashcards!</string>
 </resources>

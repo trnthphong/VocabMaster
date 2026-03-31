@@ -5,4 +5,5 @@
         android:endColor="@color/grad_purple_end"
         android:startColor="@color/grad_indigo_start"
         android:type="linear" />
+    <corners android:radius="@dimen/radius_large" />
 </shape>

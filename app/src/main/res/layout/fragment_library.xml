@@ -21,13 +21,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:gravity="center"
                 android:padding="@dimen/spacing_24">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="My Library"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.Display" />
+                    app:fontFamily="@font/adlam_display"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -35,7 +37,7 @@
                     android:layout_marginTop="@dimen/spacing_24"
                     app:cardBackgroundColor="@color/white"
                     app:cardCornerRadius="@dimen/radius_medium"
-                    app:cardElevation="@dimen/elevation_low"
+                    app:cardElevation="0dp"
                     app:strokeColor="@color/card_border"
                     app:strokeWidth="1dp">
 
@@ -47,18 +49,6 @@
                         app:queryHint="Search your study sets..."
                         app:queryBackground="@android:color/transparent" />
                 </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_ai_create_course"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="64dp"
-                    android:layout_marginTop="@dimen/spacing_16"
-                    android:text="Generate with Magic AI"
-                    android:textColor="@color/brand_accent"
-                    app:cornerRadius="@dimen/radius_medium"
-                    app:icon="@android:drawable/btn_star_big_on"
-                    app:iconTint="@color/brand_accent" />
 
             </LinearLayout>
         </com.google.android.material.appbar.CollapsingToolbarLayout>
@@ -77,7 +67,7 @@
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:paddingHorizontal="@dimen/spacing_16"
-        android:paddingBottom="@dimen/spacing_64"
+        android:paddingBottom="100dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:listitem="@layout/item_course" />
 
@@ -93,7 +83,7 @@
         <ImageView
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@android:drawable/ic_menu_agenda"
+            android:src="@drawable/empty"
             app:tint="@color/gray_light" />
 
         <TextView
@@ -110,12 +100,36 @@
             android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
     </LinearLayout>
 
+    <!-- Bottom Actions Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_16"
+        android:background="@android:color/transparent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_ai_create_course"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="Generate with Magic AI"
+            android:textColor="@color/white"
+            app:cornerRadius="@dimen/radius_large"
+            app:icon="@drawable/star"
+            app:iconTint="@color/white"
+            android:layout_marginBottom="@dimen/spacing_8"
+  />
+
+    </LinearLayout>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_course"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/spacing_24"
+        android:layout_marginEnd="@dimen/spacing_24"
+        android:layout_marginBottom="90dp"
         android:src="@android:drawable/ic_input_add"
         app:backgroundTint="@color/brand_primary"
         app:tint="@color/white" />

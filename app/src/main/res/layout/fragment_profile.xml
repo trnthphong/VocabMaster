@@ -22,41 +22,164 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
+                android:background="@drawable/bg_gradient_profile"
                 android:padding="@dimen/spacing_24">
 
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageButton
+                        android:id="@+id/btn_settings"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/setting"
+                        android:scaleType="fitCenter"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:layout_alignParentEnd="true"
+                        android:contentDescription="Settings" />
+                </RelativeLayout>
+
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_avatar"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:cardCornerRadius="50dp"
                     app:cardElevation="0dp"
-                    app:strokeColor="@color/brand_primary"
+                    app:strokeColor="@color/white"
                     app:strokeWidth="2dp">
 
                     <ImageView
+                        android:id="@+id/image_avatar"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:padding="20dp"
-                        android:src="@android:drawable/ic_menu_myplaces"
-                        app:tint="@color/brand_primary" />
+                        android:padding="16dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/bear"
+                        android:contentDescription="User Avatar" />
                 </com.google.android.material.card.MaterialCardView>
 
                 <TextView
+                    android:id="@+id/text_display_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_16"
-                    android:text="My Profile"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.Display"
-                    tools:ignore="HardcodedText" />
+                    android:text="User Name"
+                    android:textColor="@color/white"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.Display" />
+
+
 
                 <TextView
-                    android:id="@+id/text_email"
+                    android:id="@+id/text_joined_year"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_4"
-                    android:text="email@example.com"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                    android:textColor="@color/gray_text" />
+                    android:text="Thành viên từ 2024"
+                    android:textColor="#B3FFFFFF"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
 
+                <!-- Header Stats Frame -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_16"
+                    android:background="@drawable/bg_glass_card"
+                    android:backgroundTint="@color/glass_white_20"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <ImageView
+                            android:id="@+id/image_course_flag"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/vietnam"
+                            android:contentDescription="Course Flag" />
+                        <TextView
+                            android:id="@+id/text_course_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Courses"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="16dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="@color/glass_white_40" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@android:drawable/ic_menu_myplaces"
+                            app:tint="@color/white"
+                            android:contentDescription="Friends Icon" />
+                        <TextView
+                            android:id="@+id/text_friends_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="0 Bạn bè"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Action Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_24"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_add_friend_action"
+
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Thêm bạn bè"
+                        android:textColor="#1C0770"
+                        app:backgroundTint="@color/white"
+                        app:icon="@android:drawable/ic_input_add"
+                        app:iconTint="#1C0770" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_qr_code"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_12"
+                        app:cardBackgroundColor="@color/white"
+                        app:cardCornerRadius="@dimen/radius_medium"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:padding="10dp"
+                            android:src="@drawable/qr_code"
+                            app:tint="#1C0770"
+                            android:contentDescription="QR Code" />
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.appbar.CollapsingToolbarLayout>
     </com.google.android.material.appbar.AppBarLayout>
@@ -73,13 +196,14 @@
             android:paddingHorizontal="@dimen/spacing_16"
             android:paddingBottom="@dimen/spacing_32">
 
-            <!-- Stats Overview -->
+            <!-- Learning Stats Card -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VocabMaster.Card"
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_8"
-                app:cardBackgroundColor="@color/brand_primary">
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -87,60 +211,172 @@
                     android:orientation="vertical"
                     android:padding="@dimen/spacing_16">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Learning Progress"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="@color/white"
-                        tools:ignore="HardcodedText" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/text_stats_course_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Tiến độ học tập"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                            android:textColor="@color/brand_primary" />
 
-                    <TextView
-                        android:id="@+id/text_stats"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_8"
-                        android:text="XP: 0 | Streak: 0 | Hearts: 5"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/glass_white_40" />
+                        <ImageView
+                            android:id="@+id/image_stat_course"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/eng"
+                            android:contentDescription="Course Icon" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/text_role"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_4"
-                        android:text="Role: user"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                        android:textColor="@color/glass_white_40" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Profile Info Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VocabMaster.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_16">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/spacing_16">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Personal Information"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        tools:ignore="HardcodedText" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    <GridLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_16"
-                        android:hint="Display name">
+                        android:columnCount="2"
+                        android:alignmentMode="alignMargins"
+                        android:useDefaultMargins="true">
+
+                        <!-- XP -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingVertical="8dp">
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/exp"
+                                app:tint="@color/warning"
+                                android:contentDescription="XP Icon" />
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:id="@+id/text_xp_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0"
+                                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Tổng XP"
+                                    android:textSize="12sp"
+                                    android:textColor="@color/gray_text" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Streak -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingVertical="8dp">
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/streak"
+                                app:tint="#FF9800"
+                                android:contentDescription="Streak Icon" />
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:id="@+id/text_streak_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0"
+                                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Ngày học"
+                                    android:textSize="12sp"
+                                    android:textColor="@color/gray_text" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Hearts -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingVertical="8dp">
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/heart"
+                                app:tint="@color/error"
+                                android:contentDescription="Hearts Icon" />
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:id="@+id/text_hearts_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="5"
+                                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sinh lực"
+                                    android:textSize="12sp"
+                                    android:textColor="@color/gray_text" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                    </GridLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Personal Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_16"
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_16">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thông tin cá nhân"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/brand_primary" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_16"
+                        android:hint="Tên hiển thị"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/edit_name"
@@ -151,24 +387,21 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_save_profile"
-                        style="@style/Widget.VocabMaster.Button.Primary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_12"
-                        android:text="Save Profile"
-                        tools:ignore="HardcodedText" />
+                        android:layout_marginTop="@dimen/spacing_16"
+                        android:text="Lưu thay đổi" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Premium Card -->
+            <!-- Account Card -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VocabMaster.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
-                app:cardBackgroundColor="#FFF7ED"
-                app:strokeColor="#FED7AA"
-                app:strokeWidth="1dp">
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -179,83 +412,45 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Premium Membership"
+                        android:text="Tài khoản"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="#C2410C"
-                        tools:ignore="HardcodedText" />
+                        android:textColor="@color/brand_primary" />
 
-                    <TextView
-                        android:id="@+id/text_premium_status"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_8"
-                        android:text="Current Status: Free"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                        android:textColor="#EA580C" />
+                        android:layout_marginTop="@dimen/spacing_16"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Loại tài khoản"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+                        <TextView
+                            android:id="@+id/text_premium_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Free"
+                            android:textColor="@color/brand_secondary"
+                            android:textStyle="bold"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                    </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_upgrade_premium"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_12"
-                        android:text="Upgrade to Premium"
-                        android:textColor="#C2410C"
-                        app:backgroundTint="#FFEDD5"
-                        tools:ignore="HardcodedText" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                        android:layout_marginTop="@dimen/spacing_16"
+                        android:text="Nâng cấp Premium"
+                        app:icon="@android:drawable/btn_star_big_on" />
 
-            <!-- App Settings Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VocabMaster.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_16">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/spacing_16">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="App Settings"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        tools:ignore="HardcodedText" />
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switch_dark_mode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_8"
-                        android:text="Dark Mode"
-                        tools:ignore="HardcodedText" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_8"
-                        android:hint="Daily XP Goal">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/edit_daily_goal"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="number" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_save_goal"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_8"
-                        android:text="Save Settings"
-                        tools:ignore="HardcodedText" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -266,7 +461,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
-                android:visibility="gone">
+                app:cardBackgroundColor="#FFF9C4"
+                app:strokeWidth="0dp"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -277,56 +475,39 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Admin Control Panel"
+                        android:text="Admin Panel"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="@color/brand_secondary"
-                        tools:ignore="HardcodedText" />
+                        android:textColor="#F57F17" />
+
+                    <TextView
+                        android:id="@+id/text_admin_users"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_8"
+                        android:text="Users: 0" />
+
+                    <TextView
+                        android:id="@+id/text_admin_reports"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Pending reports: 0" />
+
+                    <TextView
+                        android:id="@+id/text_admin_subs"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Active subscriptions: 0" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_admin_refresh"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_12"
-                        android:text="Refresh Metrics"
-                        app:icon="@android:drawable/stat_notify_sync"
-                        tools:ignore="HardcodedText" />
+                        android:layout_marginTop="@dimen/spacing_16"
+                        android:text="Refresh Stats" />
 
-                    <TextView
-                        android:id="@+id/text_admin_users"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_12"
-                        android:text="Total Users: 0"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
-
-                    <TextView
-                        android:id="@+id/text_admin_reports"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_4"
-                        android:text="Pending Reports: 0"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
-
-                    <TextView
-                        android:id="@+id/text_admin_subs"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_4"
-                        android:text="Active Subscriptions: 0"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_logout"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_24"
-                android:text="Sign Out"
-                android:textColor="@color/error"
-                tools:ignore="HardcodedText" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

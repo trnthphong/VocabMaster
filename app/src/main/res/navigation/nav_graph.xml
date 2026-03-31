@@ -27,5 +27,24 @@
         android:id="@+id/navigation_profile"
         android:name="com.example.vocabmaster.ui.profile.ProfileFragment"
         android:label="Profile"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profile_to_settings"
+            app:destination="@id/navigation_settings" />
+        <action
+            android:id="@+id/action_profile_to_premium"
+            app:destination="@id/navigation_premium" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.example.vocabmaster.ui.profile.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/navigation_premium"
+        android:name="com.example.vocabmaster.ui.profile.PremiumFragment"
+        android:label="Premium"
+        tools:layout="@layout/fragment_premium" />
 </navigation>

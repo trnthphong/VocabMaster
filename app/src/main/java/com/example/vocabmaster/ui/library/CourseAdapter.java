@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.databinding.ItemCourseBinding;
 
@@ -30,7 +31,7 @@ public class CourseAdapter extends ListAdapter<Course, CourseAdapter.CourseViewH
             @Override
             public boolean areContentsTheSame(@NonNull Course oldItem, @NonNull Course newItem) {
                 return oldItem.getTitle().equals(newItem.getTitle()) &&
-                        oldItem.getDescription().equals(newItem.getDescription());
+                        oldItem.getLevel() == newItem.getLevel();
             }
         });
         this.listener = listener;
@@ -65,8 +66,22 @@ public class CourseAdapter extends ListAdapter<Course, CourseAdapter.CourseViewH
 
         public void bind(Course course) {
             binding.textCourseTitle.setText(course.getTitle());
-            binding.textCourseDescription.setText(course.getDescription());
-            binding.textFlashcardCount.setText(course.getFlashcardCount() + " Flashcards");
+            binding.textFlashcardCount.setText(course.getFlashcardCount() + " cards");
+            binding.textCourseLevel.setText("Lvl " + course.getLevel());
+            
+            // Guess flag from title
+            int flagRes = guessFlagFromText(course.getTitle());
+            binding.imgCourseFlag.setImageResource(flagRes);
+        }
+
+        private int guessFlagFromText(String text) {
+            if (text == null) return R.drawable.vietnam;
+            String lower = text.toLowerCase();
+            if (lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
+            if (lower.contains("nhật") || lower.contains("japan") || lower.contains("japanese")) return R.drawable.japan;
+            if (lower.contains("trung") || lower.contains("china") || lower.contains("chinese")) return R.drawable.china;
+            if (lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
+            return R.drawable.vietnam; // Default
         }
     }
 }
