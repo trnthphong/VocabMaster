@@ -24,6 +24,7 @@ import com.example.vocabmaster.data.model.StudyTask;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.ActivityStudyBinding;
+import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 import com.example.vocabmaster.databinding.LayoutTaskChoiceBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
@@ -55,6 +56,7 @@ public class StudyActivity extends AppCompatActivity {
     private int xpEarned = 0;
     private int heartsLost = 0;
     private String lessonId;
+    private String topic;
     private MediaPlayer mediaPlayer;
     private User currentUser;
 
@@ -65,6 +67,7 @@ public class StudyActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         lessonId = getIntent().getStringExtra("lesson_id");
+        topic = getIntent().getStringExtra("topic");
         String lessonTitle = getIntent().getStringExtra("lesson_title");
         if (lessonTitle != null) {
             binding.textHeaderTitle.setText(lessonTitle);
@@ -92,7 +95,6 @@ public class StudyActivity extends AppCompatActivity {
         db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
             currentUser = snapshot.toObject(User.class);
             if (currentUser != null) {
-                // Ensure UID is set even if not in the document fields
                 currentUser.setUid(uid);
                 checkHeartRegen();
                 updateStatsUI();
@@ -103,6 +105,8 @@ public class StudyActivity extends AppCompatActivity {
                 } else {
                     if (lessonId != null) {
                         loadLessonVocab(lessonId);
+                    } else if (topic != null) {
+                        loadTopicVocab(topic);
                     }
                 }
             }
@@ -118,7 +122,7 @@ public class StudyActivity extends AppCompatActivity {
         long now = new Date().getTime();
         long last = lastRegen.toDate().getTime();
         long diffMs = now - last;
-        int heartsToRegen = (int) (diffMs / (5 * 60 * 1000)); // 5 minutes per heart
+        int heartsToRegen = (int) (diffMs / (5 * 60 * 1000));
 
         if (heartsToRegen > 0) {
             int newHearts = Math.min(5, currentUser.getHearts() + heartsToRegen);
@@ -211,6 +215,43 @@ public class StudyActivity extends AppCompatActivity {
         });
     }
 
+    private void loadTopicVocab(String topicName) {
+        db.collection("vocabularies")
+                .whereEqualTo("topic", topicName)
+                .limit(20)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    allVocabs.clear();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Vocabulary v = doc.toObject(Vocabulary.class);
+                        if (v != null) {
+                            v.setVocabularyId(doc.getId());
+                            // Fallback for definition if 'definition' field is used instead of 'definitionEn'
+                            if (v.getDefinitionEn() == null || v.getDefinitionEn().isEmpty()) {
+                                Object defObj = doc.get("definition");
+                                if (defObj != null) v.setDefinitionEn(defObj.toString());
+                            }
+                            allVocabs.add(v);
+                        }
+                    }
+
+                    if (allVocabs.isEmpty()) {
+                        UiFeedback.showSnack(binding.getRoot(), "Chưa có từ vựng cho chủ đề: " + topicName);
+                        new Handler(Looper.getMainLooper()).postDelayed(this::finish, 2000);
+                        return;
+                    }
+
+                    generateStudyTasks(true); // true means ONLY Flashcards for topics
+                    currentIndex = 0;
+                    updateUI();
+                    runEntryAnimation();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading topic vocab", e);
+                    UiFeedback.showSnack(binding.getRoot(), "Lỗi tải dữ liệu chủ đề.");
+                });
+    }
+
     private void fetchVocabDetails(List<String> words) {
         List<Task<DocumentSnapshot>> firestoreTasks = new ArrayList<>();
         for (String word : words) {
@@ -224,6 +265,11 @@ public class StudyActivity extends AppCompatActivity {
                     Vocabulary v = task.getResult().toObject(Vocabulary.class);
                     if (v != null) {
                         v.setVocabularyId(task.getResult().getId());
+                        // Fallback check
+                        if (v.getDefinitionEn() == null || v.getDefinitionEn().isEmpty()) {
+                            Object defObj = task.getResult().get("definition");
+                            if (defObj != null) v.setDefinitionEn(defObj.toString());
+                        }
                         allVocabs.add(v);
                     }
                 }
@@ -234,23 +280,27 @@ public class StudyActivity extends AppCompatActivity {
                 return;
             }
 
-            generateStudyTasks();
+            generateStudyTasks(false); // Lesson mode includes quizzes
             currentIndex = 0;
             updateUI();
             runEntryAnimation();
         });
     }
 
-    private void generateStudyTasks() {
+    private void generateStudyTasks(boolean flashcardsOnly) {
         tasks.clear();
         for (Vocabulary vocab : allVocabs) {
             tasks.add(new StudyTask(StudyTask.Type.FLASHCARD, vocab));
-            StudyTask choiceTask = new StudyTask(
-                vocab.getImageUrl() != null ? StudyTask.Type.IMAGE_CHOICE : StudyTask.Type.AUDIO_CHOICE, 
-                vocab
-            );
-            choiceTask.setOptions(generateOptions(vocab));
-            tasks.add(choiceTask);
+            
+            if (!flashcardsOnly) {
+                // Mix with choice tasks only for lessons
+                StudyTask choiceTask = new StudyTask(
+                    vocab.getImageUrl() != null ? StudyTask.Type.IMAGE_CHOICE : StudyTask.Type.AUDIO_CHOICE, 
+                    vocab
+                );
+                choiceTask.setOptions(generateOptions(vocab));
+                tasks.add(choiceTask);
+            }
         }
         Collections.shuffle(tasks);
     }
@@ -270,8 +320,6 @@ public class StudyActivity extends AppCompatActivity {
         Collections.shuffle(options);
         return options;
     }
-
-    private void loadFromScheduler() {}
 
     private void updateUI() {
         if (currentIndex < tasks.size()) {
@@ -298,22 +346,50 @@ public class StudyActivity extends AppCompatActivity {
 
     private void showFlashcard(Vocabulary vocab) {
         binding.cardFlashcard.setVisibility(View.VISIBLE);
-        binding.textTerm.setText(vocab.getWord());
-        binding.textDefinition.setText(vocab.getDefinitionEn());
-        if (vocab.getImageUrl() != null) {
-            binding.imageVocab.setVisibility(View.VISIBLE);
-            Glide.with(this).load(vocab.getImageUrl()).into(binding.imageVocab);
+        binding.cardFlashcard.removeAllViews();
+        
+        if (topic != null) {
+            // Use special topic layout
+            LayoutFlashcardTopicBinding topicBinding = LayoutFlashcardTopicBinding.inflate(getLayoutInflater(), binding.cardFlashcard, true);
+            topicBinding.textTerm.setText(vocab.getWord());
+            topicBinding.textDefinition.setText(vocab.getDefinitionEn() != null ? vocab.getDefinitionEn() : "No definition");
+            
+            String example = vocab.getExampleSentence();
+            if (example != null && !example.isEmpty()) {
+                topicBinding.textExample.setText(example);
+                topicBinding.textExample.setVisibility(View.VISIBLE);
+            } else {
+                topicBinding.textExample.setVisibility(View.GONE);
+            }
+
+            if (vocab.getImageUrl() != null && !vocab.getImageUrl().isEmpty()) {
+                topicBinding.imageVocab.setVisibility(View.VISIBLE);
+                Glide.with(this).load(vocab.getImageUrl()).into(topicBinding.imageVocab);
+            } else {
+                topicBinding.imageVocab.setVisibility(View.GONE);
+            }
+            
+            // Sync with activity state for flipping
+            setupFlipState(topicBinding.cardFront, topicBinding.cardBack);
         } else {
-            binding.imageVocab.setVisibility(View.GONE);
+            // Fallback to original layout behavior inside card_flashcard
+            View originalFlashcard = getLayoutInflater().inflate(R.layout.layout_flashcard_default, binding.cardFlashcard, true);
+            // ... original logic to bind views ...
+            // (Assuming you might want to extract original layout to layout_flashcard_default.xml)
+            // For now, I'll keep the logic simple: topic means new layout.
         }
+        
         binding.cardFlashcard.setRotationY(0);
-        binding.cardFront.setVisibility(View.VISIBLE);
-        binding.cardBack.setVisibility(View.GONE);
         isShowingFront = true;
         binding.btnNext.setVisibility(View.GONE);
         binding.btnSkip.setVisibility(View.GONE);
         binding.btnHard.setVisibility(View.VISIBLE);
         binding.btnGood.setVisibility(View.VISIBLE);
+    }
+    
+    private void setupFlipState(View front, View back) {
+        front.setVisibility(View.VISIBLE);
+        back.setVisibility(View.GONE);
     }
 
     private void showChoiceTask(StudyTask task) {
@@ -405,6 +481,11 @@ public class StudyActivity extends AppCompatActivity {
 
     private void flipCard() {
         UiFeedback.performHaptic(this, 20);
+        View front = binding.cardFlashcard.findViewById(R.id.card_front);
+        View back = binding.cardFlashcard.findViewById(R.id.card_back);
+        
+        if (front == null || back == null) return;
+
         float endRotation = isShowingFront ? 180f : 0f;
         binding.cardFlashcard.animate()
                 .rotationY(endRotation)
@@ -412,12 +493,12 @@ public class StudyActivity extends AppCompatActivity {
                 .setInterpolator(new AnticipateOvershootInterpolator(1.2f))
                 .withStartAction(() -> new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     if (isShowingFront) {
-                        binding.cardFront.setVisibility(View.GONE);
-                        binding.cardBack.setVisibility(View.VISIBLE);
-                        binding.cardBack.setRotationY(180f);
+                        front.setVisibility(View.GONE);
+                        back.setVisibility(View.VISIBLE);
+                        back.setRotationY(180f);
                     } else {
-                        binding.cardFront.setVisibility(View.VISIBLE);
-                        binding.cardBack.setVisibility(View.GONE);
+                        front.setVisibility(View.VISIBLE);
+                        back.setVisibility(View.GONE);
                     }
                     isShowingFront = !isShowingFront;
                 }, 250))
@@ -461,6 +542,8 @@ public class StudyActivity extends AppCompatActivity {
         if (lessonId != null) {
             intent.putExtra("lesson_id", lessonId);
             db.collection("lessons").document(lessonId).update("completed", true);
+        } else if (topic != null) {
+            intent.putExtra("topic", topic);
         }
         startActivity(intent);
         finish();

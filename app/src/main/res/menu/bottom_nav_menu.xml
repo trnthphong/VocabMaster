@@ -9,9 +9,9 @@
         android:icon="@drawable/library"
         android:title="Library" />
     <item
-        android:id="@+id/navigation_premium"
-        android:icon="@drawable/star"
-        android:title="Premium" />
+        android:id="@+id/placeholder"
+        android:title=""
+        android:enabled="false" />
     <item
         android:id="@+id/navigation_social"
         android:icon="@drawable/share"

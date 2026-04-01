@@ -30,6 +30,7 @@ public class User {
     private boolean darkMode;
     private String language;
     private boolean notificationsEnabled;
+    private String currentUnitTitle;
 
     public User() {} // Required for Firestore
 
@@ -76,4 +77,6 @@ public class User {
     public void setLanguage(String language) { this.language = language; }
     public boolean isNotificationsEnabled() { return notificationsEnabled; }
     public void setNotificationsEnabled(boolean notificationsEnabled) { this.notificationsEnabled = notificationsEnabled; }
+    public String getCurrentUnitTitle() { return currentUnitTitle; }
+    public void setCurrentUnitTitle(String currentUnitTitle) { this.currentUnitTitle = currentUnitTitle; }
 }

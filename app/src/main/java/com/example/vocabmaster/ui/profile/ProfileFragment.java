@@ -169,8 +169,6 @@ public class ProfileFragment extends Fragment {
                         Long langId = latestDoc.getLong("targetLanguageId");
                         
                         Log.d(TAG, "Latest course found: " + title + ", langId: " + langId);
-
-
                         
                         // Cập nhật cờ
                         int flagRes = -1;
@@ -190,7 +188,37 @@ public class ProfileFragment extends Fragment {
 
                         binding.imageCourseFlag.setImageResource(flagRes);
                         binding.imageStatCourse.setImageResource(flagRes);
-                    } else {
+                        
+                        // Cập nhật text hiển thị: Ngôn ngữ + " Course"
+                        String displayLanguage = "";
+                        if (langId != null) {
+                            switch (langId.intValue()) {
+                                case 1: displayLanguage = "Tiếng Anh"; break;
+                                case 2: displayLanguage = "Tiếng Nhật"; break;
+                                case 4: displayLanguage = "Tiếng Trung"; break;
+                                case 5: displayLanguage = "Tiếng Nga"; break;
+                            }
+                        }
+                        
+                        if (displayLanguage.isEmpty() && title != null) {
+                            int guessRes = guessFlagFromText(title);
+                            if (guessRes == R.drawable.eng) displayLanguage = "Tiếng Anh";
+                            else if (guessRes == R.drawable.japan) displayLanguage = "Tiếng Nhật";
+                            else if (guessRes == R.drawable.china) displayLanguage = "Tiếng Trung";
+                            else if (guessRes == R.drawable.russia) displayLanguage = "Tiếng Nga";
+                        }
+                        
+                        if (displayLanguage.isEmpty() && userLanguage != null) {
+                            displayLanguage = "en".equals(userLanguage) ? "Tiếng Anh" : 
+                                               "ru".equals(userLanguage) ? "Tiếng Nga" : userLanguage;
+                        }
+
+                        } else if (userLanguage != null) {
+                             String langDisplay = "en".equals(userLanguage) ? "Tiếng Anh" :
+                                                "ru".equals(userLanguage) ? "Tiếng Nga" : userLanguage;
+                             binding.textCourseName.setText(langDisplay);
+                        }
+                     else {
                         updateCourseUI(userLanguage);
                     }
                 })
@@ -213,10 +241,10 @@ public class ProfileFragment extends Fragment {
     private int guessFlagFromText(String text) {
         if (text == null) return -1;
         String lower = text.toLowerCase();
-        if (lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
+        if (lower.contains("en") || lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
         if (lower.contains("nhật") || lower.contains("japan") || lower.contains("japanese")) return R.drawable.japan;
         if (lower.contains("trung") || lower.contains("china") || lower.contains("chinese")) return R.drawable.china;
-        if (lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
+        if (lower.contains("ru") || lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
         return -1;
     }
 
@@ -241,9 +269,22 @@ public class ProfileFragment extends Fragment {
             flagRes = R.drawable.vietnam;
             courseName = "Chưa chọn khóa học";
         } else {
-            courseName = language;
-            flagRes = guessFlagFromText(language);
+            if ("en".equals(language)) {
+                courseName = "Tiếng Anh";
+                flagRes = R.drawable.eng;
+            } else if ("ru".equals(language)) {
+                courseName = "Tiếng Nga";
+                flagRes = R.drawable.russia;
+            } else {
+                courseName = language;
+                flagRes = guessFlagFromText(language);
+            }
             if (flagRes == -1) flagRes = R.drawable.vietnam;
+            
+            // Append " Course"
+            if (!courseName.equals("Chưa chọn khóa học")) {
+                courseName = courseName + " Course";
+            }
         }
 
         binding.imageCourseFlag.setImageResource(flagRes);

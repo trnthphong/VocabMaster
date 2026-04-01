@@ -8,48 +8,50 @@ import java.util.List;
 public class Vocabulary {
     private String vocabularyId;
     private String word;
-    private String cefr_level;
     private String part_of_speech;
-    private String definition_en;
-    private String definition_vi;
-    private List<String> example_sentences;
+    private String definition;
+    private String example_sentence;
+    private String topic;
+    private String lang;
     private String audio_url;
     private String image_url;
-    private int difficulty;
-    private int frequency_rank;
-    private List<String> topics;
+    private String phonetic;
+    
+    // Sử dụng Object để chấp nhận cả String và List từ Firestore, tránh crash
+    private Object synonyms;
+    private Object antonyms;
+    private Object collocations;
+    private Object related_forms;
+    
+    private String turkish_translation;
     private Timestamp created_at;
 
-    public Vocabulary() {
-        this.example_sentences = new ArrayList<>();
-        this.topics = new ArrayList<>();
-    }
+    public Vocabulary() {}
 
-    // Mapping Firestore snake_case to Java getters/setters
-    @PropertyName("cefr_level")
-    public String getCefrLevel() { return cefr_level; }
-    @PropertyName("cefr_level")
-    public void setCefrLevel(String cefr_level) { this.cefr_level = cefr_level; }
+    public String getVocabularyId() { return vocabularyId; }
+    public void setVocabularyId(String vocabularyId) { this.vocabularyId = vocabularyId; }
+
+    public String getWord() { return word; }
+    public void setWord(String word) { this.word = word; }
 
     @PropertyName("part_of_speech")
     public String getPartOfSpeech() { return part_of_speech; }
     @PropertyName("part_of_speech")
     public void setPartOfSpeech(String part_of_speech) { this.part_of_speech = part_of_speech; }
 
-    @PropertyName("definition_en")
-    public String getDefinitionEn() { return definition_en; }
-    @PropertyName("definition_en")
-    public void setDefinitionEn(String definition_en) { this.definition_en = definition_en; }
+    public String getDefinition() { return definition; }
+    public void setDefinition(String definition) { this.definition = definition; }
 
-    @PropertyName("definition_vi")
-    public String getDefinitionVi() { return definition_vi; }
-    @PropertyName("definition_vi")
-    public void setDefinitionVi(String definition_vi) { this.definition_vi = definition_vi; }
+    @PropertyName("example_sentence")
+    public String getExampleSentence() { return example_sentence; }
+    @PropertyName("example_sentence")
+    public void setExampleSentence(String example_sentence) { this.example_sentence = example_sentence; }
 
-    @PropertyName("example_sentences")
-    public List<String> getExampleSentences() { return example_sentences; }
-    @PropertyName("example_sentences")
-    public void setExampleSentences(List<String> example_sentences) { this.example_sentences = example_sentences; }
+    public String getTopic() { return topic; }
+    public void setTopic(String topic) { this.topic = topic; }
+
+    public String getLang() { return lang; }
+    public void setLang(String lang) { this.lang = lang; }
 
     @PropertyName("audio_url")
     public String getAudioUrl() { return audio_url; }
@@ -61,22 +63,33 @@ public class Vocabulary {
     @PropertyName("image_url")
     public void setImageUrl(String image_url) { this.image_url = image_url; }
 
-    @PropertyName("frequency_rank")
-    public int getFrequencyRank() { return frequency_rank; }
-    @PropertyName("frequency_rank")
-    public void setFrequencyRank(int frequency_rank) { this.frequency_rank = frequency_rank; }
+    public String getPhonetic() { return phonetic; }
+    public void setPhonetic(String phonetic) { this.phonetic = phonetic; }
+
+    public Object getSynonyms() { return synonyms; }
+    public void setSynonyms(Object synonyms) { this.synonyms = synonyms; }
+
+    public Object getAntonyms() { return antonyms; }
+    public void setAntonyms(Object antonyms) { this.antonyms = antonyms; }
+
+    public Object getCollocations() { return collocations; }
+    public void setCollocations(Object collocations) { this.collocations = collocations; }
+
+    @PropertyName("related_forms")
+    public Object getRelatedForms() { return related_forms; }
+    @PropertyName("related_forms")
+    public void setRelatedForms(Object related_forms) { this.related_forms = related_forms; }
+
+    @PropertyName("turkish_translation")
+    public String getTurkishTranslation() { return turkish_translation; }
+    @PropertyName("turkish_translation")
+    public void setTurkishTranslation(String turkish_translation) { this.turkish_translation = turkish_translation; }
 
     @PropertyName("created_at")
     public Timestamp getCreatedAt() { return created_at; }
     @PropertyName("created_at")
     public void setCreatedAt(Timestamp created_at) { this.created_at = created_at; }
-
-    public String getVocabularyId() { return vocabularyId; }
-    public void setVocabularyId(String vocabularyId) { this.vocabularyId = vocabularyId; }
-    public String getWord() { return word; }
-    public void setWord(String word) { this.word = word; }
-    public int getDifficulty() { return difficulty; }
-    public void setDifficulty(int difficulty) { this.difficulty = difficulty; }
-    public List<String> getTopics() { return topics; }
-    public void setTopics(List<String> topics) { this.topics = topics; }
+    
+    public String getDefinitionEn() { return definition; }
+    public void setDefinitionEn(String definitionEn) { this.definition = definitionEn; }
 }

@@ -3,7 +3,6 @@ package com.example.vocabmaster;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.ViewGroup;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -20,7 +19,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
@@ -30,22 +29,25 @@ public class MainActivity extends AppCompatActivity {
 
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
-        
+
         if (navHostFragment != null) {
             NavController navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(binding.navView, navController);
+            binding.navView.getMenu().getItem(2).setEnabled(false);
+
+            binding.fabCreate.setOnClickListener(v -> {
+                navController.navigate(R.id.navigation_add_course);
+            });
         }
 
-        // Fix: Adjust bottom margin based on system navigation bar height
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavContainer, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-            
-            // Keep the 16dp margin and add the navigation bar height
-            int margin16dp = (int) (16 * getResources().getDisplayMetrics().density);
-            mlp.bottomMargin = insets.bottom + margin16dp;
+
+
+            mlp.bottomMargin = insets.bottom;
             v.setLayoutParams(mlp);
-            
+
             return WindowInsetsCompat.CONSUMED;
         });
     }

@@ -16,26 +16,39 @@ import androidx.fragment.app.Fragment;
 
 import com.example.vocabmaster.R;
 
+import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.library.CourseDetailActivity;
 import com.example.vocabmaster.ui.study.MiniGameActivity;
+import com.example.vocabmaster.ui.study.StudyActivity;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class HomeFragment extends Fragment {
+    private static final String TAG = "HomeFragment";
     private FragmentHomeBinding binding;
     private FirebaseFirestore db;
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private Runnable timerRunnable;
     private User currentUser;
+    private Course activeCourse;
+    private DocumentSnapshot nextLessonDoc;
 
     private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
     private final int[] avatarResIds = {
@@ -85,7 +98,6 @@ public class HomeFragment extends Fragment {
     private void setupListeners() {
         MotionSystem.applyPressState(binding.btnStartFlashcards);
         MotionSystem.applyPressState(binding.btnPlayMiniGame);
-        MotionSystem.applyPressState(binding.fabAdd);
 
         binding.btnStartFlashcards.setOnClickListener(v -> {
             UiFeedback.performHaptic(requireContext(), 10);
@@ -95,11 +107,60 @@ public class HomeFragment extends Fragment {
 
         binding.btnPlayMiniGame.setOnClickListener(v -> openMiniGame());
 
-        binding.fabAdd.setOnClickListener(v -> {
-            UiFeedback.performHaptic(requireContext(), 20);
-            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
-            startActivity(intent);
+        // Nút vào học bài học tiếp theo hoặc Roadmap
+        binding.btnViewCourse.setOnClickListener(v -> {
+            UiFeedback.performHaptic(requireContext(), 10);
+            if (nextLessonDoc != null) {
+                Intent intent = new Intent(requireContext(), StudyActivity.class);
+                intent.putExtra("lesson_id", nextLessonDoc.getId());
+                intent.putExtra("lesson_title", nextLessonDoc.getString("title"));
+                if (activeCourse != null) {
+                    intent.putExtra("course_id", activeCourse.getFirestoreId());
+                }
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+                if (activeCourse != null && activeCourse.getFirestoreId() != null) {
+                    intent.putExtra("course_id", activeCourse.getFirestoreId());
+                    intent.putExtra("course_title", activeCourse.getTitle());
+                }
+                startActivity(intent);
+            }
         });
+
+        // Topic Listeners
+        setupTopicListener(binding.cardTopicCareer, "nghề nghiệp", "Career");
+        setupTopicListener(binding.cardTopicTravel, "du lịch", "Travel");
+        setupTopicListener(binding.cardTopicSchool, "trường học", "School");
+        setupTopicListener(binding.cardTopicFood, "thức ăn", "Food");
+        setupTopicListener(binding.cardTopicCulture, "văn hóa", "Culture");
+        setupTopicListener(binding.cardTopicBrainSkill, "luyện trí não", "Brain Skill");
+        setupTopicListener(binding.cardTopicOther, "khác", "Other");
+    }
+
+    private void setupTopicListener(View view, String topicValue, String displayTitle) {
+        MotionSystem.applyPressState(view);
+        view.setOnClickListener(v -> startJourneyFlow(topicValue, displayTitle));
+    }
+
+    private void startJourneyFlow(String topic, String displayTitle) {
+        UiFeedback.performHaptic(requireContext(), 10);
+        
+        String userLang = (currentUser != null) ? currentUser.getLanguage() : null;
+        boolean hasValidLang = userLang != null && (userLang.equals("en") || userLang.equals("ru"));
+
+        if (hasValidLang) {
+            Intent intent = new Intent(requireContext(), TopicWordListActivity.class);
+            intent.putExtra("topic", topic);
+            intent.putExtra("display_title", displayTitle);
+            intent.putExtra("lang_code", userLang);
+            startActivity(intent);
+        } else {
+            Intent intent = new Intent(requireContext(), JourneySetupActivity.class);
+            intent.putExtra("selected_topic", topic);
+            intent.putExtra("display_title", displayTitle);
+            startActivity(intent);
+        }
     }
 
     @Override
@@ -124,35 +185,200 @@ public class HomeFragment extends Fragment {
             if (currentUser == null) return;
             currentUser.setUid(uid);
 
-            updateProfileUI();
+            loadActiveCourse(uid);
             setupHeartTimer();
         });
+    }
+
+    private void loadActiveCourse(String uid) {
+        db.collection("courses")
+                .whereEqualTo("creatorId", uid)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (binding == null || !isAdded()) return;
+                    
+                    activeCourse = null;
+                    if (!querySnapshot.isEmpty()) {
+                        List<DocumentSnapshot> docs = new ArrayList<>(querySnapshot.getDocuments());
+                        // Sắp xếp khóa học theo thời gian cập nhật mới nhất trên Client
+                        Collections.sort(docs, (d1, d2) -> {
+                            Date date1 = d1.getDate("updatedAt");
+                            if (date1 == null) date1 = d1.getDate("createdAt");
+                            Date date2 = d2.getDate("updatedAt");
+                            if (date2 == null) date2 = d2.getDate("createdAt");
+                            
+                            if (date1 == null || date2 == null) return 0;
+                            return date2.compareTo(date1);
+                        });
+
+                        for (DocumentSnapshot doc : docs) {
+                            Course c = doc.toObject(Course.class);
+                            if (c != null && "active".equals(c.getStatus())) {
+                                c.setFirestoreId(doc.getId());
+                                activeCourse = c;
+                                break; 
+                            }
+                        }
+                    }
+
+                    if (activeCourse != null) {
+                        findNextLesson(activeCourse.getFirestoreId());
+                    } else {
+                        nextLessonDoc = null;
+                        updateProfileUI();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading active course", e);
+                    if (isAdded()) updateProfileUI();
+                });
+    }
+
+    private void findNextLesson(String courseId) {
+        db.collection("units")
+                .whereEqualTo("courseId", courseId)
+                .get()
+                .addOnSuccessListener(unitSnapshots -> {
+                    if (unitSnapshots.isEmpty()) {
+                        updateProfileUI();
+                        return;
+                    }
+
+                    List<DocumentSnapshot> units = new ArrayList<>(unitSnapshots.getDocuments());
+                    Collections.sort(units, (u1, u2) -> {
+                        long o1 = u1.getLong("orderNum") != null ? u1.getLong("orderNum") : 0;
+                        long o2 = u2.getLong("orderNum") != null ? u2.getLong("orderNum") : 0;
+                        return Long.compare(o1, o2);
+                    });
+
+                    List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
+                    for (DocumentSnapshot unit : units) {
+                        lessonTasks.add(db.collection("lessons")
+                                .whereEqualTo("unitId", unit.getId())
+                                .get());
+                    }
+
+                    Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
+                        if (binding == null || !isAdded()) return;
+                        
+                        nextLessonDoc = null;
+                        for (int i = 0; i < units.size(); i++) {
+                            Task<QuerySnapshot> task = lessonTasks.get(i);
+                            if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                                List<DocumentSnapshot> lessons = new ArrayList<>(task.getResult().getDocuments());
+                                Collections.sort(lessons, (l1, l2) -> {
+                                    long o1 = l1.getLong("orderNum") != null ? l1.getLong("orderNum") : 0;
+                                    long o2 = l2.getLong("orderNum") != null ? l2.getLong("orderNum") : 0;
+                                    return Long.compare(o1, o2);
+                                });
+
+                                for (DocumentSnapshot lesson : lessons) {
+                                    if (!Boolean.TRUE.equals(lesson.getBoolean("completed"))) {
+                                        nextLessonDoc = lesson;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (nextLessonDoc != null) break;
+                        }
+                        updateProfileUI();
+                    });
+                });
     }
 
 
     private void updateProfileUI() {
         if (currentUser == null || binding == null) return;
 
-        // Cập nhật Greeting và Tên User
+        // User Header
         binding.textGreeting.setText(getGreeting());
         binding.textUserName.setText(currentUser.getName() != null ? currentUser.getName() : "Student");
         updateAvatarUI(currentUser.getAvatar());
 
-        String heartCount = String.valueOf(currentUser.getHearts());
-        binding.textHearts.setText(heartCount);
+        // Global Stats
+        binding.textHearts.setText(String.valueOf(currentUser.getHearts()));
+        binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
+        binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
 
-        if (binding.tvXpCount != null) {
-            binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
-        }
-        if (binding.tvStreakCount != null) {
-            binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
+        String courseTitle;
+        String unitTitle;
+        int flagRes = -1;
+
+        if (activeCourse != null) {
+            // Hiển thị tên khóa học (ưu tiên tiếng Việt)
+            courseTitle = activeCourse.getTitle();
+            if (courseTitle == null || courseTitle.isEmpty() || courseTitle.equalsIgnoreCase("en") || courseTitle.equalsIgnoreCase("english")) {
+                courseTitle = "Tiếng Anh";
+            } else if (courseTitle.equalsIgnoreCase("ru") || courseTitle.equalsIgnoreCase("russian")) {
+                courseTitle = "Tiếng Nga";
+            }
+            
+            // Hiển thị bài học/chương tiếp theo
+            if (nextLessonDoc != null) {
+                unitTitle = nextLessonDoc.getString("title");
+                binding.btnViewCourse.setText("View Course");
+            } else {
+                unitTitle = "Đã hoàn thành khóa học!";
+                binding.btnViewCourse.setText("Review Course");
+            }
+
+            // Tiến độ khóa học
+            int progress = (int) activeCourse.getProgressPercentage();
+            binding.progressCourseCircular.setProgress(progress, true);
+            binding.textCoursePercent.setText(progress + "%");
+            binding.textCourseProgress.setText("Tiến độ:");
+
+            // Xác định cờ (Flag)
+            flagRes = getFlagForLanguageId(activeCourse.getTargetLanguageId());
+            if (flagRes == R.drawable.vietnam || flagRes == -1) {
+                flagRes = guessFlagFromText(courseTitle);
+            }
+            if (flagRes == -1 && currentUser.getLanguage() != null) {
+                flagRes = "en".equals(currentUser.getLanguage()) ? R.drawable.eng : R.drawable.russia;
+            }
+        } else {
+            // Trường hợp chưa có khóa học khởi tạo
+            String lang = currentUser.getLanguage();
+            if (lang != null && !lang.isEmpty()) {
+                courseTitle = "en".equals(lang) ? "Tiếng Anh" : "Tiếng Nga";
+                unitTitle = currentUser.getCurrentUnitTitle() != null ? 
+                        currentUser.getCurrentUnitTitle() : "Hành trình khởi đầu";
+                flagRes = "en".equals(lang) ? R.drawable.eng : R.drawable.russia;
+                binding.btnViewCourse.setText("Khởi tạo khóa học");
+            } else {
+                courseTitle = "Chưa khởi tạo";
+                unitTitle = "Chọn chủ đề học tập bên dưới";
+                flagRes = R.drawable.vietnam;
+                binding.btnViewCourse.setText("Xem thư viện");
+            }
+            binding.progressCourseCircular.setProgress(0, true);
+            binding.textCoursePercent.setText("0%");
+            binding.textCourseProgress.setText("Bắt đầu ngay");
         }
 
-        int dailyGoal = currentUser.getDailyGoal() <= 0 ? 20 : currentUser.getDailyGoal();
-        int earned = (int) (currentUser.getXp() % (dailyGoal + 1));
-        binding.progressCourse.setMax(dailyGoal);
-        binding.progressCourse.setProgress(Math.min(earned, dailyGoal), true);
-        binding.textCourseProgress.setText(String.format(Locale.getDefault(), "Tiến độ: %d/%d XP", earned, dailyGoal));
+        binding.textCurrentCourseTitle.setText(courseTitle);
+        binding.textCurrentUnitTitle.setText(unitTitle);
+        binding.imgCurrentCourseFlag.setImageResource(flagRes == -1 ? R.drawable.vietnam : flagRes);
+    }
+
+    private int getFlagForLanguageId(int langId) {
+        switch (langId) {
+            case 1: return R.drawable.eng;
+            case 2: return R.drawable.japan;
+            case 4: return R.drawable.china;
+            case 5: return R.drawable.russia;
+            default: return R.drawable.vietnam;
+        }
+    }
+
+    private int guessFlagFromText(String text) {
+        if (text == null) return -1;
+        String lower = text.toLowerCase();
+        if (lower.contains("en") || lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
+        if (lower.contains("nhật") || lower.contains("japan") || lower.contains("japanese")) return R.drawable.japan;
+        if (lower.contains("trung") || lower.contains("china") || lower.contains("chinese")) return R.drawable.china;
+        if (lower.contains("ru") || lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
+        return -1;
     }
 
     private String getGreeting() {
@@ -200,36 +426,28 @@ public class HomeFragment extends Fragment {
         long lastRegen = currentUser.getLastHeartRegen().toDate().getTime();
         long diff = now - lastRegen;
         
-        // Check if one or more hearts should have regenerated
         if (diff >= REGEN_TIME_MS) {
             int heartsToRegen = (int) (diff / REGEN_TIME_MS);
             int newHearts = Math.min(5, currentUser.getHearts() + heartsToRegen);
             
-            // Calculate new lastRegen timestamp (carrying over remaining time)
             long remainingMs = diff % REGEN_TIME_MS;
             long newLastRegenTime = now - remainingMs;
 
             currentUser.setHearts(newHearts);
             currentUser.setLastHeartRegen(new Timestamp(new Date(newLastRegenTime)));
             
-            // Sync with Firestore
             updateUserHeartsInFirestore(newHearts, currentUser.getLastHeartRegen());
             
-            // Update UI immediately
-            String heartCount = String.valueOf(newHearts);
-            binding.textHearts.setText(heartCount);
+            binding.textHearts.setText(String.valueOf(newHearts));
             
             if (newHearts == 5) {
                 binding.cardHeartRegen.setVisibility(View.GONE);
                 stopTimer();
                 return;
             }
-            
-            // Recalculate diff for smooth progress bar after update
             diff = remainingMs;
         }
 
-        // UI Countdown
         long timeRemaining = REGEN_TIME_MS - (diff % REGEN_TIME_MS);
         int minutes = (int) (timeRemaining / 1000) / 60;
         int seconds = (int) (timeRemaining / 1000) % 60;
@@ -245,11 +463,11 @@ public class HomeFragment extends Fragment {
         
         db.collection("users").document(uid)
                 .update("hearts", hearts, "lastHeartRegen", lastRegen)
-                .addOnFailureListener(e -> Log.e("HomeFragment", "Error updating hearts", e));
+                .addOnFailureListener(e -> Log.e(TAG, "Error updating hearts", e));
     }
 
     private void updateAvatarUI(String avatarValue) {
-        int resId = R.drawable.bear; // default
+        int resId = R.drawable.bear;
         if (avatarValue != null) {
             for (int i = 0; i < avatarValues.length; i++) {
                 if (avatarValues[i].equals(avatarValue)) {
