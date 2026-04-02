@@ -43,6 +43,7 @@
         <activity android:name=".ui.study.StudySummaryActivity" />
         <activity android:name=".ui.analytics.AnalyticsActivity" />
         <activity android:name=".ui.library.CourseDetailActivity" />
+        <activity android:name=".ui.library.PersonalCardsActivity" />
         <activity android:name=".ui.home.CreateCourseFlowActivity" />
         <activity android:name=".ui.home.JourneySetupActivity" />
         <activity android:name=".ui.home.TopicWordListActivity" />

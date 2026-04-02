@@ -11,6 +11,9 @@ import com.example.vocabmaster.data.local.CourseDao;
 import com.example.vocabmaster.data.local.FlashcardDao;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -28,6 +31,7 @@ public class CourseRepository {
     private final ExecutorService executorService;
     private final FirebaseFirestore firestore;
     private final CollectionReference coursesRef;
+    private final CollectionReference personalFlashcardsRef;
     
     private final MutableLiveData<List<Course>> firestoreCoursesLiveData = new MutableLiveData<>();
     private ListenerRegistration coursesListener;
@@ -39,6 +43,13 @@ public class CourseRepository {
         executorService = Executors.newFixedThreadPool(4);
         firestore = FirebaseFirestore.getInstance();
         coursesRef = firestore.collection("courses");
+        
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            personalFlashcardsRef = firestore.collection("users").document(uid).collection("personal_flashcards");
+        } else {
+            personalFlashcardsRef = null;
+        }
         
         startListeningToCourses();
     }
@@ -118,19 +129,44 @@ public class CourseRepository {
         }
     }
 
-    public void deleteCourseFromFirestore(String firestoreId) {
+    public Task<Void> deleteCourseFromFirestore(String firestoreId) {
         if (firestoreId != null) {
-            coursesRef.document(firestoreId).delete()
-                    .addOnSuccessListener(aVoid -> Log.d(TAG, "Course deleted from Firestore"))
-                    .addOnFailureListener(e -> Log.e(TAG, "Error deleting course from Firestore", e));
+            return coursesRef.document(firestoreId).delete();
         }
+        return Tasks.forException(new Exception("Invalid Course ID"));
     }
 
     public void insertFlashcard(Flashcard flashcard) {
-        executorService.execute(() -> flashcardDao.insert(flashcard));
+        executorService.execute(() -> {
+            flashcardDao.insert(flashcard);
+            Log.d(TAG, "Flashcard inserted locally: " + flashcard.getTerm());
+        });
+    }
+
+    public void addPersonalFlashcard(Flashcard flashcard) {
+        Log.d(TAG, "Adding personal flashcard: " + flashcard.getTerm());
+        flashcard.setCourseId(-1); // Luôn đặt là Personal
+        
+        // Bước 1: Lưu Local ngay lập tức để UI cập nhật
+        insertFlashcard(flashcard);
+        
+        // Bước 2: Thử đồng bộ lên Firestore (nếu có mạng và không hết quota)
+        if (personalFlashcardsRef != null) {
+            personalFlashcardsRef.add(flashcard)
+                    .addOnSuccessListener(documentReference -> {
+                        Log.d(TAG, "Flashcard synced to Firestore: " + documentReference.getId());
+                        flashcard.setFirestoreId(documentReference.getId());
+                        executorService.execute(() -> flashcardDao.update(flashcard));
+                    })
+                    .addOnFailureListener(e -> Log.e(TAG, "Firestore sync failed (expected if quota exceeded)", e));
+        }
     }
 
     public LiveData<List<Flashcard>> getFlashcardsForCourse(int courseId) {
         return flashcardDao.getFlashcardsByCourse(courseId);
+    }
+
+    public LiveData<List<Flashcard>> getPersonalFlashcards() {
+        return flashcardDao.getPersonalFlashcards();
     }
 }

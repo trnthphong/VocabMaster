@@ -2,7 +2,6 @@ package com.example.vocabmaster.data.model;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
-import com.google.firebase.firestore.Exclude;
 
 @Entity(tableName = "flashcards")
 public class Flashcard {
@@ -16,6 +15,7 @@ public class Flashcard {
     private String example;
     private String imageUrl;
     private String audioUrl;
+    private String tag; // Added tag field
     private int orderIndex;
     
     private long lastReviewTime;
@@ -59,6 +59,9 @@ public class Flashcard {
 
     public String getAudioUrl() { return audioUrl; }
     public void setAudioUrl(String audioUrl) { this.audioUrl = audioUrl; }
+
+    public String getTag() { return tag; }
+    public void setTag(String tag) { this.tag = tag; }
 
     public int getOrderIndex() { return orderIndex; }
     public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }

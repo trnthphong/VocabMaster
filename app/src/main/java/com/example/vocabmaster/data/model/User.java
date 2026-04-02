@@ -2,13 +2,12 @@ package com.example.vocabmaster.data.model;
 
 import com.google.firebase.Timestamp;
 import java.util.List;
-import java.util.Map;
 
 public class User {
     private String uid;
     private String name;
     private String email;
-    private String avatar; // Matches Firestore field
+    private String avatar;
     private String avatarUrl;
     private String role;
     private boolean isPremium;
@@ -31,8 +30,13 @@ public class User {
     private String language;
     private boolean notificationsEnabled;
     private String currentUnitTitle;
+    
+    // New fields for Roadmap
+    private String activeCourseId;
 
-    public User() {} // Required for Firestore
+    public User() {
+        this.hearts = 5;
+    }
 
     // Getters and Setters
     public String getUid() { return uid; }
@@ -79,4 +83,6 @@ public class User {
     public void setNotificationsEnabled(boolean notificationsEnabled) { this.notificationsEnabled = notificationsEnabled; }
     public String getCurrentUnitTitle() { return currentUnitTitle; }
     public void setCurrentUnitTitle(String currentUnitTitle) { this.currentUnitTitle = currentUnitTitle; }
+    public String getActiveCourseId() { return activeCourseId; }
+    public void setActiveCourseId(String activeCourseId) { this.activeCourseId = activeCourseId; }
 }

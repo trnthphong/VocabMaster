@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_24">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tạo Flashcard mới"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+            android:layout_marginBottom="@dimen/spacing_16"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Mặt trước (Từ vựng)"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="@dimen/spacing_12">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_term"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Mặt sau (Định nghĩa)"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="@dimen/spacing_12">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_definition"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:minLines="2"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Gắn thẻ (ví dụ: Topic, Level)"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="@dimen/spacing_16">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_tag"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ảnh minh họa"
+            android:textAppearance="@style/TextAppearance.VocabMaster.LabelMedium"
+            android:layout_marginBottom="@dimen/spacing_8"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_marginBottom="@dimen/spacing_24">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_select_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:cardBackgroundColor="@color/gray_lighter"
+                app:cardCornerRadius="@dimen/radius_medium"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/image_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_back"
+                    android:visibility="gone"/>
+
+                <LinearLayout
+                    android:id="@+id/layout_add_image_prompt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_gallery"
+                        app:tint="@color/text_secondary"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nhấn để chọn ảnh"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="@dimen/spacing_4"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save_flashcard"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Lưu Flashcard"
+            app:cornerRadius="@dimen/radius_medium"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"/>
+
+    </LinearLayout>
+</ScrollView>

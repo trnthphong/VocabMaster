@@ -25,6 +25,12 @@ public interface FlashcardDao {
     @Query("SELECT * FROM flashcards WHERE courseId = :courseId")
     LiveData<List<Flashcard>> getFlashcardsByCourse(int courseId);
 
+    @Query("SELECT * FROM flashcards")
+    LiveData<List<Flashcard>> getAllFlashcards();
+
+    @Query("SELECT * FROM flashcards WHERE courseId = -1")
+    LiveData<List<Flashcard>> getPersonalFlashcards();
+
     @Query("SELECT * FROM flashcards WHERE courseId = :courseId AND lastReviewTime + interval * 86400000 <= :currentTime")
     LiveData<List<Flashcard>> getFlashcardsToReview(int courseId, long currentTime);
 }

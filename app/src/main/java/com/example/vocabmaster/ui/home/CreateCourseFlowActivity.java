@@ -2,6 +2,7 @@ package com.example.vocabmaster.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.Toast;
@@ -9,6 +10,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.model.Challenge;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Lesson;
 import com.example.vocabmaster.data.model.Unit;
@@ -23,16 +25,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 public class CreateCourseFlowActivity extends AppCompatActivity {
+    private static final String TAG = "CreateCourseFlow";
     private ActivityCreateCourseFlowBinding binding;
     private int currentStep = 1;
-    private final int totalSteps = 4;
+    private final int totalSteps = 3; // Giảm xuống 3 bước
     
     private String selectedLanguage = "";
     private String selectedTheme = "";
-    private int selectedTime = 10;
-    private boolean isPremiumUser = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,19 +42,8 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding = ActivityCreateCourseFlowBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        checkPremiumStatus();
         updateStepUI();
         setupListeners();
-    }
-
-    private void checkPremiumStatus() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid != null) {
-            FirebaseFirestore.getInstance().collection("users").document(uid).get()
-                    .addOnSuccessListener(snapshot -> {
-                        isPremiumUser = Boolean.TRUE.equals(snapshot.getBoolean("premium"));
-                    });
-        }
     }
 
     private void setupListeners() {
@@ -71,7 +62,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
                     currentStep++;
                     updateStepUI();
                 } else {
-                    createCourseAndFinish();
+                    checkIfCourseExists();
                 }
             }
         });
@@ -81,7 +72,6 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding.layoutStep1.setVisibility(currentStep == 1 ? View.VISIBLE : View.GONE);
         binding.layoutStep2.setVisibility(currentStep == 2 ? View.VISIBLE : View.GONE);
         binding.layoutStep3.setVisibility(currentStep == 3 ? View.VISIBLE : View.GONE);
-        binding.layoutStep4.setVisibility(currentStep == 4 ? View.VISIBLE : View.GONE);
 
         binding.progressFlow.setProgress(currentStep);
         binding.progressFlow.setMax(totalSteps);
@@ -112,29 +102,41 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             RadioButton rb = findViewById(checkedId);
             selectedTheme = rb.getText().toString();
             return true;
-        } else if (currentStep == 3) {
-            int checkedId = binding.radioGroupTime.getCheckedRadioButtonId();
-            if (checkedId == R.id.radio_5min) selectedTime = 5;
-            else if (checkedId == R.id.radio_15min) selectedTime = 15;
-            else selectedTime = 10;
-            return true;
         }
         return true;
     }
 
+    private void checkIfCourseExists() {
+        String courseTitle = selectedLanguage + " - " + selectedTheme;
+        binding.btnNextFlow.setEnabled(false);
+        binding.btnNextFlow.setText("Đang kiểm tra dữ liệu...");
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("courses")
+                .whereEqualTo("title", courseTitle)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        QueryDocumentSnapshot doc = (QueryDocumentSnapshot) querySnapshot.getDocuments().get(0);
+                        goToRoadmap(doc.getId(), doc.getString("title"), doc.getString("theme"));
+                    } else {
+                        createCourseAndFinish();
+                    }
+                })
+                .addOnFailureListener(e -> createCourseAndFinish());
+    }
+
     private void createCourseAndFinish() {
         String userId = FirebaseAuth.getInstance().getUid();
-        if (userId == null) return;
-
-        binding.btnNextFlow.setEnabled(false);
-        binding.btnNextFlow.setText("Đang khởi tạo...");
+        binding.btnNextFlow.setText("Đang khởi tạo lộ trình...");
 
         Course course = new Course();
         course.setTitle(selectedLanguage + " - " + selectedTheme);
-        course.setDescription("Lộ trình học tập cá nhân hóa " + selectedLanguage);
+        course.setDescription("Lộ trình học tập " + selectedLanguage);
         course.setTheme(selectedTheme);
         course.setCreatorId(userId);
-        course.setPublic(false);
+        course.setPublic(true);
         course.setCreatedAt(new Date());
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -142,42 +144,22 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             String courseId = docRef.getId();
             fetchVocabAndGenerateDuolingoPath(db, courseId, selectedTheme, course);
         }).addOnFailureListener(e -> {
-            binding.btnNextFlow.setEnabled(true);
-            binding.btnNextFlow.setText("Hoàn tất");
-            Toast.makeText(this, "Lỗi khi tạo khóa học", Toast.LENGTH_SHORT).show();
+            resetButton();
+            Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
         });
     }
 
     private void fetchVocabAndGenerateDuolingoPath(FirebaseFirestore db, String courseId, String theme, Course course) {
-        db.collection("vocabularies")
-                .limit(100)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> allWords = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String word = doc.getString("word");
-                        if (word != null) allWords.add(word);
-                    }
-                    
-                    if (allWords.isEmpty()) {
-                        allWords.add("Hello"); allWords.add("Goodbye"); allWords.add("Thank you");
-                    }
-
-                    generateDuolingoUnits(db, courseId, theme, allWords, course);
-                });
+        db.collection("vocabularies").limit(40).get().addOnSuccessListener(querySnapshot -> {
+            List<QueryDocumentSnapshot> allVocabs = new ArrayList<>();
+            for (QueryDocumentSnapshot doc : querySnapshot) allVocabs.add(doc);
+            generateDuolingoUnits(db, courseId, theme, allVocabs, course);
+        }).addOnFailureListener(e -> generateDuolingoUnits(db, courseId, theme, new ArrayList<>(), course));
     }
 
-    private void generateDuolingoUnits(FirebaseFirestore db, String courseId, String theme, List<String> words, Course course) {
+    private void generateDuolingoUnits(FirebaseFirestore db, String courseId, String theme, List<QueryDocumentSnapshot> vocabs, Course course) {
         WriteBatch batch = db.batch();
-        Collections.shuffle(words);
-
-        String[] unitThemes = {
-            "Làm quen & Chào hỏi",
-            "Giao tiếp Cơ bản",
-            "Mở rộng vốn từ " + theme,
-            "Tình huống thực tế",
-            "Ôn tập tổng hợp"
-        };
+        String[] unitThemes = {"Khởi đầu", "Cơ bản", "Nâng cao " + theme};
 
         for (int i = 0; i < unitThemes.length; i++) {
             String unitId = db.collection("units").document().getId();
@@ -186,43 +168,52 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             unit.setUnitId(unitId);
             batch.set(db.collection("units").document(unitId), unit);
 
-            createDuolingoLessons(db, batch, unitId, words, i);
+            createLessons(db, batch, unitId, vocabs, i);
         }
 
         batch.commit().addOnSuccessListener(aVoid -> {
-            Intent intent = new Intent(this, CourseDetailActivity.class);
-            intent.putExtra("course_id", courseId);
-            intent.putExtra("course_title", course.getTitle());
-            intent.putExtra("course_theme", course.getTheme());
-            startActivity(intent);
-            finish();
+            goToRoadmap(courseId, course.getTitle(), course.getTheme());
         }).addOnFailureListener(e -> {
-            binding.btnNextFlow.setEnabled(true);
-            binding.btnNextFlow.setText("Hoàn tất");
+            resetButton();
+            Toast.makeText(this, "Lỗi lưu dữ liệu: " + e.getMessage(), Toast.LENGTH_LONG).show();
         });
     }
 
-    private void createDuolingoLessons(FirebaseFirestore db, WriteBatch batch, String unitId, List<String> allWords, int unitIndex) {
-        String[] lessonTitles = {"Từ vựng 1", "Luyện nghe", "Từ vựng 2", "Hội thoại", "Kiểm tra cuối chương"};
-        String[] types = {"vocabulary", "listening", "vocabulary", "speaking", "quiz"};
-        
-        int wordsPerUnit = 10;
-        int startIdx = (unitIndex * wordsPerUnit) % allWords.size();
-        
-        List<String> unitWords = new ArrayList<>();
-        for (int k = 0; k < wordsPerUnit; k++) {
-            unitWords.add(allWords.get((startIdx + k) % allWords.size()));
-        }
-
+    private void createLessons(FirebaseFirestore db, WriteBatch batch, String unitId, List<QueryDocumentSnapshot> allVocabs, int unitIndex) {
+        String[] lessonTitles = {"Từ vựng", "Luyện nghe", "Kiểm tra"};
         for (int j = 0; j < lessonTitles.length; j++) {
-            Lesson lesson = new Lesson(lessonTitles[j], types[j], 10, 15);
-            lesson.setUnitId(unitId);
-            lesson.setVocabWords(unitWords);
-            lesson.setOrderNum(j + 1);
-            
             String lessonId = db.collection("lessons").document().getId();
+            Lesson lesson = new Lesson(lessonTitles[j], "vocabulary", 10, 15);
+            lesson.setUnitId(unitId);
             lesson.setLessonId(lessonId);
+            lesson.setOrderNum(j + 1);
             batch.set(db.collection("lessons").document(lessonId), lesson);
+
+            for (int k = 0; k < 2; k++) {
+                Challenge challenge = new Challenge();
+                challenge.setLessonId(lessonId);
+                challenge.setOrderNum(k + 1);
+                challenge.setType("SELECT");
+                challenge.setQuestion("Nghĩa của từ này là gì?");
+                String challengeId = db.collection("challenges").document().getId();
+                challenge.setId(challengeId);
+                batch.set(db.collection("challenges").document(challengeId), challenge);
+            }
         }
+    }
+
+    private void goToRoadmap(String courseId, String title, String theme) {
+        Intent intent = new Intent(this, CourseDetailActivity.class);
+        intent.putExtra("course_id", courseId);
+        intent.putExtra("course_title", title);
+        intent.putExtra("course_theme", theme);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
+    }
+
+    private void resetButton() {
+        binding.btnNextFlow.setEnabled(true);
+        binding.btnNextFlow.setText("Hoàn tất");
     }
 }

@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.vocabmaster.MainActivity;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.databinding.ActivityJourneySetupBinding;
 import com.google.firebase.auth.FirebaseAuth;
@@ -68,7 +69,6 @@ public class JourneySetupActivity extends AppCompatActivity {
             Map<String, Object> updates = new HashMap<>();
             updates.put("language", langCode);
             
-            // Cập nhật tên chương mặc định dựa trên topic hoặc ngôn ngữ
             String unitTitle = (displayTitle != null && !displayTitle.isEmpty()) ? 
                               "Chủ đề: " + displayTitle : "Khởi đầu mới";
             updates.put("currentUnitTitle", unitTitle);
@@ -96,20 +96,24 @@ public class JourneySetupActivity extends AppCompatActivity {
     }
 
     private void startProcessing() {
-        currentStep = 3; // Chuyển đến màn hình Loading
+        currentStep = 3;
         updateUI();
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (isChangeOnly) {
-                finish(); // Nếu chỉ là đổi ngôn ngữ từ Topic list, quay lại màn hình trước
+                // Để thay đổi ngôn ngữ có hiệu lực ngay lập tức, 
+                // chúng ta cần khởi động lại MainActivity và xóa các màn hình cũ.
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
             } else {
                 Intent intent = new Intent(this, TopicWordListActivity.class);
                 intent.putExtra("topic", selectedTopic);
                 intent.putExtra("display_title", displayTitle);
                 intent.putExtra("lang_code", langCode);
                 startActivity(intent);
-                finish();
             }
+            finish();
         }, 1500);
     }
 }

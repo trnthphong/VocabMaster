@@ -21,12 +21,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center"
-                android:padding="@dimen/spacing_24">
+                android:padding="@dimen/spacing_16">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="@dimen/spacing_8"
                     android:text="My Library"
                     app:fontFamily="@font/adlam_display"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
@@ -49,6 +50,15 @@
                         app:queryHint="Search your study sets..."
                         app:queryBackground="@android:color/transparent" />
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Personal Cards Entry -->
+                <include
+                    android:id="@+id/layout_personal_cards"
+                    layout="@layout/item_personal_cards"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_16"
+                    android:visibility="gone" />
 
             </LinearLayout>
         </com.google.android.material.appbar.CollapsingToolbarLayout>

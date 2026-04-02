@@ -8,7 +8,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.vocabmaster.data.model.Course;
+import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.repository.CourseRepository;
+import com.google.android.gms.tasks.Task;
 
 import java.util.List;
 
@@ -49,8 +51,16 @@ public class LibraryViewModel extends AndroidViewModel {
         repository.updateCourseInFirestore(course);
     }
 
-    public void deleteCourseFromFirestore(String firestoreId) {
-        repository.deleteCourseFromFirestore(firestoreId);
+    public Task<Void> deleteCourseFromFirestore(String firestoreId) {
+        return repository.deleteCourseFromFirestore(firestoreId);
+    }
+    
+    public void addPersonalFlashcard(Flashcard flashcard) {
+        repository.addPersonalFlashcard(flashcard);
+    }
+
+    public LiveData<List<Flashcard>> getPersonalFlashcards() {
+        return repository.getPersonalFlashcards();
     }
 
     public LiveData<Boolean> getCourseDeletedEvent() {

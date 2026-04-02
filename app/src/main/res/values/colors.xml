@@ -28,6 +28,7 @@
     <!-- Glass System -->
     <color name="glass_white_20">#33FFFFFF</color>
     <color name="glass_white_40">#66FFFFFF</color>
+    <color name="glass_white_60">#99FFFFFF</color>
     <color name="glass_black_10">#1A000000</color>
     <color name="glass_black_20">#33000000</color>
 

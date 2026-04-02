@@ -94,7 +94,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Main Container for Flashcards and Tasks -->
+    <!-- Main Container -->
     <FrameLayout
         android:id="@+id/task_container"
         android:layout_width="match_parent"
@@ -105,7 +105,6 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_controls"
         app:layout_constraintTop_toBottomOf="@id/top_bar">
 
-        <!-- Flashcard View -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_flashcard"
             android:layout_width="match_parent"
@@ -119,6 +118,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
+                <!-- Nút lưu nhanh nằm góc trên card -->
                 <ImageButton
                     android:id="@+id/btn_add_flashcard"
                     android:layout_width="48dp"
@@ -170,7 +170,7 @@
                             android:id="@+id/text_term"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Resilience"
+                            android:text="Term"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Display"
                             android:textAlignment="center"
                             app:layout_constraintBottom_toBottomOf="parent"
@@ -181,7 +181,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Tap to reveal definition"
+                            android:text="Chạm để xem nghĩa"
                             android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
@@ -200,7 +200,7 @@
                             android:id="@+id/text_definition"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="The capacity to recover quickly from difficulties; toughness."
+                            android:text="Definition Placeholder"
                             android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                             android:textAlignment="center"
                             app:layout_constraintBottom_toBottomOf="parent"
@@ -213,7 +213,6 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Dynamic Task Views -->
         <FrameLayout
             android:id="@+id/dynamic_task_layout"
             android:layout_width="match_parent"
@@ -233,6 +232,18 @@
         android:padding="@dimen/spacing_16"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- Nút thêm vào thư viện riêng cho Flashcard Journey -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save_to_library"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
+            android:text="Lưu vào thư viện"
+            android:visibility="gone"
+            app:backgroundTint="@color/brand_primary"
+            app:cornerRadius="@dimen/radius_large"
+            app:icon="@android:drawable/ic_input_add" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_skip"
             style="@style/Widget.Material3.Button.TonalButton"
@@ -240,7 +251,7 @@
             android:layout_height="64dp"
             android:layout_marginEnd="@dimen/spacing_8"
             android:layout_weight="1"
-            android:text="Skip"
+            android:text="Bỏ qua"
             app:cornerRadius="@dimen/radius_large" />
 
         <com.google.android.material.button.MaterialButton
@@ -249,34 +260,9 @@
             android:layout_height="64dp"
             android:layout_marginStart="@dimen/spacing_8"
             android:layout_weight="1"
-            android:text="Check"
+            android:text="Tiếp tục"
             app:backgroundTint="@color/brand_primary"
             app:cornerRadius="@dimen/radius_large" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_hard"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="@dimen/spacing_8"
-            android:layout_weight="1"
-            android:text="Hard"
-            android:textColor="@color/error"
-            android:visibility="gone"
-            app:cornerRadius="@dimen/radius_large"
-            app:icon="@android:drawable/ic_dialog_alert" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_good"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_marginStart="@dimen/spacing_8"
-            android:layout_weight="1"
-            android:text="Mastered"
-            android:visibility="gone"
-            app:backgroundTint="@color/brand_primary"
-            app:cornerRadius="@dimen/radius_large"
-            app:icon="@android:drawable/checkbox_on_background" />
 
     </LinearLayout>
 

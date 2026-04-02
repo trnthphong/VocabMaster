@@ -53,6 +53,8 @@ dependencies {
 
     // Room
     implementation(libs.room.runtime)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
     annotationProcessor(libs.room.compiler)
 
     // UI Utilities

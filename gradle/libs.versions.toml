@@ -16,6 +16,8 @@ firebaseDatabase = "22.0.1"
 coreSplashscreen = "1.0.1"
 gson = "2.13.2"
 glide = "4.16.0"
+navigationFragmentKtx = "2.9.7"
+navigationUiKtx = "2.9.7"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -57,6 +59,8 @@ gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 # Glide
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

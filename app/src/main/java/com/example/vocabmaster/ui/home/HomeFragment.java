@@ -30,6 +30,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -49,6 +50,7 @@ public class HomeFragment extends Fragment {
     private User currentUser;
     private Course activeCourse;
     private DocumentSnapshot nextLessonDoc;
+    private ListenerRegistration userListener;
 
     private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
     private final int[] avatarResIds = {
@@ -72,6 +74,7 @@ public class HomeFragment extends Fragment {
         setupInitialAnimations();
         setupListeners();
         runEntranceAnimation();
+        observeUserData();
     }
 
     private void setupInitialAnimations() {
@@ -107,7 +110,6 @@ public class HomeFragment extends Fragment {
 
         binding.btnPlayMiniGame.setOnClickListener(v -> openMiniGame());
 
-        // Nút vào học bài học tiếp theo hoặc Roadmap
         binding.btnViewCourse.setOnClickListener(v -> {
             UiFeedback.performHaptic(requireContext(), 10);
             if (nextLessonDoc != null) {
@@ -128,7 +130,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Topic Listeners
         setupTopicListener(binding.cardTopicCareer, "nghề nghiệp", "Career");
         setupTopicListener(binding.cardTopicTravel, "du lịch", "Travel");
         setupTopicListener(binding.cardTopicSchool, "trường học", "School");
@@ -159,34 +160,31 @@ public class HomeFragment extends Fragment {
             Intent intent = new Intent(requireContext(), JourneySetupActivity.class);
             intent.putExtra("selected_topic", topic);
             intent.putExtra("display_title", displayTitle);
+            intent.putExtra("is_change_only", true);
             startActivity(intent);
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        loadStats();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        stopTimer();
-    }
-
-    private void loadStats() {
+    private void observeUserData() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
-            if (binding == null || !isAdded()) return;
-            
-            currentUser = snapshot.toObject(User.class);
-            if (currentUser == null) return;
-            currentUser.setUid(uid);
 
-            loadActiveCourse(uid);
-            setupHeartTimer();
+        if (userListener != null) userListener.remove();
+
+        userListener = db.collection("users").document(uid).addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
+                Log.w(TAG, "Listen failed.", e);
+                return;
+            }
+
+            if (snapshot != null && snapshot.exists() && isAdded() && binding != null) {
+                currentUser = snapshot.toObject(User.class);
+                if (currentUser != null) {
+                    currentUser.setUid(uid);
+                    loadActiveCourse(uid);
+                    setupHeartTimer();
+                }
+            }
         });
     }
 
@@ -200,13 +198,11 @@ public class HomeFragment extends Fragment {
                     activeCourse = null;
                     if (!querySnapshot.isEmpty()) {
                         List<DocumentSnapshot> docs = new ArrayList<>(querySnapshot.getDocuments());
-                        // Sắp xếp khóa học theo thời gian cập nhật mới nhất trên Client
                         Collections.sort(docs, (d1, d2) -> {
                             Date date1 = d1.getDate("updatedAt");
                             if (date1 == null) date1 = d1.getDate("createdAt");
                             Date date2 = d2.getDate("updatedAt");
                             if (date2 == null) date2 = d2.getDate("createdAt");
-                            
                             if (date1 == null || date2 == null) return 0;
                             return date2.compareTo(date1);
                         });
@@ -253,14 +249,11 @@ public class HomeFragment extends Fragment {
 
                     List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
                     for (DocumentSnapshot unit : units) {
-                        lessonTasks.add(db.collection("lessons")
-                                .whereEqualTo("unitId", unit.getId())
-                                .get());
+                        lessonTasks.add(db.collection("lessons").whereEqualTo("unitId", unit.getId()).get());
                     }
 
                     Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
                         if (binding == null || !isAdded()) return;
-                        
                         nextLessonDoc = null;
                         for (int i = 0; i < units.size(); i++) {
                             Task<QuerySnapshot> task = lessonTasks.get(i);
@@ -271,7 +264,6 @@ public class HomeFragment extends Fragment {
                                     long o2 = l2.getLong("orderNum") != null ? l2.getLong("orderNum") : 0;
                                     return Long.compare(o1, o2);
                                 });
-
                                 for (DocumentSnapshot lesson : lessons) {
                                     if (!Boolean.TRUE.equals(lesson.getBoolean("completed"))) {
                                         nextLessonDoc = lesson;
@@ -286,16 +278,13 @@ public class HomeFragment extends Fragment {
                 });
     }
 
-
     private void updateProfileUI() {
         if (currentUser == null || binding == null) return;
 
-        // User Header
         binding.textGreeting.setText(getGreeting());
         binding.textUserName.setText(currentUser.getName() != null ? currentUser.getName() : "Student");
         updateAvatarUI(currentUser.getAvatar());
 
-        // Global Stats
         binding.textHearts.setText(String.valueOf(currentUser.getHearts()));
         binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
         binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
@@ -305,7 +294,6 @@ public class HomeFragment extends Fragment {
         int flagRes = -1;
 
         if (activeCourse != null) {
-            // Hiển thị tên khóa học (ưu tiên tiếng Việt)
             courseTitle = activeCourse.getTitle();
             if (courseTitle == null || courseTitle.isEmpty() || courseTitle.equalsIgnoreCase("en") || courseTitle.equalsIgnoreCase("english")) {
                 courseTitle = "Tiếng Anh";
@@ -313,7 +301,6 @@ public class HomeFragment extends Fragment {
                 courseTitle = "Tiếng Nga";
             }
             
-            // Hiển thị bài học/chương tiếp theo
             if (nextLessonDoc != null) {
                 unitTitle = nextLessonDoc.getString("title");
                 binding.btnViewCourse.setText("View Course");
@@ -322,22 +309,16 @@ public class HomeFragment extends Fragment {
                 binding.btnViewCourse.setText("Review Course");
             }
 
-            // Tiến độ khóa học
             int progress = (int) activeCourse.getProgressPercentage();
             binding.progressCourseCircular.setProgress(progress, true);
             binding.textCoursePercent.setText(progress + "%");
             binding.textCourseProgress.setText("Tiến độ:");
 
-            // Xác định cờ (Flag)
             flagRes = getFlagForLanguageId(activeCourse.getTargetLanguageId());
             if (flagRes == R.drawable.vietnam || flagRes == -1) {
                 flagRes = guessFlagFromText(courseTitle);
             }
-            if (flagRes == -1 && currentUser.getLanguage() != null) {
-                flagRes = "en".equals(currentUser.getLanguage()) ? R.drawable.eng : R.drawable.russia;
-            }
         } else {
-            // Trường hợp chưa có khóa học khởi tạo
             String lang = currentUser.getLanguage();
             if (lang != null && !lang.isEmpty()) {
                 courseTitle = "en".equals(lang) ? "Tiếng Anh" : "Tiếng Nga";
@@ -364,8 +345,6 @@ public class HomeFragment extends Fragment {
     private int getFlagForLanguageId(int langId) {
         switch (langId) {
             case 1: return R.drawable.eng;
-            case 2: return R.drawable.japan;
-            case 4: return R.drawable.china;
             case 5: return R.drawable.russia;
             default: return R.drawable.vietnam;
         }
@@ -375,8 +354,6 @@ public class HomeFragment extends Fragment {
         if (text == null) return -1;
         String lower = text.toLowerCase();
         if (lower.contains("en") || lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
-        if (lower.contains("nhật") || lower.contains("japan") || lower.contains("japanese")) return R.drawable.japan;
-        if (lower.contains("trung") || lower.contains("china") || lower.contains("chinese")) return R.drawable.china;
         if (lower.contains("ru") || lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
         return -1;
     }
@@ -395,7 +372,6 @@ public class HomeFragment extends Fragment {
             stopTimer();
             return;
         }
-
         binding.cardHeartRegen.setVisibility(View.VISIBLE);
         startTimer();
     }
@@ -429,15 +405,12 @@ public class HomeFragment extends Fragment {
         if (diff >= REGEN_TIME_MS) {
             int heartsToRegen = (int) (diff / REGEN_TIME_MS);
             int newHearts = Math.min(5, currentUser.getHearts() + heartsToRegen);
-            
             long remainingMs = diff % REGEN_TIME_MS;
             long newLastRegenTime = now - remainingMs;
 
             currentUser.setHearts(newHearts);
             currentUser.setLastHeartRegen(new Timestamp(new Date(newLastRegenTime)));
-            
             updateUserHeartsInFirestore(newHearts, currentUser.getLastHeartRegen());
-            
             binding.textHearts.setText(String.valueOf(newHearts));
             
             if (newHearts == 5) {
@@ -452,7 +425,6 @@ public class HomeFragment extends Fragment {
         int minutes = (int) (timeRemaining / 1000) / 60;
         int seconds = (int) (timeRemaining / 1000) % 60;
         binding.textHeartTimer.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
-        
         int progress = (int) ((diff * 100) / REGEN_TIME_MS);
         binding.regenProgress.setProgress(progress, true);
     }
@@ -460,7 +432,6 @@ public class HomeFragment extends Fragment {
     private void updateUserHeartsInFirestore(int hearts, Timestamp lastRegen) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        
         db.collection("users").document(uid)
                 .update("hearts", hearts, "lastHeartRegen", lastRegen)
                 .addOnFailureListener(e -> Log.e(TAG, "Error updating hearts", e));
@@ -483,14 +454,21 @@ public class HomeFragment extends Fragment {
         if (currentUser != null && currentUser.isPremium()) {
             MotionSystem.startScreen(requireActivity(), new Intent(requireContext(), MiniGameActivity.class));
         } else {
-            UiFeedback.showErrorDialog(requireContext(), "Upgrade to Pro", "Mini games are a Pro feature. Level up your learning experience!");
+            UiFeedback.showErrorDialog(requireContext(), "Upgrade to Pro", "Mini games are a Pro feature.");
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        observeUserData();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         stopTimer();
+        if (userListener != null) userListener.remove();
         binding = null;
     }
 }

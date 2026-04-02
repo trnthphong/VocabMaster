@@ -4,26 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_flashcard"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="@dimen/radius_huge"
-    app:cardElevation="@dimen/elevation_high"
-    app:strokeWidth="0dp">
+    app:cardCornerRadius="@dimen/radius_large"
+    app:cardElevation="@dimen/elevation_low"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/card_border">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <ImageButton
-            android:id="@+id/btn_add_flashcard"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_margin="@dimen/spacing_16"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/btn_star_big_off"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/brand_primary" />
+        android:layout_height="240dp">
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -34,7 +25,7 @@
                 android:id="@+id/card_front"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="@dimen/spacing_32">
+                android:padding="@dimen/spacing_16">
 
                 <TextView
                     android:id="@+id/label_topic"
@@ -42,48 +33,47 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_glass_card"
                     android:backgroundTint="@color/brand_secondary"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="4dp"
-                    android:text="TOPIC STUDY"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="PERSONAL"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/text_caption"
+                    android:textSize="10sp"
                     android:textStyle="bold"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <ImageView
                     android:id="@+id/image_vocab"
-                    android:layout_width="160dp"
-                    android:layout_height="160dp"
-                    android:layout_marginTop="@dimen/spacing_32"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
                     android:scaleType="centerInside"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toTopOf="@id/text_term"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/label_topic"
-                    tools:src="@drawable/dog" />
+                    app:layout_constraintTop_toBottomOf="@id/label_topic" />
 
                 <TextView
                     android:id="@+id/text_term"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_24"
                     android:textAlignment="center"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.Display"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                     android:textColor="@color/brand_primary"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/image_vocab"
+                    app:layout_constraintTop_toBottomOf="@id/label_topic"
                     tools:text="Vocabulary" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/spacing_16"
-                    android:text="Chạm để xem nghĩa"
-                    android:textColor="@color/text_secondary"
+                    android:text="Tap to flip"
+                    android:textSize="10sp"
+                    android:textColor="@color/gray_text"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
+                    app:layout_constraintEnd_toEndOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -92,7 +82,7 @@
                 android:id="@+id/card_back"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="@dimen/spacing_32"
+                android:padding="@dimen/spacing_16"
                 android:visibility="gone">
 
                 <TextView
@@ -100,8 +90,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:textAlignment="center"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                    android:textColor="@color/text_primary"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                    android:textColor="@color/surface_dark"
                     app:layout_constraintBottom_toTopOf="@id/text_example"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -113,16 +103,15 @@
                     android:id="@+id/text_example"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_24"
-                    android:fontStyle="italic"
+                    android:layout_marginTop="8dp"
                     android:textAlignment="center"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                    android:textColor="@color/text_secondary"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/gray_text"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/text_definition"
-                    tools:text="Example sentence using the word." />
+                    tools:text="Example sentence" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </FrameLayout>
