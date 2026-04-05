@@ -17,6 +17,7 @@ public class Flashcard {
     private String example;
     private String imageUrl;
     private String audioUrl;
+    private String phonetic; // Added phonetic field
     private String tag;
     private int orderIndex;
     
@@ -61,6 +62,9 @@ public class Flashcard {
 
     public String getAudioUrl() { return audioUrl; }
     public void setAudioUrl(String audioUrl) { this.audioUrl = audioUrl; }
+
+    public String getPhonetic() { return phonetic; }
+    public void setPhonetic(String phonetic) { this.phonetic = phonetic; }
 
     public String getTag() { return tag; }
     public void setTag(String tag) { this.tag = tag; }

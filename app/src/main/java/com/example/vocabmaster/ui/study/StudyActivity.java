@@ -21,21 +21,18 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class StudyActivity extends AppCompatActivity {
     private static final String TAG = "StudyActivity";
     private ActivityStudyBinding binding;
     private FirebaseFirestore db;
-    private String lessonId;
     private String wordId;
-    private String userId;
-    private User currentUser;
     private Vocabulary currentVocab;
     private CourseRepository repository;
+    private MediaPlayer mediaPlayer;
     
     private boolean isFlashcardMode = false;
 
@@ -46,13 +43,11 @@ public class StudyActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         db = FirebaseFirestore.getInstance();
-        userId = FirebaseAuth.getInstance().getUid();
         repository = new CourseRepository(getApplication());
+        mediaPlayer = new MediaPlayer();
         
-        lessonId = getIntent().getStringExtra("lesson_id");
         wordId = getIntent().getStringExtra("word_id");
         String lessonTitle = getIntent().getStringExtra("lesson_title");
-        
         if (lessonTitle != null) binding.textHeaderTitle.setText(lessonTitle);
 
         if (wordId != null || getIntent().hasExtra("topic")) {
@@ -64,8 +59,6 @@ public class StudyActivity extends AppCompatActivity {
         
         if (isFlashcardMode) {
             loadSingleWordData();
-        } else {
-            loadLessonData();
         }
     }
 
@@ -83,6 +76,33 @@ public class StudyActivity extends AppCompatActivity {
         binding.btnClose.setOnClickListener(v -> finish());
         binding.cardFlashcard.setOnClickListener(v -> flipCard());
         binding.btnSaveToLibrary.setOnClickListener(v -> saveToFirebaseLibrary());
+        
+        binding.btnListen.setOnClickListener(v -> {
+            if (currentVocab != null) {
+                String url = currentVocab.getAnyAudioUrl();
+                if (url != null && !url.trim().isEmpty()) {
+                    playAudio(url);
+                } else {
+                    Toast.makeText(this, "Không có âm thanh cho từ này", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void playAudio(String url) {
+        Log.d(TAG, "Playing audio: " + url);
+        try {
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "MediaPlayer error: " + what + ", " + extra);
+                return true;
+            });
+        } catch (IOException e) {
+            Log.e(TAG, "Error playing audio", e);
+        }
     }
 
     private void flipCard() {
@@ -98,6 +118,7 @@ public class StudyActivity extends AppCompatActivity {
     private void loadSingleWordData() {
         if (wordId == null) return;
         
+        // Luôn tải từ Firebase để khớp dữ liệu mới nhất
         db.collection("vocabularies").document(wordId).get()
             .addOnSuccessListener(doc -> {
                 if (doc.exists()) {
@@ -112,14 +133,34 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     private void displayVocab(DocumentSnapshot doc) {
+        // Mapping tự động từ Firebase sang Model mới đã cập nhật
         currentVocab = doc.toObject(Vocabulary.class);
-        if (currentVocab != null) {
-            binding.textTerm.setText(currentVocab.getWord());
-            binding.textDefinition.setText(currentVocab.getDefinition());
-            if (currentVocab.getImageUrl() != null && !currentVocab.getImageUrl().isEmpty()) {
-                binding.imageVocab.setVisibility(View.VISIBLE);
-                // Glide load here if needed
-            }
+        if (currentVocab == null) return;
+
+        // Cập nhật UI
+        binding.textTerm.setText(currentVocab.getWord());
+        binding.textDefinition.setText(currentVocab.getDefinition());
+        
+        // HIỂN THỊ PHIÊN ÂM
+        String phonetic = currentVocab.getPhonetic();
+        if (phonetic != null && !phonetic.trim().isEmpty()) {
+            binding.textPhonetic.setText(phonetic);
+            binding.textPhonetic.setVisibility(View.VISIBLE);
+        } else {
+            binding.textPhonetic.setVisibility(View.GONE);
+        }
+
+        // HIỂN THỊ NÚT NGHE
+        String audioUrl = currentVocab.getAnyAudioUrl();
+        if (audioUrl != null && !audioUrl.trim().isEmpty()) {
+            binding.btnListen.setVisibility(View.VISIBLE);
+        } else {
+            binding.btnListen.setVisibility(View.GONE);
+        }
+
+        if (currentVocab.getImageUrl() != null && !currentVocab.getImageUrl().trim().isEmpty()) {
+            binding.imageVocab.setVisibility(View.VISIBLE);
+            // Có thể dùng Glide để load ảnh ở đây
         }
     }
 
@@ -128,20 +169,25 @@ public class StudyActivity extends AppCompatActivity {
         
         Flashcard card = new Flashcard(currentVocab.getWord(), currentVocab.getDefinition());
         card.setImageUrl(currentVocab.getImageUrl());
-        card.setAudioUrl(currentVocab.getAudioUrl());
+        card.setAudioUrl(currentVocab.getAnyAudioUrl());
+        card.setPhonetic(currentVocab.getPhonetic());
         card.setExample(currentVocab.getExampleSentence());
         card.setTag(getIntent().getStringExtra("topic") != null ? getIntent().getStringExtra("topic") : "Journey");
         
-        // Đồng bộ hóa: Sử dụng repository để đẩy lên Firebase (giống như ở TopicWordListActivity)
         repository.addPersonalFlashcard(card);
         
-        Toast.makeText(this, "Đã đồng bộ vào thư viện Firebase", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Đã lưu vào thư viện cá nhân", Toast.LENGTH_SHORT).show();
         UiFeedback.performHaptic(this, 10);
         binding.btnSaveToLibrary.setEnabled(false);
         binding.btnSaveToLibrary.setText("Đã lưu");
     }
 
-    private void loadLessonData() {
-        // ... (Keep existing lesson logic)
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }

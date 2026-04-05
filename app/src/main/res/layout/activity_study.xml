@@ -77,9 +77,9 @@
                 android:drawableStart="@drawable/heart"
                 android:drawablePadding="4dp"
                 android:text="5"
-                android:textColor="@color/error"
+                android:textColor="@color/white"
                 android:textStyle="bold"
-                app:drawableTint="@color/error" />
+                />
 
             <TextView
                 android:id="@+id/text_streak"
@@ -173,12 +173,45 @@
                             android:text="Term"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Display"
                             android:textAlignment="center"
-                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintBottom_toTopOf="@+id/text_phonetic"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/image_vocab" />
+                            app:layout_constraintTop_toBottomOf="@id/image_vocab"
+                            app:layout_constraintVertical_chainStyle="packed" />
 
                         <TextView
+                            android:id="@+id/text_phonetic"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="/phonetic/"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                            android:textColor="@color/gray_light"
+                            android:visibility="gone"
+                            app:layout_constraintBottom_toTopOf="@+id/btn_listen"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/text_term"
+                            tools:visibility="visible" />
+
+                        <ImageButton
+                            android:id="@+id/btn_listen"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_marginTop="16dp"
+                            android:background="@drawable/bg_circle_glass"
+                            android:backgroundTint="@color/surface_light"
+                            android:src="@drawable/ic_listen"
+                            android:visibility="gone"
+                            app:layout_constraintBottom_toTopOf="@+id/text_hint"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/text_phonetic"
+                            app:tint="@color/brand_primary"
+                            tools:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/text_hint"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Chạm để xem nghĩa"

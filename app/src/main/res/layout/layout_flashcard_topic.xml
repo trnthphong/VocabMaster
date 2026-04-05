@@ -108,12 +108,23 @@
                             android:textStyle="bold"
                             tools:text="Vocabulary" />
 
+                        <TextView
+                            android:id="@+id/text_phonetic"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="/phonetic/"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                            android:textColor="@color/gray_light"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_audio"
                             style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="20dp"
+                            android:layout_marginTop="12dp"
                             android:text="Listen"
                             android:textAllCaps="false"
                             android:textColor="@color/brand_primary"

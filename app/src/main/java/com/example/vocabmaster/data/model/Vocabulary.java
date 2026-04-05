@@ -1,10 +1,10 @@
 package com.example.vocabmaster.data.model;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
-import java.util.ArrayList;
-import java.util.List;
 
+@IgnoreExtraProperties
 public class Vocabulary {
     private String vocabularyId;
     private String word;
@@ -13,11 +13,12 @@ public class Vocabulary {
     private String example_sentence;
     private String topic;
     private String lang;
+    private String audio;
     private String audio_url;
     private String image_url;
     private String phonetic;
+    private String cefr;
     
-    // Sử dụng Object để chấp nhận cả String và List từ Firestore, tránh crash
     private Object synonyms;
     private Object antonyms;
     private Object collocations;
@@ -53,6 +54,13 @@ public class Vocabulary {
     public String getLang() { return lang; }
     public void setLang(String lang) { this.lang = lang; }
 
+    // Trường audio từ script import
+    @PropertyName("audio")
+    public String getAudio() { return audio; }
+    @PropertyName("audio")
+    public void setAudio(String audio) { this.audio = audio; }
+
+    // Trường audio_url dự phòng
     @PropertyName("audio_url")
     public String getAudioUrl() { return audio_url; }
     @PropertyName("audio_url")
@@ -65,6 +73,9 @@ public class Vocabulary {
 
     public String getPhonetic() { return phonetic; }
     public void setPhonetic(String phonetic) { this.phonetic = phonetic; }
+
+    public String getCefr() { return cefr; }
+    public void setCefr(String cefr) { this.cefr = cefr; }
 
     public Object getSynonyms() { return synonyms; }
     public void setSynonyms(Object synonyms) { this.synonyms = synonyms; }
@@ -90,6 +101,9 @@ public class Vocabulary {
     @PropertyName("created_at")
     public void setCreatedAt(Timestamp created_at) { this.created_at = created_at; }
     
-    public String getDefinitionEn() { return definition; }
-    public void setDefinitionEn(String definitionEn) { this.definition = definitionEn; }
+    // Helper để lấy bất kỳ URL âm thanh nào khả dụng
+    public String getAnyAudioUrl() {
+        if (audio != null && !audio.trim().isEmpty()) return audio;
+        return audio_url;
+    }
 }

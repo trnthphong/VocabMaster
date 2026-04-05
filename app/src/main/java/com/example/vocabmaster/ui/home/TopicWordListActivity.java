@@ -22,8 +22,10 @@ import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityTopicWordListBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.study.StudyActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +37,7 @@ public class TopicWordListActivity extends AppCompatActivity {
     private String topic;
     private String displayTitle;
     private String langCode;
+    private String selectedLevel; // Thêm trường trình độ
     private CourseRepository repository;
 
     @Override
@@ -47,15 +50,16 @@ public class TopicWordListActivity extends AppCompatActivity {
         topic = getIntent().getStringExtra("topic");
         displayTitle = getIntent().getStringExtra("display_title");
         langCode = getIntent().getStringExtra("lang_code");
+        selectedLevel = getIntent().getStringExtra("selected_level"); // Nhận từ JourneySetup
 
         if (langCode != null) {
             if (langCode.contains("Anh")) langCode = "en";
             else if (langCode.contains("Nga")) langCode = "ru";
         }
 
-        Log.d(TAG, "onCreate: topic=" + topic + ", normalized_lang=" + langCode);
+        Log.d(TAG, "onCreate: topic=" + topic + ", level=" + selectedLevel);
 
-        binding.textHeaderTitle.setText(displayTitle);
+        binding.textHeaderTitle.setText(displayTitle + (selectedLevel != null ? " (" + selectedLevel + ")" : ""));
         binding.btnBack.setOnClickListener(v -> finish());
 
         binding.btnChangeLang.setOnClickListener(v -> {
@@ -68,7 +72,30 @@ public class TopicWordListActivity extends AppCompatActivity {
         });
 
         setupRecyclerView();
-        loadWords();
+        
+        // Nếu chưa có level từ intent, thử lấy từ profile user
+        if (selectedLevel == null) {
+            fetchUserLevelAndLoad();
+        } else {
+            loadWords();
+        }
+    }
+
+    private void fetchUserLevelAndLoad() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            selectedLevel = doc.getString("proficiencyLevel");
+                            Log.d(TAG, "User level from profile: " + selectedLevel);
+                        }
+                        loadWords();
+                    })
+                    .addOnFailureListener(e -> loadWords());
+        } else {
+            loadWords();
+        }
     }
 
     private void setupRecyclerView() {
@@ -95,21 +122,14 @@ public class TopicWordListActivity extends AppCompatActivity {
         Flashcard card = new Flashcard(v.getWord(), v.getDefinition());
         card.setImageUrl(v.getImageUrl());
         card.setAudioUrl(v.getAudioUrl());
+        card.setPhonetic(v.getPhonetic());
         card.setExample(v.getExampleSentence());
         card.setTag(displayTitle != null ? displayTitle : topic);
         
-        // Luôn gọi repository.addPersonalFlashcard để đảm bảo đồng bộ lên Firebase
-        // Logic trong CourseRepository hiện tại đã hỗ trợ lưu Local + Sync Firebase
         repository.addPersonalFlashcard(card);
         
         UiFeedback.showSnack(binding.getRoot(), "Đã thêm '" + v.getWord() + "' vào thư viện");
         UiFeedback.performHaptic(this, 10);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadWords();
     }
 
     private void loadWords() {
@@ -124,27 +144,27 @@ public class TopicWordListActivity extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
         
-        Log.d(TAG, "Querying " + collectionPath + " with topic: " + topic);
+        Log.d(TAG, "Querying " + collectionPath + " | Topic: " + topic + " | Level: " + selectedLevel);
 
-        db.collection(collectionPath)
-                .whereEqualTo("topic", topic.toLowerCase())
-                .get()
+        Query query = db.collection(collectionPath)
+                .whereEqualTo("topic", topic.toLowerCase());
+
+        // CHỈ LỌC THEO TRÌNH ĐỘ NẾU selectedLevel KHÔNG NULL
+        if (selectedLevel != null && !selectedLevel.isEmpty()) {
+            query = query.whereEqualTo("cefr", selectedLevel);
+        }
+
+        query.get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Vocabulary> words = new ArrayList<>();
-                    Log.d(TAG, "Documents found in Firestore: " + queryDocumentSnapshots.size());
+                    Log.d(TAG, "Documents found with criteria: " + queryDocumentSnapshots.size());
                     
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
                         try {
                             Vocabulary v = doc.toObject(Vocabulary.class);
                             if (v != null) {
                                 v.setVocabularyId(doc.getId());
-                                if ("vocabularies".equals(collectionPath)) {
-                                    if (langCode.equalsIgnoreCase(v.getLang())) {
-                                        words.add(v);
-                                    }
-                                } else {
-                                    words.add(v);
-                                }
+                                words.add(v);
                             }
                         } catch (Exception e) {
                             Log.e(TAG, "Error parsing vocabulary: " + doc.getId(), e);
@@ -153,7 +173,7 @@ public class TopicWordListActivity extends AppCompatActivity {
                     
                     binding.progressBar.setVisibility(View.GONE);
                     adapter.submitList(words);
-                    binding.textCount.setText(words.size() + " từ vựng");
+                    binding.textCount.setText(words.size() + " từ vựng phù hợp");
                     
                     if (words.isEmpty()) {
                         binding.layoutEmpty.setVisibility(View.VISIBLE);
@@ -198,9 +218,10 @@ public class TopicWordListActivity extends AppCompatActivity {
             Vocabulary vocab = words.get(position);
             holder.wordText.setText(vocab.getWord());
             
-            String pos = vocab.getPartOfSpeech() != null ? "[" + vocab.getPartOfSpeech() + "] " : "";
-            String info = pos + (vocab.getDefinition() != null ? vocab.getDefinition() : "");
-            holder.defText.setText(info);
+            // Hiển thị thêm CEFR Level nếu có
+            String cefr = vocab.getCefr() != null ? "[" + vocab.getCefr() + "] " : "";
+            String pos = vocab.getPartOfSpeech() != null ? "(" + vocab.getPartOfSpeech() + ") " : "";
+            holder.defText.setText(cefr + pos + (vocab.getDefinition() != null ? vocab.getDefinition() : ""));
             
             holder.itemView.setOnClickListener(v -> listener.onWordClick(vocab));
             holder.btnAdd.setOnClickListener(v -> listener.onAddClick(vocab));

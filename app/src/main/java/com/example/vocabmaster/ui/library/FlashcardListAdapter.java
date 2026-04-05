@@ -3,11 +3,14 @@ package com.example.vocabmaster.ui.library;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.media.MediaPlayer;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
@@ -19,9 +22,12 @@ import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.databinding.ItemFlashcardRowBinding;
 import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 
+import java.io.IOException;
+
 public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAdapter.ViewHolder> {
 
     private final OnFlashcardDeleteListener deleteListener;
+    private static MediaPlayer mediaPlayer;
 
     public interface OnFlashcardDeleteListener {
         void onDelete(Flashcard flashcard);
@@ -42,6 +48,9 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
             }
         });
         this.deleteListener = deleteListener;
+        if (mediaPlayer == null) {
+            mediaPlayer = new MediaPlayer();
+        }
     }
 
     @NonNull
@@ -55,6 +64,25 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.bind(getItem(position));
+    }
+
+    private static void playAudio(String url, View view) {
+        if (url == null || url.trim().isEmpty()) {
+            Toast.makeText(view.getContext(), "Không có âm thanh cho từ này", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e("FlashcardAdapter", "MediaPlayer error: " + what + ", " + extra);
+                return true;
+            });
+        } catch (IOException e) {
+            Log.e("FlashcardAdapter", "Error playing audio", e);
+        }
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -83,11 +111,27 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
                     .setView(dialogBinding.getRoot())
                     .create();
 
-            // Bind data to the flippable card
+            // Bind data
             dialogBinding.textTerm.setText(card.getTerm());
             dialogBinding.textDefinition.setText(card.getDefinition());
             dialogBinding.textExample.setText(card.getExample());
             dialogBinding.labelTopic.setText(card.getTag() != null ? card.getTag().toUpperCase() : "PERSONAL");
+
+            // PHONETIC LOGIC
+            if (card.getPhonetic() != null && !card.getPhonetic().trim().isEmpty()) {
+                dialogBinding.textPhonetic.setText(card.getPhonetic());
+                dialogBinding.textPhonetic.setVisibility(View.VISIBLE);
+            } else {
+                dialogBinding.textPhonetic.setVisibility(View.GONE);
+            }
+
+            // AUDIO LOGIC
+            if (card.getAudioUrl() != null && !card.getAudioUrl().trim().isEmpty()) {
+                dialogBinding.btnAudio.setVisibility(View.VISIBLE);
+                dialogBinding.btnAudio.setOnClickListener(v -> playAudio(card.getAudioUrl(), v));
+            } else {
+                dialogBinding.btnAudio.setVisibility(View.GONE);
+            }
 
             if (card.getImageUrl() != null && !card.getImageUrl().isEmpty()) {
                 dialogBinding.imageVocab.setVisibility(View.VISIBLE);
@@ -101,7 +145,7 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
                 dialogBinding.imageVocab.setVisibility(View.GONE);
             }
 
-            // Flip logic inside dialog
+            // Flip logic
             final boolean[] isFront = {true};
             dialogBinding.cardFlashcard.setOnClickListener(v -> {
                 if (isFront[0]) {
@@ -131,7 +175,6 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
 
             dialog.show();
             
-            // Set dialog to cover most of the screen
             Window window = dialog.getWindow();
             if (window != null) {
                 window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));

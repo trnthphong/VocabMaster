@@ -10,26 +10,32 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-async function importRussian() {
+async function importOxford() {
   const data = [];
 
-  console.log('--- Đang đọc russian_vocab_with_topics.csv ---');
+  console.log('--- Đang đọc oxford3000_final.csv ---');
 
-  fs.createReadStream('russian_vocab_with_topics.csv')
+  fs.createReadStream('oxford3000_final.csv')
     .pipe(csv())
     .on('data', (row) => {
-      const word = (row['word'] || '').trim();
+      const word = (row['Word'] || '').trim();
       if (!word) return;
 
       data.push({
-        word,
-        accented: (row['accented'] || '').trim(),
-        translations_en: (row['translations_en'] || '').trim(),
-        translations_de: (row['translations_de'] || '').trim(),
-        part_of_speech: (row['part_of_speech'] || '').trim(),
-        extra: (row['extra'] || '').trim(),
-        topic: (row['topic'] || 'khác').trim(),
-        lang: (row['lang'] || 'ru').trim(),
+        word: word.toLowerCase(),
+        definition: (row['Definition'] || '').trim(),
+        turkish_translation: (row['Turkish Translation'] || '').trim(),
+        example_sentence: (row['Example Sentence'] || '').trim(),
+        part_of_speech: (row['Part of Speech'] || '').trim(),
+        related_forms: (row['Related Forms'] || '').trim(),
+        synonyms: (row['Synonyms'] || '').trim(),
+        antonyms: (row['Antonyms'] || '').trim(),
+        collocations: (row['Collocations'] || '').trim(),
+        topic: (row['Topic'] || 'khác').trim(),
+        lang: (row['Lang'] || 'en').trim(),
+        phonetic: (row['Phonetic'] || '').trim(),
+        audio: (row['Audio'] || '').trim(),
+        cefr: (row['CEFR'] || '').trim(),
         created_at: admin.firestore.FieldValue.serverTimestamp(),
       });
     })
@@ -41,31 +47,33 @@ async function importRussian() {
         return;
       }
 
+      // Dedup by word
+      const seen = new Map();
+      for (const item of data) seen.set(item.word, item);
+      const unique = Array.from(seen.entries());
+      console.log(`Sau dedup: ${unique.length} từ (đã loại ${data.length - unique.length} trùng).`);
+
       let count = 0;
       let totalImported = 0;
       let batch = db.batch();
 
-      for (const item of data) {
-        // Dùng word làm doc ID, thêm part_of_speech để tránh trùng verb/noun cùng từ
-        const docId = `${item.word}_${item.part_of_speech}`;
-        const docRef = db.collection('russian_vocabularies').doc(docId);
+      for (const [word, item] of unique) {
+        const docRef = db.collection('vocabularies').doc(word);
         batch.set(docRef, item, { merge: true });
         count++;
         totalImported++;
 
-        if (count === 400) {
+        if (count === 200) {
           await batch.commit();
-          console.log(`Tiến độ: ${totalImported}/${data.length} từ...`);
+          console.log(`Tiến độ: ${totalImported}/${unique.length} từ...`);
           batch = db.batch();
           count = 0;
         }
       }
 
-      if (count > 0) {
-        await batch.commit();
-      }
+      if (count > 0) await batch.commit();
 
-      console.log(`✅ Thành công! Đã import ${totalImported} từ vựng tiếng Nga.`);
+      console.log(`✅ Thành công! Đã import ${totalImported} từ vựng tiếng Anh.`);
       process.exit(0);
     })
     .on('error', (err) => {
@@ -74,4 +82,4 @@ async function importRussian() {
     });
 }
 
-importRussian();
+importOxford();
