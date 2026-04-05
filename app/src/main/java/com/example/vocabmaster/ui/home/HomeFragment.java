@@ -13,9 +13,9 @@ import android.view.animation.DecelerateInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.vocabmaster.R;
-
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
@@ -31,7 +31,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -147,6 +146,12 @@ public class HomeFragment extends Fragment {
     private void startJourneyFlow(String topic, String displayTitle) {
         UiFeedback.performHaptic(requireContext(), 10);
         
+        // Luồng 4: Hết tim chặn không làm tiếp
+        if (currentUser != null && currentUser.getHearts() <= 0 && !currentUser.isActivePremium()) {
+            showHeartsModal();
+            return;
+        }
+
         String userLang = (currentUser != null) ? currentUser.getLanguage() : null;
         boolean hasValidLang = userLang != null && (userLang.equals("en") || userLang.equals("ru"));
 
@@ -163,6 +168,17 @@ public class HomeFragment extends Fragment {
             intent.putExtra("is_change_only", true);
             startActivity(intent);
         }
+    }
+
+    // Luồng 4: HeartsModal hiện ra khi hearts = 0
+    private void showHeartsModal() {
+        UiFeedback.showConfirmDialog(requireContext(), 
+            "Out of Hearts!", 
+            "Get unlimited hearts and learn without limits with VocabMaster Pro.",
+            () -> {
+                // Click "Get unlimited hearts" → redirect Premium (Shop)
+                NavHostFragment.findNavController(this).navigate(R.id.navigation_premium);
+            });
     }
 
     private void observeUserData() {
@@ -183,9 +199,30 @@ public class HomeFragment extends Fragment {
                     currentUser.setUid(uid);
                     loadActiveCourse(uid);
                     setupHeartTimer();
+                    updatePremiumUI();
                 }
             }
         });
+    }
+
+    // Luồng 5: Promo widget (tận dụng UI hiện có hoặc badge)
+    private void updatePremiumUI() {
+        if (currentUser == null) return;
+        boolean isPro = currentUser.isActivePremium();
+        
+        // Hiển thị badge PRO hoặc Promo nếu !isPro
+        binding.textPremiumBadge.setVisibility(isPro ? View.GONE : View.VISIBLE);
+        if (!isPro) {
+            binding.textPremiumBadge.setText("UPGRADE TODAY");
+            binding.textPremiumBadge.setOnClickListener(v -> 
+                NavHostFragment.findNavController(this).navigate(R.id.navigation_premium));
+        }
+        
+        // Unlimited hearts for Pro
+        if (isPro) {
+            binding.textHearts.setText("∞");
+            binding.cardHeartRegen.setVisibility(View.GONE);
+        }
     }
 
     private void loadActiveCourse(String uid) {
@@ -285,7 +322,12 @@ public class HomeFragment extends Fragment {
         binding.textUserName.setText(currentUser.getName() != null ? currentUser.getName() : "Student");
         updateAvatarUI(currentUser.getAvatar());
 
-        binding.textHearts.setText(String.valueOf(currentUser.getHearts()));
+        if (currentUser.isActivePremium()) {
+            binding.textHearts.setText("∞");
+        } else {
+            binding.textHearts.setText(String.valueOf(currentUser.getHearts()));
+        }
+        
         binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
         binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
 
@@ -319,7 +361,6 @@ public class HomeFragment extends Fragment {
                 flagRes = guessFlagFromText(courseTitle);
             }
         } else {
-            // Hiển thị mặc định khi không có khóa học nào hoạt động
             courseTitle = "No courses";
             unitTitle = "Chọn chủ đề học tập bên dưới";
             flagRes = R.drawable.vietnam;
@@ -360,7 +401,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupHeartTimer() {
-        if (currentUser == null || currentUser.getHearts() >= 5) {
+        if (currentUser == null || currentUser.isActivePremium() || currentUser.getHearts() >= 5) {
             binding.cardHeartRegen.setVisibility(View.GONE);
             stopTimer();
             return;
@@ -444,10 +485,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void openMiniGame() {
-        if (currentUser != null && currentUser.isPremium()) {
+        if (currentUser != null && currentUser.isActivePremium()) {
             MotionSystem.startScreen(requireActivity(), new Intent(requireContext(), MiniGameActivity.class));
         } else {
-            UiFeedback.showErrorDialog(requireContext(), "Upgrade to Pro", "Mini games are a Pro feature.");
+            UiFeedback.showConfirmDialog(requireContext(), "Upgrade to Pro", 
+                "Mini games are a Pro feature. Upgrade today to unlock!",
+                () -> NavHostFragment.findNavController(this).navigate(R.id.navigation_premium));
         }
     }
 

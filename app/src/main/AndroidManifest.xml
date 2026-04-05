@@ -38,7 +38,18 @@
         <activity android:name=".ui.auth.LoginActivity" />
         <activity android:name=".ui.auth.RegisterActivity" />
         <activity android:name=".ui.auth.ForgotPasswordActivity" />
-        <activity android:name=".MainActivity" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vocabmaster" android:host="payment-success" />
+            </intent-filter>
+        </activity>
+
         <activity android:name=".ui.study.StudyActivity" />
         <activity android:name=".ui.study.MiniGameActivity" />
         <activity android:name=".ui.study.StudySummaryActivity" />

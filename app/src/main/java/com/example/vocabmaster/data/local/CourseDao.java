@@ -34,4 +34,7 @@ public interface CourseDao {
     
     @Query("SELECT * FROM courses WHERE firestoreId = :firestoreId LIMIT 1")
     Course getCourseByFirestoreId(String firestoreId);
+
+    @Query("DELETE FROM courses")
+    void deleteAll();
 }

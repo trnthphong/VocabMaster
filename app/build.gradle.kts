@@ -61,8 +61,12 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation("nl.dionsegijn:konfetti-xml:2.0.5")
 
-    // Gson
+    // Network & JSON
     implementation(libs.gson)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

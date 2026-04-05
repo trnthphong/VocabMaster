@@ -1,16 +1,22 @@
 package com.example.vocabmaster.ui.profile;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentSettingsBinding;
 import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.common.UiFeedback;
@@ -18,8 +24,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class SettingsFragment extends Fragment {
+    private static final String TAG = "SettingsFragment";
     private FragmentSettingsBinding binding;
     private FirebaseFirestore db;
+    private User currentUser;
 
     @Nullable
     @Override
@@ -45,7 +53,8 @@ public class SettingsFragment extends Fragment {
             saveSetting("dailyGoal", goal);
         });
 
-        binding.btnCancelPremium.setOnClickListener(v -> cancelPremium());
+        // Nút hủy gói Premium
+        binding.btnCancelPremium.setOnClickListener(v -> showCancelSubscriptionDialog());
 
         loadSettings();
     }
@@ -54,33 +63,48 @@ public class SettingsFragment extends Fragment {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
 
-        db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
-            if (!isAdded() || binding == null) return;
-            
-            Long dailyGoal = snapshot.getLong("dailyGoal");
-            Boolean darkMode = snapshot.getBoolean("darkMode");
-            Boolean isPremium = snapshot.getBoolean("premium");
-
-            binding.editDailyGoal.setText(String.valueOf(dailyGoal == null ? 20 : dailyGoal));
-            binding.switchDarkMode.setChecked(Boolean.TRUE.equals(darkMode));
-            
-            // Show/Hide Premium section
-            binding.cardSubscription.setVisibility(Boolean.TRUE.equals(isPremium) ? View.VISIBLE : View.GONE);
+        db.collection("users").document(uid).addSnapshotListener((snapshot, e) -> {
+            if (snapshot != null && snapshot.exists() && isAdded() && binding != null) {
+                currentUser = snapshot.toObject(User.class);
+                if (currentUser != null) {
+                    currentUser.setUid(uid);
+                    
+                    binding.editDailyGoal.setText(String.valueOf(currentUser.getDailyGoal() == 0 ? 20 : currentUser.getDailyGoal()));
+                    binding.switchDarkMode.setChecked(currentUser.isDarkMode());
+                    
+                    // Hiện/Ẩn mục Subscription dựa trên trạng thái Premium
+                    binding.cardSubscription.setVisibility(currentUser.isActivePremium() ? View.VISIBLE : View.GONE);
+                }
+            }
         });
     }
 
-    private void cancelPremium() {
+    private void showCancelSubscriptionDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Hủy gói Premium")
+                .setMessage("Bạn có chắc chắn muốn hủy gói Premium không? Bạn sẽ mất các quyền lợi Premium ngay lập tức.")
+                .setPositiveButton("Xác nhận hủy", (dialog, which) -> cancelSubscription())
+                .setNegativeButton("Quay lại", null)
+                .show();
+    }
+
+    private void cancelSubscription() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
 
-        UiFeedback.showConfirmDialog(requireContext(), "Hủy Premium", "Bạn có chắc chắn muốn hủy gói Premium? Các tính năng đặc biệt sẽ bị khóa.", () -> {
-            db.collection("users").document(uid).update("premium", false).addOnSuccessListener(unused -> {
-                if (isAdded()) {
-                    UiFeedback.showSnack(binding.getRoot(), "Đã hủy gói Premium thành công");
-                    binding.cardSubscription.setVisibility(View.GONE);
-                }
-            });
-        });
+        // Cập nhật Firestore để hủy Premium
+        db.collection("users").document(uid)
+                .update("isPremium", false, "premiumUntil", null)
+                .addOnSuccessListener(unused -> {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Đã hủy gói Premium thành công", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Lỗi khi hủy gói: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void saveSetting(String key, Object value) {

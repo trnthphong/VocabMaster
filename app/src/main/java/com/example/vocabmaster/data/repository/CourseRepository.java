@@ -1,6 +1,8 @@
 package com.example.vocabmaster.data.repository;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -26,6 +28,9 @@ import java.util.concurrent.Executors;
 
 public class CourseRepository {
     private static final String TAG = "CourseRepository";
+    private static final String PREFS_NAME = "VocabMasterPrefs";
+    private static final String KEY_LAST_USER_ID = "last_user_id";
+    
     private final CourseDao courseDao;
     private final FlashcardDao flashcardDao;
     private final ExecutorService executorService;
@@ -45,9 +50,25 @@ public class CourseRepository {
         firestore = FirebaseFirestore.getInstance();
         coursesRef = firestore.collection("courses");
         
+        checkUserChanged(application);
         setupPersonalFlashcardsRef();
         startListeningToCourses();
         startListeningToPersonalFlashcards();
+    }
+
+    private void checkUserChanged(Context context) {
+        String currentUid = FirebaseAuth.getInstance().getUid();
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String lastUid = prefs.getString(KEY_LAST_USER_ID, null);
+
+        if (currentUid != null && !currentUid.equals(lastUid)) {
+            Log.d(TAG, "User changed from " + lastUid + " to " + currentUid + ". Clearing local data.");
+            executorService.execute(() -> {
+                courseDao.deleteAll();
+                flashcardDao.deleteAll();
+            });
+            prefs.edit().putString(KEY_LAST_USER_ID, currentUid).apply();
+        }
     }
 
     private void setupPersonalFlashcardsRef() {
@@ -80,7 +101,13 @@ public class CourseRepository {
         if (personalFlashcardsRef == null) {
             setupPersonalFlashcardsRef();
         }
-        if (personalFlashcardsRef == null || personalFlashcardsListener != null) return;
+        if (personalFlashcardsRef == null) return;
+        
+        // Luôn gỡ bỏ listener cũ nếu có để tránh leak dữ liệu giữa các user
+        if (personalFlashcardsListener != null) {
+            personalFlashcardsListener.remove();
+            personalFlashcardsListener = null;
+        }
 
         personalFlashcardsListener = personalFlashcardsRef.addSnapshotListener((value, error) -> {
             if (error != null) {
@@ -94,10 +121,8 @@ public class CourseRepository {
                         firestoreFlashcard.setFirestoreId(document.getId());
                         firestoreFlashcard.setCourseId(-1);
 
-                        // Kiểm tra xem đã tồn tại local chưa dựa trên firestoreId
                         Flashcard existing = flashcardDao.getFlashcardByFirestoreId(firestoreFlashcard.getFirestoreId());
                         if (existing != null) {
-                            // Nếu đã tồn tại, cập nhật ID local để Room thực hiện UPDATE thay vì INSERT mới
                             firestoreFlashcard.setId(existing.getId());
                         }
                         flashcardDao.insert(firestoreFlashcard); 
@@ -128,20 +153,16 @@ public class CourseRepository {
 
     public void addPersonalFlashcard(Flashcard flashcard) {
         flashcard.setCourseId(-1);
-        // Luôn đồng bộ lên Firebase Firestore trực tiếp
         if (personalFlashcardsRef != null) {
             personalFlashcardsRef.add(flashcard)
                     .addOnSuccessListener(doc -> {
                         flashcard.setFirestoreId(doc.getId());
-                        // Sau khi lưu thành công lên Firebase, cập nhật Local (thông qua listener sẽ tự động sync)
-                        // Hoặc có thể chèn trực tiếp vào Room ở đây để hiển thị Offline
                         executorService.execute(() -> flashcardDao.insert(flashcard));
                     });
         }
     }
 
     public LiveData<List<Flashcard>> getPersonalFlashcards() {
-        // Trả về từ Room để có LiveData phản hồi nhanh, việc Sync từ Firebase đã được quản lý bởi Listener
         return flashcardDao.getPersonalFlashcards();
     }
 
