@@ -6,7 +6,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.databinding.ActivityPersonalCardsBinding;
 
@@ -23,7 +22,7 @@ public class PersonalCardsActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
         
-        setupRecyclerView();
+        setupViewPager();
         
         binding.toolbar.setNavigationOnClickListener(v -> finish());
 
@@ -31,18 +30,32 @@ public class PersonalCardsActivity extends AppCompatActivity {
             if (flashcards != null && !flashcards.isEmpty()) {
                 adapter.submitList(flashcards);
                 binding.textEmpty.setVisibility(View.GONE);
+                binding.viewPagerFlashcards.setVisibility(View.VISIBLE);
             } else {
                 binding.textEmpty.setVisibility(View.VISIBLE);
-                // Nếu không còn flashcard nào, tự động quay lại Library
+                binding.viewPagerFlashcards.setVisibility(View.GONE);
                 Toast.makeText(this, "Không còn thẻ nào, quay lại Thư viện", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
     }
 
-    private void setupRecyclerView() {
+    private void setupViewPager() {
         adapter = new FlashcardListAdapter(flashcard -> viewModel.deleteFlashcard(flashcard));
-        binding.recyclerFlashcards.setLayoutManager(new LinearLayoutManager(this));
-        binding.recyclerFlashcards.setAdapter(adapter);
+        adapter.setViewPagerMode(true); // Kích hoạt chế độ match_parent cho ViewPager2
+        binding.viewPagerFlashcards.setAdapter(adapter);
+        
+        binding.viewPagerFlashcards.setOffscreenPageLimit(3);
+        binding.viewPagerFlashcards.setClipToPadding(false);
+        binding.viewPagerFlashcards.setClipChildren(false);
+        
+        // Tạo khoảng trống giữa các thẻ (tùy chọn)
+        float margin = 40 * getResources().getDisplayMetrics().density;
+        binding.viewPagerFlashcards.setPageTransformer((page, position) -> {
+            float absPos = Math.abs(position);
+            page.setScaleY(0.85f + (1 - absPos) * 0.15f);
+            page.setAlpha(0.5f + (1 - absPos) * 0.5f);
+            page.setTranslationX(-position * margin);
+        });
     }
 }

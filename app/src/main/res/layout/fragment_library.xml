@@ -104,6 +104,7 @@
             android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
         <TextView
+            android:id="@+id/text_empty_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create your first set to start"
@@ -186,7 +187,8 @@
         android:layout_marginEnd="@dimen/spacing_24"
         android:layout_marginBottom="90dp"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/brand_primary"
-        app:tint="@color/white" />
+        app:backgroundTint="@color/light_blue"
+        app:tint="@color/blue"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Circle" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

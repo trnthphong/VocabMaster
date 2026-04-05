@@ -319,22 +319,15 @@ public class HomeFragment extends Fragment {
                 flagRes = guessFlagFromText(courseTitle);
             }
         } else {
-            String lang = currentUser.getLanguage();
-            if (lang != null && !lang.isEmpty()) {
-                courseTitle = "en".equals(lang) ? "Tiếng Anh" : "Tiếng Nga";
-                unitTitle = currentUser.getCurrentUnitTitle() != null ? 
-                        currentUser.getCurrentUnitTitle() : "Hành trình khởi đầu";
-                flagRes = "en".equals(lang) ? R.drawable.eng : R.drawable.russia;
-                binding.btnViewCourse.setText("Khởi tạo khóa học");
-            } else {
-                courseTitle = "Chưa khởi tạo";
-                unitTitle = "Chọn chủ đề học tập bên dưới";
-                flagRes = R.drawable.vietnam;
-                binding.btnViewCourse.setText("Xem thư viện");
-            }
+            // Hiển thị mặc định khi không có khóa học nào hoạt động
+            courseTitle = "No courses";
+            unitTitle = "Chọn chủ đề học tập bên dưới";
+            flagRes = R.drawable.vietnam;
+            binding.btnViewCourse.setText("Bắt đầu ngay");
+            
             binding.progressCourseCircular.setProgress(0, true);
             binding.textCoursePercent.setText("0%");
-            binding.textCourseProgress.setText("Bắt đầu ngay");
+            binding.textCourseProgress.setText("Hành trình mới");
         }
 
         binding.textCurrentCourseTitle.setText(courseTitle);

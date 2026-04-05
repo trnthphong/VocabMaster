@@ -7,8 +7,10 @@
     <color name="brand_secondary_light">#FCE7F3</color> <!-- Light Pink -->
     <color name="brand_accent">#8B5CF6</color> <!-- Violet -->
     <color name="light_blue">#E7F3FF</color>
+    <color name="blue">#0087FF</color>
     <color name="light_red">#FFE9E1</color>
     <color name="light_pink">#FFE4F2</color>
+    <color name="pink">#F478B8</color>
     <color name="light_purple">#EDE8FF</color>
     <color name="light_orange">#FFF4E7</color>
     <color name="light_yellow">#FFF6D4</color>

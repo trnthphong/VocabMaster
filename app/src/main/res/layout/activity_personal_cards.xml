@@ -17,19 +17,53 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_back"
-            app:title="My Personal Cards"
+            app:navigationIconTint="@android:color/black"
+            app:title="My Flashcard"
             app:titleTextAppearance="@style/TextAppearance.VocabMaster.H3" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_flashcards"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="@dimen/spacing_16"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:listitem="@layout/layout_flashcard_topic" />
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/view_pager_flashcards"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toTopOf="@+id/layout_swipe_hint"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/layout_swipe_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/arrows"
+                app:tint="@color/gray_text" />
+
+            <TextView
+                android:id="@+id/text_swipe_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vuốt để thay đổi thẻ"
+                android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                android:textColor="@color/gray_text" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
         android:id="@+id/text_empty"

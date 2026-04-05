@@ -10,32 +10,28 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-async function importOxford() {
+async function importRussian() {
   const data = [];
 
-  console.log('--- Đang đọc oxford3000_final.csv ---');
+  console.log('--- Đang đọc russian_vocab_with_topics.csv ---');
 
-  fs.createReadStream('oxford3000_final.csv')
+  fs.createReadStream('russian_vocab_with_topics.csv')
     .pipe(csv())
     .on('data', (row) => {
-      const word = (row['Word'] || '').trim();
+      const word = (row['word'] || '').trim();
       if (!word) return;
 
       data.push({
-        word: word.toLowerCase(),
-        definition: (row['Definition'] || '').trim(),
-        turkish_translation: (row['Turkish Translation'] || '').trim(),
-        example_sentence: (row['Example Sentence'] || '').trim(),
-        part_of_speech: (row['Part of Speech'] || '').trim(),
-        related_forms: (row['Related Forms'] || '').trim(),
-        synonyms: (row['Synonyms'] || '').trim(),
-        antonyms: (row['Antonyms'] || '').trim(),
-        collocations: (row['Collocations'] || '').trim(),
-        topic: (row['Topic'] || 'khác').trim(),
-        lang: (row['Lang'] || 'en').trim(),
-        phonetic: (row['Phonetic'] || '').trim(),
-        audio: (row['Audio'] || '').trim(),
-        cefr: (row['CEFR'] || '').trim(),
+        word,
+        accented: (row['accented'] || '').trim(),
+        translations_en: (row['translations_en'] || '').trim(),
+        translations_de: (row['translations_de'] || '').trim(),
+        part_of_speech: (row['part_of_speech'] || '').trim(),
+        extra: (row['extra'] || '').trim(),
+        topic: (row['topic'] || 'khác').trim(),
+        lang: (row['lang'] || 'ru').trim(),
+        phonetic: (row['phonetic'] || '').trim(),
+        audio: (row['audio'] || '').trim(),
         created_at: admin.firestore.FieldValue.serverTimestamp(),
       });
     })
@@ -47,18 +43,21 @@ async function importOxford() {
         return;
       }
 
-      // Dedup by word
+      // Dedup by docId (word_partOfSpeech), giữ lại bản cuối
       const seen = new Map();
-      for (const item of data) seen.set(item.word, item);
-      const unique = Array.from(seen.entries());
+      for (const item of data) {
+        const docId = `${item.word}_${item.part_of_speech}`;
+        seen.set(docId, item);
+      }
+      const unique = Array.from(seen.entries()); // [[docId, item], ...]
       console.log(`Sau dedup: ${unique.length} từ (đã loại ${data.length - unique.length} trùng).`);
 
       let count = 0;
       let totalImported = 0;
       let batch = db.batch();
 
-      for (const [word, item] of unique) {
-        const docRef = db.collection('vocabularies').doc(word);
+      for (const [docId, item] of unique) {
+        const docRef = db.collection('russian_vocabularies').doc(docId);
         batch.set(docRef, item, { merge: true });
         count++;
         totalImported++;
@@ -71,9 +70,11 @@ async function importOxford() {
         }
       }
 
-      if (count > 0) await batch.commit();
+      if (count > 0) {
+        await batch.commit();
+      }
 
-      console.log(`✅ Thành công! Đã import ${totalImported} từ vựng tiếng Anh.`);
+      console.log(`✅ Thành công! Đã import ${totalImported} từ vựng tiếng Nga.`);
       process.exit(0);
     })
     .on('error', (err) => {
@@ -82,4 +83,4 @@ async function importOxford() {
     });
 }
 
-importOxford();
+importRussian();
