@@ -11,6 +11,9 @@ import com.example.vocabmaster.data.local.CourseDao;
 import com.example.vocabmaster.data.local.FlashcardDao;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -28,9 +31,11 @@ public class CourseRepository {
     private final ExecutorService executorService;
     private final FirebaseFirestore firestore;
     private final CollectionReference coursesRef;
+    private CollectionReference personalFlashcardsRef;
     
     private final MutableLiveData<List<Course>> firestoreCoursesLiveData = new MutableLiveData<>();
     private ListenerRegistration coursesListener;
+    private ListenerRegistration personalFlashcardsListener;
 
     public CourseRepository(Application application) {
         AppDatabase db = AppDatabase.getDatabase(application);
@@ -40,30 +45,64 @@ public class CourseRepository {
         firestore = FirebaseFirestore.getInstance();
         coursesRef = firestore.collection("courses");
         
+        setupPersonalFlashcardsRef();
         startListeningToCourses();
+        startListeningToPersonalFlashcards();
+    }
+
+    private void setupPersonalFlashcardsRef() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            personalFlashcardsRef = firestore.collection("users").document(uid).collection("personal_flashcards");
+        }
     }
 
     private void startListeningToCourses() {
         if (coursesListener != null) return;
-        
         coursesListener = coursesRef.addSnapshotListener((value, error) -> {
             if (error != null) {
-                Log.e(TAG, "Listen failed.", error);
+                Log.e(TAG, "Listen courses failed.", error);
                 return;
             }
-
             if (value != null) {
                 List<Course> courses = new ArrayList<>();
                 for (QueryDocumentSnapshot document : value) {
-                    try {
-                        Course course = document.toObject(Course.class);
-                        course.setFirestoreId(document.getId());
-                        courses.add(course);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error parsing course: " + document.getId(), e);
-                    }
+                    Course course = document.toObject(Course.class);
+                    course.setFirestoreId(document.getId());
+                    courses.add(course);
                 }
                 firestoreCoursesLiveData.setValue(courses);
+            }
+        });
+    }
+
+    private void startListeningToPersonalFlashcards() {
+        if (personalFlashcardsRef == null) {
+            setupPersonalFlashcardsRef();
+        }
+        if (personalFlashcardsRef == null || personalFlashcardsListener != null) return;
+
+        personalFlashcardsListener = personalFlashcardsRef.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.e(TAG, "Listen personal flashcards failed.", error);
+                return;
+            }
+            if (value != null) {
+                executorService.execute(() -> {
+                    for (QueryDocumentSnapshot document : value) {
+                        Flashcard firestoreFlashcard = document.toObject(Flashcard.class);
+                        firestoreFlashcard.setFirestoreId(document.getId());
+                        firestoreFlashcard.setCourseId(-1);
+
+                        // Kiểm tra xem đã tồn tại local chưa dựa trên firestoreId
+                        Flashcard existing = flashcardDao.getFlashcardByFirestoreId(firestoreFlashcard.getFirestoreId());
+                        if (existing != null) {
+                            // Nếu đã tồn tại, cập nhật ID local để Room thực hiện UPDATE thay vì INSERT mới
+                            firestoreFlashcard.setId(existing.getId());
+                        }
+                        flashcardDao.insert(firestoreFlashcard); 
+                    }
+                });
             }
         });
     }
@@ -73,64 +112,57 @@ public class CourseRepository {
     }
 
     public void insertCourseLocal(Course course) {
-        executorService.execute(() -> {
-            long id = courseDao.insert(course);
-            course.setId((int) id);
-            Log.d(TAG, "Course inserted locally with ID: " + id);
-        });
-    }
-
-    public void updateCourseLocal(Course course) {
-        executorService.execute(() -> courseDao.update(course));
-    }
-
-    public void addCourseAndSync(Course course) {
-        coursesRef.add(course)
-                .addOnSuccessListener(documentReference -> {
-                    String firestoreId = documentReference.getId();
-                    course.setFirestoreId(firestoreId);
-                    insertCourseLocal(course);
-                })
-                .addOnFailureListener(e -> insertCourseLocal(course));
-    }
-
-    public void addCourseToFirestore(Course course) {
-        coursesRef.add(course)
-                .addOnSuccessListener(documentReference -> {
-                    String firestoreId = documentReference.getId();
-                    course.setFirestoreId(firestoreId);
-                    if (course.getId() > 0) {
-                        updateCourseLocal(course);
-                    }
-                })
-                .addOnFailureListener(e -> Log.e(TAG, "Error adding course to Firestore", e));
+        executorService.execute(() -> courseDao.insert(course));
     }
 
     public LiveData<List<Course>> getCoursesFromFirestore() {
         return firestoreCoursesLiveData;
     }
 
+    public Task<Void> deleteCourseFromFirestore(String firestoreId) {
+        if (firestoreId != null) {
+            return coursesRef.document(firestoreId).delete();
+        }
+        return Tasks.forException(new Exception("Invalid ID"));
+    }
+
+    public void addPersonalFlashcard(Flashcard flashcard) {
+        flashcard.setCourseId(-1);
+        // Luôn đồng bộ lên Firebase Firestore trực tiếp
+        if (personalFlashcardsRef != null) {
+            personalFlashcardsRef.add(flashcard)
+                    .addOnSuccessListener(doc -> {
+                        flashcard.setFirestoreId(doc.getId());
+                        // Sau khi lưu thành công lên Firebase, cập nhật Local (thông qua listener sẽ tự động sync)
+                        // Hoặc có thể chèn trực tiếp vào Room ở đây để hiển thị Offline
+                        executorService.execute(() -> flashcardDao.insert(flashcard));
+                    });
+        }
+    }
+
+    public LiveData<List<Flashcard>> getPersonalFlashcards() {
+        // Trả về từ Room để có LiveData phản hồi nhanh, việc Sync từ Firebase đã được quản lý bởi Listener
+        return flashcardDao.getPersonalFlashcards();
+    }
+
+    public void deleteFlashcard(Flashcard flashcard) {
+        executorService.execute(() -> flashcardDao.delete(flashcard));
+        if (personalFlashcardsRef != null && flashcard.getFirestoreId() != null) {
+            personalFlashcardsRef.document(flashcard.getFirestoreId()).delete();
+        }
+    }
+
     public void updateCourseInFirestore(Course course) {
         if (course.getFirestoreId() != null) {
-            coursesRef.document(course.getFirestoreId()).set(course)
-                    .addOnSuccessListener(aVoid -> Log.d(TAG, "Course updated in Firestore"))
-                    .addOnFailureListener(e -> Log.e(TAG, "Error updating course in Firestore", e));
+            coursesRef.document(course.getFirestoreId()).set(course);
         }
     }
 
-    public void deleteCourseFromFirestore(String firestoreId) {
-        if (firestoreId != null) {
-            coursesRef.document(firestoreId).delete()
-                    .addOnSuccessListener(aVoid -> Log.d(TAG, "Course deleted from Firestore"))
-                    .addOnFailureListener(e -> Log.e(TAG, "Error deleting course from Firestore", e));
-        }
+    public void addCourseToFirestore(Course course) {
+        coursesRef.add(course).addOnSuccessListener(doc -> course.setFirestoreId(doc.getId()));
     }
 
-    public void insertFlashcard(Flashcard flashcard) {
-        executorService.execute(() -> flashcardDao.insert(flashcard));
-    }
-
-    public LiveData<List<Flashcard>> getFlashcardsForCourse(int courseId) {
-        return flashcardDao.getFlashcardsByCourse(courseId);
+    public void addCourseAndSync(Course course) {
+        addCourseToFirestore(course);
     }
 }

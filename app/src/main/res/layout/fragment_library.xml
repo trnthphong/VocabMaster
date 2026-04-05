@@ -21,12 +21,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center"
-                android:padding="@dimen/spacing_24">
+                android:padding="@dimen/spacing_16">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="@dimen/spacing_8"
                     android:text="My Library"
                     app:fontFamily="@font/adlam_display"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
@@ -49,6 +50,15 @@
                         app:queryHint="Search your study sets..."
                         app:queryBackground="@android:color/transparent" />
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Personal Cards Entry -->
+                <include
+                    android:id="@+id/layout_personal_cards"
+                    layout="@layout/item_personal_cards"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_16"
+                    android:visibility="gone" />
 
             </LinearLayout>
         </com.google.android.material.appbar.CollapsingToolbarLayout>
@@ -94,14 +104,61 @@
             android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
         <TextView
+            android:id="@+id/text_empty_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create your first set to start"
             android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
     </LinearLayout>
 
+    <!-- Selection Bar -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_selection_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="@dimen/spacing_16"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/brand_primary"
+        app:cardCornerRadius="@dimen/radius_large"
+        app:cardElevation="@dimen/elevation_medium">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="@dimen/spacing_16">
+
+            <TextView
+                android:id="@+id/text_selection_count"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1 selected"
+                android:textColor="@color/white"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+            <ImageButton
+                android:id="@+id/btn_delete_selected"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="@color/white" />
+
+            <ImageButton
+                android:id="@+id/btn_cancel_selection"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="@color/white" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- Bottom Actions Container -->
     <LinearLayout
+        android:id="@+id/layout_bottom_actions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
@@ -118,8 +175,7 @@
             app:cornerRadius="@dimen/radius_large"
             app:icon="@drawable/star"
             app:iconTint="@color/white"
-            android:layout_marginBottom="@dimen/spacing_8"
-  />
+            android:layout_marginBottom="@dimen/spacing_8" />
 
     </LinearLayout>
 
@@ -131,7 +187,8 @@
         android:layout_marginEnd="@dimen/spacing_24"
         android:layout_marginBottom="90dp"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/brand_primary"
-        app:tint="@color/white" />
+        app:backgroundTint="@color/light_blue"
+        app:tint="@color/blue"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Circle" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

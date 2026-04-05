@@ -44,6 +44,8 @@ dependencies {
     // Navigation
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
 
     // Lifecycle
     implementation(libs.lifecycle.viewmodel)
@@ -51,11 +53,13 @@ dependencies {
 
     // Room
     implementation(libs.room.runtime)
-    implementation(libs.firebase.database)
-    implementation(libs.core.splashscreen)
-    implementation(libs.navigation.fragment.ktx)
-    implementation(libs.navigation.ui.ktx)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
     annotationProcessor(libs.room.compiler)
+
+    // UI Utilities
+    implementation(libs.core.splashscreen)
+    implementation("nl.dionsegijn:konfetti-xml:2.0.5")
 
     // Gson
     implementation(libs.gson)
@@ -65,6 +69,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.database) // Version managed by BOM
 
     // Glide
     implementation(libs.glide)
@@ -76,7 +81,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-
-    //3d
-    implementation("nl.dionsegijn:konfetti-xml:2.0.5")
 }

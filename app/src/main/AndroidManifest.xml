@@ -17,7 +17,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.VocabMaster">
+        android:theme="@style/Theme.VocabMaster"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".data.model.IntroActivity"
@@ -43,7 +44,11 @@
         <activity android:name=".ui.study.StudySummaryActivity" />
         <activity android:name=".ui.analytics.AnalyticsActivity" />
         <activity android:name=".ui.library.CourseDetailActivity" />
+        <activity android:name=".ui.library.PersonalCardsActivity" />
+        <activity android:name=".ui.library.CreateFlashcardActivity" />
         <activity android:name=".ui.home.CreateCourseFlowActivity" />
+        <activity android:name=".ui.home.JourneySetupActivity" />
+        <activity android:name=".ui.home.TopicWordListActivity" />
 
         <meta-data
             android:name="preloaded_fonts"

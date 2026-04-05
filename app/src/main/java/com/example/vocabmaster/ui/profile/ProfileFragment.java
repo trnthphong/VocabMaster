@@ -58,12 +58,9 @@ public class ProfileFragment extends Fragment {
         binding.cardAvatar.setOnClickListener(v -> showAvatarSelectionDialog());
         binding.btnSaveProfile.setOnClickListener(v -> saveProfile());
         
-        // Navigate to Premium Page
         binding.btnUpgradePremium.setOnClickListener(v -> 
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_premium));
 
-
-        // Navigation to Social
         View.OnClickListener toSocial = v -> {
             NavController navController = NavHostFragment.findNavController(this);
             navController.navigate(R.id.navigation_social);
@@ -85,18 +82,14 @@ public class ProfileFragment extends Fragment {
             if (!isAdded() || binding == null) return;
             
             String name = snapshot.getString("name");
-            String email = snapshot.getString("email");
             Boolean premium = snapshot.getBoolean("premium");
             String role = snapshot.getString("role");
-            Long dailyGoal = snapshot.getLong("dailyGoal");
-            Boolean darkMode = snapshot.getBoolean("darkMode");
             Long streak = snapshot.getLong("streak");
             Long xp = snapshot.getLong("xp");
             Long hearts = snapshot.getLong("hearts");
             String avatar = snapshot.getString("avatar");
             String language = snapshot.getString("language");
             
-            // Handle join year
             Object createdAtObj = snapshot.get("createdAt");
             int joinYear = 2024;
             if (createdAtObj instanceof Long) {
@@ -112,20 +105,15 @@ public class ProfileFragment extends Fragment {
             binding.editName.setText(name == null ? "" : name);
             binding.textDisplayName.setText(name == null || name.isEmpty() ? "User" : name);
             binding.textJoinedYear.setText("Thành viên từ " + joinYear);
-            
             binding.textPremiumStatus.setText(Boolean.TRUE.equals(premium) ? "Premium" : "Free");
             
-            // Update New Stats UI
-            long xpVal = (xp == null ? 0 : xp);
-            binding.textXpValue.setText(String.valueOf(xpVal));
+            binding.textXpValue.setText(String.valueOf(xp == null ? 0 : xp));
             binding.textStreakValue.setText(String.valueOf(streak == null ? 0 : streak));
             binding.textHeartsValue.setText(String.valueOf(hearts == null ? 5 : hearts));
             
             binding.adminPanel.setVisibility("admin".equals(role) ? View.VISIBLE : View.GONE);
-            
             updateAvatarUI(avatar);
             
-            // Ưu tiên load từ courses collection để có thông tin mới nhất và chính xác nhất
             loadLatestCourse(uid, language);
         });
         binding.btnAdminRefresh.setOnClickListener(v -> loadAdminData());
@@ -139,8 +127,8 @@ public class ProfileFragment extends Fragment {
                     if (!isAdded() || binding == null) return;
                     
                     if (querySnapshot.isEmpty()) {
-                        // Nếu không tìm thấy khóa học nào, dùng thông tin từ user profile làm fallback
-                        updateCourseUI(userLanguage);
+                        // HIỂN THỊ MẶC ĐỊNH: NO COURSES + CỜ VIỆT NAM
+                        updateCourseUI(null);
                         return;
                     }
                     
@@ -149,54 +137,36 @@ public class ProfileFragment extends Fragment {
                     
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                         Date updatedAt = doc.getDate("updatedAt");
-                        if (updatedAt != null) {
-                            if (latestDate == null || updatedAt.after(latestDate)) {
-                                latestDate = updatedAt;
-                                latestDoc = doc;
-                            }
-                        } else {
-                            // Nếu không có updatedAt, thử dùng createdAt
-                            Date createdAt = doc.getDate("createdAt");
-                            if (createdAt != null && (latestDate == null || createdAt.after(latestDate))) {
-                                latestDate = createdAt;
-                                latestDoc = doc;
-                            }
+                        if (updatedAt == null) updatedAt = doc.getDate("createdAt");
+                        
+                        if (updatedAt != null && (latestDate == null || updatedAt.after(latestDate))) {
+                            latestDate = updatedAt;
+                            latestDoc = doc;
                         }
                     }
                     
                     if (latestDoc != null) {
                         String title = latestDoc.getString("title");
                         Long langId = latestDoc.getLong("targetLanguageId");
+                        int flagRes = (langId != null) ? getFlagForLanguageId(langId.intValue()) : -1;
                         
-                        Log.d(TAG, "Latest course found: " + title + ", langId: " + langId);
-
-
-                        
-                        // Cập nhật cờ
-                        int flagRes = -1;
-                        if (langId != null) {
-                            flagRes = getFlagForLanguageId(langId.intValue());
-                        } 
-                        
-                        if (flagRes == -1 && title != null) {
-                            flagRes = guessFlagFromText(title);
-                        }
-                        
-                        if (flagRes == -1 && userLanguage != null) {
-                            flagRes = guessFlagFromText(userLanguage);
-                        }
-
+                        if (flagRes == -1) flagRes = guessFlagFromText(title != null ? title : "");
                         if (flagRes == -1) flagRes = R.drawable.vietnam;
 
+                        String displayTitle = title;
+                        if (displayTitle == null || displayTitle.isEmpty() || displayTitle.equalsIgnoreCase("en")) displayTitle = "Tiếng Anh";
+                        else if (displayTitle.equalsIgnoreCase("ru")) displayTitle = "Tiếng Nga";
+
                         binding.imageCourseFlag.setImageResource(flagRes);
+                        binding.textCourseName.setText(displayTitle);
                         binding.imageStatCourse.setImageResource(flagRes);
+                        binding.textStatsCourseTitle.setText(displayTitle);
                     } else {
-                        updateCourseUI(userLanguage);
+                        updateCourseUI(null);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading courses", e);
-                    if (isAdded()) updateCourseUI(userLanguage);
+                    if (isAdded()) updateCourseUI(null);
                 });
     }
 
@@ -211,17 +181,14 @@ public class ProfileFragment extends Fragment {
     }
 
     private int guessFlagFromText(String text) {
-        if (text == null) return -1;
         String lower = text.toLowerCase();
-        if (lower.contains("anh") || lower.contains("english")) return R.drawable.eng;
-        if (lower.contains("nhật") || lower.contains("japan") || lower.contains("japanese")) return R.drawable.japan;
-        if (lower.contains("trung") || lower.contains("china") || lower.contains("chinese")) return R.drawable.china;
-        if (lower.contains("nga") || lower.contains("russia") || lower.contains("russian")) return R.drawable.russia;
+        if (lower.contains("en") || lower.contains("anh")) return R.drawable.eng;
+        if (lower.contains("ru") || lower.contains("nga")) return R.drawable.russia;
         return -1;
     }
 
     private void updateAvatarUI(String avatarValue) {
-        int resId = R.drawable.bear; // default
+        int resId = R.drawable.bear;
         if (avatarValue != null) {
             for (int i = 0; i < avatarValues.length; i++) {
                 if (avatarValues[i].equals(avatarValue)) {
@@ -234,54 +201,30 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateCourseUI(String language) {
-        int flagRes;
-        String courseName;
-
-        if (language == null || language.isEmpty()) {
-            flagRes = R.drawable.vietnam;
-            courseName = "Chưa chọn khóa học";
-        } else {
-            courseName = language;
-            flagRes = guessFlagFromText(language);
-            if (flagRes == -1) flagRes = R.drawable.vietnam;
-        }
-
-        binding.imageCourseFlag.setImageResource(flagRes);
-        binding.textCourseName.setText(courseName);
-        binding.imageStatCourse.setImageResource(flagRes);
-        binding.textStatsCourseTitle.setText(courseName);
+        // Luôn hiển thị No courses và cờ Việt Nam khi được gọi với null
+        binding.imageCourseFlag.setImageResource(R.drawable.vietnam);
+        binding.textCourseName.setText("No courses");
+        binding.imageStatCourse.setImageResource(R.drawable.vietnam);
+        binding.textStatsCourseTitle.setText("No courses");
     }
 
     private void showAvatarSelectionDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_avatar_selection, null);
         GridView gridView = dialogView.findViewById(R.id.grid_avatars);
-        
         AvatarAdapter adapter = new AvatarAdapter(getLayoutInflater(), avatarResIds);
         gridView.setAdapter(adapter);
-
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setView(dialogView)
-                .create();
-
+        AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).create();
         gridView.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedAvatar = avatarValues[position];
-            saveSetting("avatar", selectedAvatar);
-            updateAvatarUI(selectedAvatar);
+            saveSetting("avatar", avatarValues[position]);
+            updateAvatarUI(avatarValues[position]);
             dialog.dismiss();
         });
-
         dialog.show();
     }
 
     private void loadAdminData() {
         db.collection("users").get().addOnSuccessListener(users -> {
             if (binding != null) binding.textAdminUsers.setText("Users: " + users.size());
-        });
-        db.collection("reports").get().addOnSuccessListener(reports -> {
-            if (binding != null) binding.textAdminReports.setText("Pending reports: " + reports.size());
-        });
-        db.collection("subscriptions").get().addOnSuccessListener(subs -> {
-            if (binding != null) binding.textAdminSubs.setText("Active subscriptions: " + subs.size());
         });
     }
 
@@ -301,16 +244,7 @@ public class ProfileFragment extends Fragment {
     private void saveSetting(String key, Object value) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        db.collection("users").document(uid).update(key, value)
-                .addOnSuccessListener(unused -> {
-                    if (isAdded()) UiFeedback.showSnack(binding.getRoot(), "Settings saved");
-                });
-    }
-
-    private void logout() {
-        FirebaseAuth.getInstance().signOut();
-        startActivity(new Intent(requireContext(), LoginActivity.class));
-        requireActivity().finish();
+        db.collection("users").document(uid).update(key, value);
     }
 
     @Override

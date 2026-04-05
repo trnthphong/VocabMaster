@@ -6,6 +6,16 @@
     <color name="brand_secondary">#EC4899</color> <!-- Pink -->
     <color name="brand_secondary_light">#FCE7F3</color> <!-- Light Pink -->
     <color name="brand_accent">#8B5CF6</color> <!-- Violet -->
+    <color name="light_blue">#E7F3FF</color>
+    <color name="blue">#0087FF</color>
+    <color name="light_red">#FFE9E1</color>
+    <color name="light_pink">#FFE4F2</color>
+    <color name="pink">#F478B8</color>
+    <color name="light_purple">#EDE8FF</color>
+    <color name="light_orange">#FFF4E7</color>
+    <color name="light_yellow">#FFF6D4</color>
+    <color name="btn_purple">#5F33E1</color>
+
 
     <!-- Neutrals (Standard) -->
     <color name="black">#FF000000</color>
@@ -13,9 +23,14 @@
     <color name="surface_dark">#0F172A</color>
     <color name="surface_light">#F8FAFC</color>
 
+    <!-- Text Colors -->
+    <color name="text_primary">#1E293B</color>
+    <color name="text_secondary">#64748B</color>
+
     <!-- Glass System -->
     <color name="glass_white_20">#33FFFFFF</color>
     <color name="glass_white_40">#66FFFFFF</color>
+    <color name="glass_white_60">#99FFFFFF</color>
     <color name="glass_black_10">#1A000000</color>
     <color name="glass_black_20">#33000000</color>
 
@@ -38,6 +53,9 @@
     <color name="shimmer_highlight">#F1F5F9</color>
     <color name="card_border">#E2E8F0</color>
 
+    <!-- Bottom Nav -->
+    <color name="nav_indicator_glow">#265F33E1</color> <!-- 15% opacity of btn_purple -->
+
     <!-- Legacy / Compatibility (Mapped to new system) -->
     <color name="primary">@color/brand_primary</color>
     <color name="primary_dark">#4F46E5</color>
@@ -47,7 +65,7 @@
     <color name="accent_orange">#F97316</color>
     <color name="accent_red">@color/error</color>
     <color name="accent_yellow">#EAB308</color>
-    <color name="gray_text">#64748B</color>
+    <color name="gray_text">@color/text_secondary</color>
     <color name="gray_light">#CBD5E1</color>
     <color name="gray_lighter">#F1F5F9</color>
     <color name="gray_background">@color/surface_light</color>

@@ -15,4 +15,33 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">@dimen/radius_medium</item>
     </style>
+    <style name="ShapeAppearance.VocabMaster.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.VocabMaster.Card.TopOnly"
+        parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <!-- Bottom Nav Indicator Style -->
+    <style name="Widget.VocabMaster.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <!-- Đặt màu trong suốt để không bị đè bởi hình khối mặc định -->
+        <item name="android:color">@android:color/transparent</item>
+        <!-- Sử dụng drawable radial gradient để tạo hiệu ứng tỏa sáng -->
+        <item name="android:drawable">@drawable/nav_indicator_background</item>
+        <item name="android:height">64dp</item>
+        <item name="android:width">64dp</item>
+    </style>
+
+    <style name="Widget.VocabMaster.BottomNavigationView.LineIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+        <item name="android:drawable">@drawable/nav_line_indicator</item>
+        <item name="android:width">44dp</item>
+        <item name="android:height">48dp</item>
+    </style>
 </resources>

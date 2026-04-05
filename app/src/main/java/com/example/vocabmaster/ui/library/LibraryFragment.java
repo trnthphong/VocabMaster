@@ -1,12 +1,15 @@
 package com.example.vocabmaster.ui.library;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,18 +19,13 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.data.model.Course;
-
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
-import com.example.vocabmaster.ui.home.CreateCourseFlowActivity;
-import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 public class LibraryFragment extends Fragment {
     private FragmentLibraryBinding binding;
@@ -47,22 +45,14 @@ public class LibraryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        adapter = new CourseAdapter(course -> {
-            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
-            intent.putExtra("course_id", course.getFirestoreId());
-            intent.putExtra("course_title", course.getTitle());
-            intent.putExtra("course_theme", course.getTheme());
-            startActivity(intent);
-        }, this::showCourseActionMenu);
-        
-        binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
-        binding.recyclerCourses.setAdapter(adapter);
+        setupRecyclerView();
+        setupSelectionBar();
         
         binding.fabAddCourse.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
+            Intent intent = new Intent(requireContext(), CreateFlashcardActivity.class);
             startActivity(intent);
         });
-
+        
         binding.btnAiCreateCourse.setOnClickListener(v -> createCourseByAi());
         
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -71,7 +61,6 @@ public class LibraryFragment extends Fragment {
                 filterCourses(query);
                 return true;
             }
-
             @Override
             public boolean onQueryTextChange(String newText) {
                 filterCourses(newText);
@@ -79,10 +68,73 @@ public class LibraryFragment extends Fragment {
             }
         });
 
+        binding.layoutPersonalCards.getRoot().setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), PersonalCardsActivity.class);
+            startActivity(intent);
+        });
+
         observeViewModel();
     }
 
+    private void setupRecyclerView() {
+        adapter = new CourseAdapter(course -> {
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            intent.putExtra("course_id", course.getFirestoreId());
+            intent.putExtra("course_title", course.getTitle());
+            startActivity(intent);
+        }, this::showCourseActionMenu, count -> {
+            updateSelectionBar(count);
+        });
+        
+        binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.recyclerCourses.setAdapter(adapter);
+    }
+
+    private void setupSelectionBar() {
+        binding.btnCancelSelection.setOnClickListener(v -> {
+            adapter.setSelectionMode(false);
+        });
+
+        binding.btnDeleteSelected.setOnClickListener(v -> {
+            List<Course> selected = adapter.getSelectedCourses();
+            if (!selected.isEmpty()) {
+                confirmDeleteMultiple(selected);
+            }
+        });
+    }
+
+    private void updateSelectionBar(int count) {
+        if (count > 0) {
+            binding.cardSelectionBar.setVisibility(View.VISIBLE);
+            binding.layoutBottomActions.setVisibility(View.GONE);
+            binding.fabAddCourse.hide();
+            binding.textSelectionCount.setText(count + " selected");
+        } else {
+            binding.cardSelectionBar.setVisibility(View.GONE);
+            binding.layoutBottomActions.setVisibility(View.VISIBLE);
+            binding.fabAddCourse.show();
+            if (adapter.isSelectionMode()) {
+                adapter.setSelectionMode(false);
+            }
+        }
+    }
+
+    private void confirmDeleteMultiple(List<Course> courses) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete " + courses.size() + " courses?")
+                .setMessage("This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    viewModel.deleteCoursesFromFirestore(courses).addOnSuccessListener(aVoid -> {
+                        UiFeedback.showSnack(binding.getRoot(), "Deleted " + courses.size() + " courses");
+                        adapter.setSelectionMode(false);
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void observeViewModel() {
+        if (binding == null) return;
         binding.progressSkeleton.setVisibility(View.VISIBLE);
         viewModel.getCoursesFromFirestore().observe(getViewLifecycleOwner(), courses -> {
             allCourses.clear();
@@ -97,12 +149,18 @@ public class LibraryFragment extends Fragment {
                 filterCourses(binding.searchView.getQuery().toString());
             }
         });
-    }
 
-
-
-    private void refreshData() {
-        observeViewModel();
+        viewModel.getPersonalFlashcards().observe(getViewLifecycleOwner(), flashcards -> {
+            if (flashcards != null && !flashcards.isEmpty()) {
+                binding.layoutPersonalCards.getRoot().setVisibility(View.VISIBLE);
+                TextView textCount = binding.layoutPersonalCards.getRoot().findViewById(com.example.vocabmaster.R.id.text_personal_count);
+                if (textCount != null) {
+                    textCount.setText(flashcards.size() + " cards");
+                }
+            } else {
+                binding.layoutPersonalCards.getRoot().setVisibility(View.GONE);
+            }
+        });
     }
 
     private void filterCourses(String query) {
@@ -111,64 +169,45 @@ public class LibraryFragment extends Fragment {
         List<Course> result = new ArrayList<>();
         for (Course c : allCourses) {
             String t = c.getTitle() == null ? "" : c.getTitle().toLowerCase(Locale.ROOT);
-            String d = c.getDescription() == null ? "" : c.getDescription().toLowerCase(Locale.ROOT);
-            if (q.isEmpty() || t.contains(q) || d.contains(q)) result.add(c);
+            if (q.isEmpty() || t.contains(q)) result.add(c);
         }
         adapter.submitList(new ArrayList<>(result));
-        binding.layoutEmptyState.setVisibility(result.isEmpty() ? View.VISIBLE : View.GONE);
+        
+        boolean noCourses = result.isEmpty();
+        boolean noPersonal = viewModel.getPersonalFlashcards().getValue() == null || viewModel.getPersonalFlashcards().getValue().isEmpty();
+        binding.layoutEmptyState.setVisibility(noCourses && noPersonal ? View.VISIBLE : View.GONE);
+        
+        if (!q.isEmpty()) {
+            binding.layoutPersonalCards.getRoot().setVisibility(View.GONE);
+        } else if (viewModel.getPersonalFlashcards().getValue() != null && !viewModel.getPersonalFlashcards().getValue().isEmpty()) {
+            binding.layoutPersonalCards.getRoot().setVisibility(View.VISIBLE);
+        }
     }
 
     private void showCourseActionMenu(Course course) {
-        String[] actions = {"Edit", "Delete", "Duplicate", "Share"};
+        String[] actions = {"Sửa", "Xóa", "Nhân bản"};
         new AlertDialog.Builder(requireContext())
                 .setTitle(course.getTitle())
                 .setItems(actions, (dialog, which) -> {
-
-                    if (which == 1) deleteCourse(course);
-                    if (which == 2) duplicateCourse(course);
-                    if (which == 3) shareCourse(course);
+                    if (which == 1) confirmDeleteCourse(course);
                 })
                 .show();
     }
 
-
+    private void confirmDeleteCourse(Course course) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Xóa khóa học")
+                .setPositiveButton("Xóa", (dialog, which) -> deleteCourse(course))
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
 
     private void deleteCourse(Course course) {
         viewModel.deleteCourseFromFirestore(course.getFirestoreId());
-        UiFeedback.showSnack(binding.getRoot(), "Study set deleted");
-        refreshData();
-    }
-
-    private void duplicateCourse(Course course) {
-        Course copied = new Course(course.getTitle() + " (copy)", course.getDescription(), course.getTheme(), FirebaseAuth.getInstance().getUid(), false);
-        copied.setFlashcardCount(course.getFlashcardCount());
-        viewModel.addCourseToFirestore(copied);
-        UiFeedback.showSnack(binding.getRoot(), "Study set duplicated");
-        refreshData();
-    }
-
-    private void shareCourse(Course course) {
-        Intent sendIntent = new Intent(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, "Study set: " + course.getTitle() + "\nDescription: " + course.getDescription());
-        sendIntent.setType("text/plain");
-        startActivity(Intent.createChooser(sendIntent, "Share study set"));
+        UiFeedback.showSnack(binding.getRoot(), "Đã xóa");
     }
 
     private void createCourseByAi() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
-        FirebaseFirestore.getInstance().collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
-            Boolean premium = snapshot.getBoolean("premium");
-            if (!Boolean.TRUE.equals(premium)) {
-                UiFeedback.showErrorDialog(requireContext(), "Premium required", "Upgrade to Premium to use AI generation.");
-                return;
-            }
-            Course ai = new Course("AI Set: TOEIC High-Frequency Vocabulary", "Auto-generated 60 cards for fast review", "Education", uid, false);
-            ai.setFlashcardCount(60);
-            viewModel.addCourseToFirestore(ai);
-            UiFeedback.showSnack(binding.getRoot(), "AI generated a new study set");
-            refreshData();
-        });
     }
 
     @Override

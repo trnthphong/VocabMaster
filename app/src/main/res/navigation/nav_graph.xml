@@ -17,6 +17,11 @@
         android:label="Library"
         tools:layout="@layout/fragment_library" />
 
+    <activity
+        android:id="@+id/navigation_add_course"
+        android:name="com.example.vocabmaster.ui.home.CreateCourseFlowActivity"
+        android:label="Create Course" />
+
     <fragment
         android:id="@+id/navigation_social"
         android:name="com.example.vocabmaster.ui.social.SocialFragment"

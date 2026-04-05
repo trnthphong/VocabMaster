@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_main">
+    android:background="@color/light_blue">
 
     <!-- Top Navigation Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -16,14 +16,15 @@
 
         <ImageButton
             android:id="@+id/btn_close"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_glass_card"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            android:src="@drawable/close"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/white" />
+            app:tint="@color/blue" />
 
         <TextView
             android:id="@+id/text_header_title"
@@ -31,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/spacing_16"
             android:textAlignment="center"
-            android:textColor="@color/white"
+            android:textColor="@color/info"
             android:textSize="14sp"
             android:textStyle="bold"
             android:ellipsize="end"
@@ -49,12 +50,12 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/spacing_16"
             android:layout_marginTop="4dp"
-            app:indicatorColor="@color/brand_secondary"
+            app:indicatorColor="@color/blue"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/layout_stats"
             app:layout_constraintStart_toEndOf="@id/btn_close"
             app:layout_constraintTop_toBottomOf="@id/text_header_title"
-            app:trackColor="@color/glass_white_20"
+            app:trackColor="@color/white"
             app:trackCornerRadius="@dimen/radius_full"
             app:trackThickness="10dp"
             android:progress="30" />
@@ -69,32 +70,39 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/heart" />
+
             <TextView
                 android:id="@+id/text_hearts"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:drawableStart="@drawable/heart"
-                android:drawablePadding="4dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="12dp"
                 android:text="5"
-                android:textColor="@color/error"
-                android:textStyle="bold"
-                app:drawableTint="@color/error" />
+                android:textColor="#000000"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/star1" />
 
             <TextView
                 android:id="@+id/text_streak"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:drawableStart="@android:drawable/btn_star_big_on"
-                android:drawablePadding="4dp"
+                android:layout_marginStart="4dp"
                 android:text="12"
-                android:textColor="@color/white"
+                android:textColor="#000000"
                 android:textStyle="bold" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Main Container for Flashcards and Tasks -->
+    <!-- Main Container -->
     <FrameLayout
         android:id="@+id/task_container"
         android:layout_width="match_parent"
@@ -105,20 +113,20 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_controls"
         app:layout_constraintTop_toBottomOf="@id/top_bar">
 
-        <!-- Flashcard View -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_flashcard"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="@dimen/radius_huge"
-            app:cardElevation="@dimen/elevation_high"
+            app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
+                <!-- Nút lưu nhanh nằm góc trên card -->
                 <ImageButton
                     android:id="@+id/btn_add_flashcard"
                     android:layout_width="48dp"
@@ -149,7 +157,7 @@
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="4dp"
                             android:text="VOCABULARY"
-                            android:textColor="@color/white"
+                            android:textColor="#9260F4"
                             android:textSize="@dimen/text_caption"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="parent"
@@ -170,22 +178,45 @@
                             android:id="@+id/text_term"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Resilience"
+                            android:text="Term"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Display"
                             android:textAlignment="center"
+                            app:layout_constraintBottom_toTopOf="@+id/text_phonetic"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/image_vocab"
+                            app:layout_constraintVertical_chainStyle="packed" />
+
+                        <TextView
+                            android:id="@+id/text_phonetic"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="/phonetic/"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                            android:textColor="@color/gray_light"
+                            android:visibility="gone"
+                            app:layout_constraintBottom_toTopOf="@+id/btn_listen"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/text_term"
+                            tools:visibility="visible" />
+
+                        <ImageButton
+                            android:id="@+id/btn_listen"
+                            android:scaleType="centerInside"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginTop="16dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@drawable/volume"
+                            android:visibility="gone"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/image_vocab" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Tap to reveal definition"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent" />
+                            app:layout_constraintTop_toBottomOf="@id/text_phonetic"
+                            app:tint="@color/brand_primary"
+                            tools:visibility="visible" />
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -200,7 +231,7 @@
                             android:id="@+id/text_definition"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="The capacity to recover quickly from difficulties; toughness."
+                            android:text="Definition Placeholder"
                             android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                             android:textAlignment="center"
                             app:layout_constraintBottom_toBottomOf="parent"
@@ -213,7 +244,6 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Dynamic Task Views -->
         <FrameLayout
             android:id="@+id/dynamic_task_layout"
             android:layout_width="match_parent"
@@ -227,20 +257,32 @@
         android:id="@+id/bottom_controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_glass_card"
         android:layout_margin="@dimen/spacing_16"
         android:orientation="horizontal"
         android:padding="@dimen/spacing_16"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- Nút thêm vào thư viện riêng cho Flashcard Journey -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save_to_library"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
+            android:text="Lưu vào thư viện"
+            android:visibility="gone"
+            app:backgroundTint="@color/brand_primary"
+            app:cornerRadius="@dimen/radius_large"
+            app:icon="@android:drawable/ic_input_add" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_skip"
-            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="0dp"
             android:layout_height="64dp"
             android:layout_marginEnd="@dimen/spacing_8"
             android:layout_weight="1"
-            android:text="Skip"
+            android:text="Bỏ qua"
+            android:textColor="@color/blue"
+            app:backgroundTint="@color/white"
             app:cornerRadius="@dimen/radius_large" />
 
         <com.google.android.material.button.MaterialButton
@@ -249,34 +291,9 @@
             android:layout_height="64dp"
             android:layout_marginStart="@dimen/spacing_8"
             android:layout_weight="1"
-            android:text="Check"
+            android:text="Tiếp tục"
             app:backgroundTint="@color/brand_primary"
             app:cornerRadius="@dimen/radius_large" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_hard"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="@dimen/spacing_8"
-            android:layout_weight="1"
-            android:text="Hard"
-            android:textColor="@color/error"
-            android:visibility="gone"
-            app:cornerRadius="@dimen/radius_large"
-            app:icon="@android:drawable/ic_dialog_alert" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_good"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_marginStart="@dimen/spacing_8"
-            android:layout_weight="1"
-            android:text="Mastered"
-            android:visibility="gone"
-            app:backgroundTint="@color/brand_primary"
-            app:cornerRadius="@dimen/radius_large"
-            app:icon="@android:drawable/checkbox_on_background" />
 
     </LinearLayout>
 

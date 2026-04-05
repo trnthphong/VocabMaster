@@ -1,10 +1,11 @@
 package com.example.vocabmaster.data.model;
 
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
-import com.google.firebase.firestore.Exclude;
 
-@Entity(tableName = "flashcards")
+@Entity(tableName = "flashcards", 
+        indices = {@Index(value = {"firestoreId"}, unique = true)})
 public class Flashcard {
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -16,13 +17,15 @@ public class Flashcard {
     private String example;
     private String imageUrl;
     private String audioUrl;
+    private String phonetic; // Added phonetic field
+    private String tag;
     private int orderIndex;
     
     private long lastReviewTime;
     private long nextReviewAt;
     private int interval;
 
-    public Flashcard() {} // Required for Firestore
+    public Flashcard() {}
 
     public Flashcard(String term, String definition) {
         this.term = term;
@@ -59,6 +62,12 @@ public class Flashcard {
 
     public String getAudioUrl() { return audioUrl; }
     public void setAudioUrl(String audioUrl) { this.audioUrl = audioUrl; }
+
+    public String getPhonetic() { return phonetic; }
+    public void setPhonetic(String phonetic) { this.phonetic = phonetic; }
+
+    public String getTag() { return tag; }
+    public void setTag(String tag) { this.tag = tag; }
 
     public int getOrderIndex() { return orderIndex; }
     public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }

@@ -5,13 +5,8 @@
     android:id="@+id/main_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-
     tools:context=".MainActivity">
 
-    <!-- TOP BAR: Chứa XP, Streak, Heart -->
-
-
-    <!-- Fragment Container: Bây giờ nằm dưới Top Bar -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"
@@ -22,32 +17,50 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-
         app:navGraph="@navigation/nav_graph" />
 
-    <!-- Bottom Navigation: Giữ nguyên CardView và fix lỗi gravity -->
-    <androidx.cardview.widget.CardView
+    <!-- Bottom Navigation Container -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottom_nav_container"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="72dp"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginBottom="16dp"
-        app:cardCornerRadius="36dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:cardBackgroundColor="@color/light_purple"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:strokeWidth="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Card.TopOnly">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/nav_view"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="match_parent"
             android:layout_gravity="center"
             android:background="@android:color/transparent"
             app:labelVisibilityMode="unlabeled"
-            app:itemIconTint="@color/primary"
-            app:itemTextColor="@color/primary"
+            app:itemIconTint="@color/nav_item_color"
+            app:itemTextColor="@color/nav_item_color"
+            app:itemRippleColor="@null"
+            app:itemActiveIndicatorStyle="@null"
             app:menu="@menu/bottom_nav_menu"
             app:paddingBottomSystemWindowInsets="false" />
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_create"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/plus"
+        app:tint="@color/white"
+        app:backgroundTint="@color/btn_purple"
+        app:fabCustomSize="60dp"
+        app:maxImageSize="32dp"
+        app:elevation="10dp"
+        app:borderWidth="0dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Circle"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav_container"
+        app:layout_constraintTop_toTopOf="@id/bottom_nav_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

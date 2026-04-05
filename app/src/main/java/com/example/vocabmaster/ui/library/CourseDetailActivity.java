@@ -26,7 +26,9 @@ import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CourseDetailActivity extends AppCompatActivity {
     private static final String TAG = "CourseDetailActivity";
@@ -35,6 +37,7 @@ public class CourseDetailActivity extends AppCompatActivity {
     private String courseId;
     private RoadmapAdapter adapter;
     private List<RoadmapStep> allStepsList = new ArrayList<>();
+    private Set<String> completedChallenges = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,13 +46,8 @@ public class CourseDetailActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         db = FirebaseFirestore.getInstance();
-        
         courseId = getIntent().getStringExtra("course_id");
-        String courseTitle = getIntent().getStringExtra("course_title");
-        String courseTheme = getIntent().getStringExtra("course_theme");
-
-        Log.d(TAG, "onCreate: courseId=" + courseId);
-
+        
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -59,153 +57,186 @@ public class CourseDetailActivity extends AppCompatActivity {
         binding.recyclerRoadmap.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerRoadmap.setAdapter(adapter);
 
-        if (courseTitle != null) {
-            binding.collapsingToolbar.setTitle(courseTitle);
-        }
-        if (courseTheme != null) {
-            binding.textCourseTheme.setText("Chủ đề: " + courseTheme);
-        }
-
-        if (courseId == null) {
-            findLatestCourseAndLoad();
-        } else {
-            loadUnitsAndLessons();
-        }
+        loadUserDataAndRoadmap();
     }
 
-    private void findLatestCourseAndLoad() {
+    private void loadUserDataAndRoadmap() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
 
         binding.progressRoadmap.setVisibility(View.VISIBLE);
+        db.collection("challengeProgress")
+                .whereEqualTo("userId", uid)
+                .whereEqualTo("completed", true)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    completedChallenges.clear();
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        completedChallenges.add(doc.getString("challengeId"));
+                    }
+                    
+                    if (courseId == null) {
+                        findLatestCourse();
+                    } else {
+                        loadUnitsAndLessons();
+                    }
+                });
+    }
+
+    private void findLatestCourse() {
+        String uid = FirebaseAuth.getInstance().getUid();
         db.collection("courses")
                 .whereEqualTo("creatorId", uid)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
-                        List<DocumentSnapshot> docs = new ArrayList<>(querySnapshot.getDocuments());
-                        
+                        List<DocumentSnapshot> docs = querySnapshot.getDocuments();
                         Collections.sort(docs, (d1, d2) -> {
-                            long t1 = getTimestampLong(d1, "createdAt");
-                            long t2 = getTimestampLong(d2, "createdAt");
-                            return Long.compare(t2, t1); // Mới nhất lên đầu
+                            Timestamp t1 = d1.getTimestamp("createdAt");
+                            Timestamp t2 = d2.getTimestamp("createdAt");
+                            if (t1 == null || t2 == null) return 0;
+                            return t2.compareTo(t1);
                         });
-                        
-                        DocumentSnapshot latest = docs.get(0);
-                        courseId = latest.getId();
-                        Log.d(TAG, "Found course: " + courseId);
-                        binding.collapsingToolbar.setTitle(latest.getString("title"));
-                        binding.textCourseTheme.setText("Chủ đề: " + latest.getString("theme"));
+                        courseId = docs.get(0).getId();
                         loadUnitsAndLessons();
-                    } else {
-                        binding.progressRoadmap.setVisibility(View.GONE);
-                        Toast.makeText(this, "Bạn chưa có khóa học nào. Hãy tạo mới!", Toast.LENGTH_LONG).show();
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error finding course", e);
-                    binding.progressRoadmap.setVisibility(View.GONE);
                 });
-    }
-
-    private long getTimestampLong(DocumentSnapshot doc, String field) {
-        Object value = doc.get(field);
-        if (value instanceof Timestamp) {
-            return ((Timestamp) value).getSeconds();
-        } else if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        return 0;
     }
 
     private void loadUnitsAndLessons() {
         if (courseId == null) return;
-        binding.progressRoadmap.setVisibility(View.VISIBLE);
-        
         db.collection("units")
                 .whereEqualTo("courseId", courseId)
                 .get()
                 .addOnSuccessListener(unitSnapshots -> {
-                    if (unitSnapshots.isEmpty()) {
-                        Log.d(TAG, "No units found for " + courseId);
-                        binding.progressRoadmap.setVisibility(View.GONE);
-                        return;
-                    }
-
                     List<DocumentSnapshot> units = new ArrayList<>(unitSnapshots.getDocuments());
-                    Collections.sort(units, (u1, u2) -> {
-                        long o1 = getLong(u1, "orderNum");
-                        long o2 = getLong(u2, "orderNum");
-                        return Long.compare(o1, o2);
-                    });
+                    Collections.sort(units, (u1, u2) -> Long.compare(getLong(u1, "orderNum"), getLong(u2, "orderNum")));
 
                     List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
                     for (DocumentSnapshot unitDoc : units) {
-                        lessonTasks.add(db.collection("lessons")
-                                .whereEqualTo("unitId", unitDoc.getId())
-                                .get());
+                        lessonTasks.add(db.collection("lessons").whereEqualTo("unitId", unitDoc.getId()).get());
                     }
 
                     Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
-                        allStepsList.clear();
+                        List<LessonWithChallenges> allLessons = new ArrayList<>();
                         for (int i = 0; i < units.size(); i++) {
-                            DocumentSnapshot unitDoc = units.get(i);
                             Task<QuerySnapshot> task = lessonTasks.get(i);
-                            
-                            if (task.isSuccessful() && task.getResult() != null) {
-                                List<DocumentSnapshot> lessons = new ArrayList<>(task.getResult().getDocuments());
-                                Collections.sort(lessons, (l1, l2) -> {
-                                    long o1 = getLong(l1, "orderNum");
-                                    long o2 = getLong(l2, "orderNum");
-                                    return Long.compare(o1, o2);
-                                });
-
+                            if (task.isSuccessful()) {
+                                List<DocumentSnapshot> lessons = task.getResult().getDocuments();
                                 for (DocumentSnapshot lessonDoc : lessons) {
-                                    String type = lessonDoc.getString("type");
-                                    allStepsList.add(new RoadmapStep(
-                                            lessonDoc.getId(),
-                                            unitDoc.getString("title"),
-                                            lessonDoc.getString("title"),
-                                            getLessonDescription(type),
-                                            getIconForType(type),
-                                            !Boolean.TRUE.equals(unitDoc.getBoolean("unlocked")),
-                                            Boolean.TRUE.equals(lessonDoc.getBoolean("completed")),
-                                            type
-                                    ));
+                                    allLessons.add(new LessonWithChallenges(lessonDoc, units.get(i)));
                                 }
                             }
                         }
-                        adapter.notifyDataSetChanged();
-                        binding.progressRoadmap.setVisibility(View.GONE);
+                        
+                        Collections.sort(allLessons, (l1, l2) -> {
+                            int unitComp = Long.compare(getLong(l1.unitDoc, "orderNum"), getLong(l2.unitDoc, "orderNum"));
+                            if (unitComp != 0) return unitComp;
+                            return Long.compare(getLong(l1.lessonDoc, "orderNum"), getLong(l2.lessonDoc, "orderNum"));
+                        });
+
+                        fetchChallengesAndBuildRoadmap(allLessons);
                     });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading units", e);
+                    if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
                 });
     }
 
+    private void fetchChallengesAndBuildRoadmap(List<LessonWithChallenges> lessons) {
+        List<Task<QuerySnapshot>> challengeTasks = new ArrayList<>();
+        for (LessonWithChallenges lc : lessons) {
+            challengeTasks.add(db.collection("challenges").whereEqualTo("lessonId", lc.lessonDoc.getId()).get());
+        }
+
+        Tasks.whenAllComplete(challengeTasks).addOnCompleteListener(t -> {
+            allStepsList.clear();
+            boolean foundActive = false;
+
+            for (int i = 0; i < lessons.size(); i++) {
+                LessonWithChallenges lc = lessons.get(i);
+                Task<QuerySnapshot> task = challengeTasks.get(i);
+                
+                int totalChallenges = 0;
+                int completedCount = 0;
+
+                if (task.isSuccessful()) {
+                    for (DocumentSnapshot challengeDoc : task.getResult()) {
+                        totalChallenges++;
+                        if (completedChallenges.contains(challengeDoc.getId())) {
+                            completedCount++;
+                        }
+                    }
+                }
+
+                boolean isCompleted = (totalChallenges > 0 && completedCount == totalChallenges);
+                boolean isLocked = false;
+                boolean isActive = false;
+
+                if (!isCompleted && !foundActive) {
+                    isActive = true;
+                    foundActive = true;
+                } else if (foundActive) {
+                    isLocked = true;
+                }
+
+                String type = lc.lessonDoc.getString("type");
+                allStepsList.add(new RoadmapStep(
+                        lc.lessonDoc.getId(),
+                        lc.unitTitle,
+                        lc.lessonDoc.getString("title"),
+                        completedCount + "/" + totalChallenges + " Challenges",
+                        getIconForType(type),
+                        isLocked,
+                        isCompleted,
+                        type
+                ));
+            }
+            adapter.notifyDataSetChanged();
+            if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
+        });
+    }
+
+    private void confirmDeleteCourse() {
+        new AlertDialog.Builder(this)
+                .setTitle("Xóa khóa học")
+                .setMessage("Bạn có chắc chắn muốn xóa khóa học này không?")
+                .setPositiveButton("Xóa", (dialog, which) -> deleteCourse())
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void deleteCourse() {
+        if (courseId == null) return;
+        
+        // Thoát màn hình ngay lập tức để tạo cảm giác tức thì
+        Toast.makeText(this, "Đang xóa khóa học...", Toast.LENGTH_SHORT).show();
+        db.collection("courses").document(courseId).delete()
+                .addOnFailureListener(e -> Log.e(TAG, "Delete failed in background", e));
+        finish();
+    }
+
     private long getLong(DocumentSnapshot doc, String field) {
+        if (doc == null) return 0;
         Long val = doc.getLong(field);
         return val != null ? val : 0;
     }
 
     private int getIconForType(String type) {
-        if (type == null) return R.drawable.vocab;
-        switch (type) {
-            case "listening": return R.drawable.ic_listen;
-            case "speaking": return R.drawable.brain;
-            case "reading": return R.drawable.vocab;
-            case "quiz": return R.drawable.exp;
-            default: return R.drawable.vocab;
-        }
+        if ("quiz".equals(type)) return R.drawable.exp;
+        if ("listening".equals(type)) return R.drawable.ic_listen;
+        return R.drawable.vocab;
     }
 
-    private String getLessonDescription(String type) {
-        if (type == null) return "Bài học";
-        switch (type) {
-            case "listening": return "Luyện kỹ năng nghe.";
-            case "vocabulary": return "Học từ vựng mới.";
-            case "reading": return "Đọc hiểu văn bản.";
-            case "speaking": return "Thực hành giao tiếp.";
-            case "quiz": return "Kiểm tra kiến thức.";
-            default: return "Bài học trong lộ trình.";
+    private static class LessonWithChallenges {
+        DocumentSnapshot lessonDoc;
+        DocumentSnapshot unitDoc;
+        String unitTitle;
+        LessonWithChallenges(DocumentSnapshot ld, DocumentSnapshot ud) {
+            this.lessonDoc = ld;
+            this.unitDoc = ud;
+            this.unitTitle = ud != null ? ud.getString("title") : "";
         }
     }
 
@@ -217,63 +248,14 @@ public class CourseDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
             finish();
             return true;
-        } else if (item.getItemId() == R.id.action_delete_course) {
+        } else if (id == R.id.action_delete_course) {
             confirmDeleteCourse();
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void confirmDeleteCourse() {
-        new AlertDialog.Builder(this)
-                .setTitle("Xóa khóa học")
-                .setMessage("Bạn có chắc chắn muốn xóa khóa học này cùng tất cả bài học bên trong không? Hành động này không thể hoàn tác.")
-                .setPositiveButton("Xóa", (dialog, which) -> deleteCourseData())
-                .setNegativeButton("Hủy", null)
-                .show();
-    }
-
-    private void deleteCourseData() {
-        if (courseId == null) return;
-        binding.progressRoadmap.setVisibility(View.VISIBLE);
-
-        // Logic xóa khóa học: Xóa Course -> Xóa các Unit của Course đó -> Xóa các Lesson của các Unit đó
-        db.collection("units").whereEqualTo("courseId", courseId).get().addOnSuccessListener(unitSnapshots -> {
-            WriteBatch batch = db.batch();
-            
-            // 1. Xóa các Units và Lessons
-            List<Task<QuerySnapshot>> lessonFetchTasks = new ArrayList<>();
-            for (DocumentSnapshot unitDoc : unitSnapshots) {
-                batch.delete(unitDoc.getReference());
-                lessonFetchTasks.add(db.collection("lessons").whereEqualTo("unitId", unitDoc.getId()).get());
-            }
-
-            Tasks.whenAllComplete(lessonFetchTasks).addOnCompleteListener(t -> {
-                for (Task<QuerySnapshot> lessonTask : lessonFetchTasks) {
-                    if (lessonTask.isSuccessful()) {
-                        for (DocumentSnapshot lessonDoc : lessonTask.getResult()) {
-                            batch.delete(lessonDoc.getReference());
-                        }
-                    }
-                }
-
-                // 2. Xóa chính khóa học
-                batch.delete(db.collection("courses").document(courseId));
-
-                // 3. Thực thi batch
-                batch.commit().addOnSuccessListener(aVoid -> {
-                    binding.progressRoadmap.setVisibility(View.GONE);
-                    Toast.makeText(this, "Đã xóa khóa học thành công", Toast.LENGTH_SHORT).show();
-                    finish();
-                }).addOnFailureListener(e -> {
-                    binding.progressRoadmap.setVisibility(View.GONE);
-                    Log.e(TAG, "Error deleting course", e);
-                    Toast.makeText(this, "Lỗi khi xóa khóa học", Toast.LENGTH_SHORT).show();
-                });
-            });
-        });
     }
 }
