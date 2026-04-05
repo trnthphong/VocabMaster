@@ -1,9 +1,11 @@
 package com.example.vocabmaster.data.model;
 
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "flashcards")
+@Entity(tableName = "flashcards", 
+        indices = {@Index(value = {"firestoreId"}, unique = true)})
 public class Flashcard {
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -15,14 +17,14 @@ public class Flashcard {
     private String example;
     private String imageUrl;
     private String audioUrl;
-    private String tag; // Added tag field
+    private String tag;
     private int orderIndex;
     
     private long lastReviewTime;
     private long nextReviewAt;
     private int interval;
 
-    public Flashcard() {} // Required for Firestore
+    public Flashcard() {}
 
     public Flashcard(String term, String definition) {
         this.term = term;

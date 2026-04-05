@@ -2,6 +2,7 @@ package com.example.vocabmaster.ui.library;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -32,12 +33,15 @@ public class PersonalCardsActivity extends AppCompatActivity {
                 binding.textEmpty.setVisibility(View.GONE);
             } else {
                 binding.textEmpty.setVisibility(View.VISIBLE);
+                // Nếu không còn flashcard nào, tự động quay lại Library
+                Toast.makeText(this, "Không còn thẻ nào, quay lại Thư viện", Toast.LENGTH_SHORT).show();
+                finish();
             }
         });
     }
 
     private void setupRecyclerView() {
-        adapter = new FlashcardListAdapter();
+        adapter = new FlashcardListAdapter(flashcard -> viewModel.deleteFlashcard(flashcard));
         binding.recyclerFlashcards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerFlashcards.setAdapter(adapter);
     }

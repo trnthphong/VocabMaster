@@ -11,7 +11,9 @@ import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LibraryViewModel extends AndroidViewModel {
@@ -54,6 +56,16 @@ public class LibraryViewModel extends AndroidViewModel {
     public Task<Void> deleteCourseFromFirestore(String firestoreId) {
         return repository.deleteCourseFromFirestore(firestoreId);
     }
+
+    public Task<Void> deleteCoursesFromFirestore(List<Course> courses) {
+        List<Task<Void>> tasks = new ArrayList<>();
+        for (Course course : courses) {
+            if (course.getFirestoreId() != null) {
+                tasks.add(repository.deleteCourseFromFirestore(course.getFirestoreId()));
+            }
+        }
+        return Tasks.whenAll(tasks);
+    }
     
     public void addPersonalFlashcard(Flashcard flashcard) {
         repository.addPersonalFlashcard(flashcard);
@@ -61,6 +73,10 @@ public class LibraryViewModel extends AndroidViewModel {
 
     public LiveData<List<Flashcard>> getPersonalFlashcards() {
         return repository.getPersonalFlashcards();
+    }
+
+    public void deleteFlashcard(Flashcard flashcard) {
+        repository.deleteFlashcard(flashcard);
     }
 
     public LiveData<Boolean> getCourseDeletedEvent() {

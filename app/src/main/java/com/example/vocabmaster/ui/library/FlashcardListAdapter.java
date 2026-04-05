@@ -1,9 +1,13 @@
 package com.example.vocabmaster.ui.library;
 
 import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
@@ -17,7 +21,13 @@ import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 
 public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAdapter.ViewHolder> {
 
-    protected FlashcardListAdapter() {
+    private final OnFlashcardDeleteListener deleteListener;
+
+    public interface OnFlashcardDeleteListener {
+        void onDelete(Flashcard flashcard);
+    }
+
+    public FlashcardListAdapter(OnFlashcardDeleteListener deleteListener) {
         super(new DiffUtil.ItemCallback<Flashcard>() {
             @Override
             public boolean areItemsTheSame(@NonNull Flashcard oldItem, @NonNull Flashcard newItem) {
@@ -27,9 +37,11 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
             @Override
             public boolean areContentsTheSame(@NonNull Flashcard oldItem, @NonNull Flashcard newItem) {
                 return oldItem.getTerm().equals(newItem.getTerm()) &&
-                        oldItem.getDefinition().equals(newItem.getDefinition());
+                        oldItem.getDefinition().equals(newItem.getDefinition()) &&
+                        (oldItem.getImageUrl() == null ? newItem.getImageUrl() == null : oldItem.getImageUrl().equals(newItem.getImageUrl()));
             }
         });
+        this.deleteListener = deleteListener;
     }
 
     @NonNull
@@ -37,7 +49,7 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         ItemFlashcardRowBinding binding = ItemFlashcardRowBinding.inflate(
                 LayoutInflater.from(parent.getContext()), parent, false);
-        return new ViewHolder(binding);
+        return new ViewHolder(binding, deleteListener);
     }
 
     @Override
@@ -47,10 +59,12 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final ItemFlashcardRowBinding binding;
+        private final OnFlashcardDeleteListener deleteListener;
 
-        public ViewHolder(ItemFlashcardRowBinding binding) {
+        public ViewHolder(ItemFlashcardRowBinding binding, OnFlashcardDeleteListener deleteListener) {
             super(binding.getRoot());
             this.binding = binding;
+            this.deleteListener = deleteListener;
         }
 
         public void bind(Flashcard card) {
@@ -77,7 +91,12 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
 
             if (card.getImageUrl() != null && !card.getImageUrl().isEmpty()) {
                 dialogBinding.imageVocab.setVisibility(View.VISIBLE);
-                Glide.with(dialogBinding.imageVocab).load(card.getImageUrl()).into(dialogBinding.imageVocab);
+                Glide.with(dialogBinding.imageVocab.getContext())
+                        .load(card.getImageUrl())
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.stat_notify_error)
+                        .centerInside()
+                        .into(dialogBinding.imageVocab);
             } else {
                 dialogBinding.imageVocab.setVisibility(View.GONE);
             }
@@ -95,14 +114,32 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
                 isFront[0] = !isFront[0];
             });
 
+            // Delete logic
+            dialogBinding.btnDelete.setOnClickListener(v -> {
+                new AlertDialog.Builder(binding.getRoot().getContext())
+                        .setTitle("Delete Flashcard")
+                        .setMessage("Are you sure you want to delete this card?")
+                        .setPositiveButton("Delete", (d, which) -> {
+                            if (deleteListener != null) {
+                                deleteListener.onDelete(card);
+                            }
+                            dialog.dismiss();
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            });
+
             dialog.show();
             
-            // Set width for dialog
-            if (dialog.getWindow() != null) {
-                dialog.getWindow().setLayout(
-                        (int) (binding.getRoot().getContext().getResources().getDisplayMetrics().widthPixels * 0.9),
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                );
+            // Set dialog to cover most of the screen
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+                lp.copyFrom(window.getAttributes());
+                lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+                lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+                window.setAttributes(lp);
             }
         }
     }

@@ -1,5 +1,8 @@
 package com.example.vocabmaster.data.remote;
 
+import android.net.Uri;
+import android.util.Log;
+
 import com.example.vocabmaster.data.model.Flashcard;
 import com.google.ai.client.generativeai.GenerativeModel;
 import com.google.ai.client.generativeai.java.GenerativeModelFutures;
@@ -25,6 +28,11 @@ public class AIService {
         void onError(Throwable t);
     }
 
+    public interface ImageGenerationCallback {
+        void onSuccess(String imageUrl);
+        void onError(Throwable t);
+    }
+
     public void generateFlashcards(String topic, int count, AICallback callback) {
         String prompt = String.format(
                 "Generate %d English vocabulary flashcards about '%s'. " +
@@ -41,7 +49,6 @@ public class AIService {
             try {
                 GenerateContentResponse res = response.get();
                 String text = res.getText();
-                // Basic manual parsing of JSON (In a real app, use Gson)
                 List<Flashcard> cards = parseJson(text);
                 callback.onSuccess(cards);
             } catch (Exception e) {
@@ -50,12 +57,43 @@ public class AIService {
         }, executor);
     }
 
+    public void generateImageFromText(String term, String definition, ImageGenerationCallback callback) {
+        // Prompt cực kỳ nghiêm ngặt để lấy từ khóa tìm kiếm ảnh
+        String promptForGemini = String.format(
+                "You are an image search expert. Input: Term='%s', Definition='%s'.\n" +
+                "Task: Translate to English if needed, then provide 1-2 SIMPLE English nouns for a photo search.\n" +
+                "Constraint: Return ONLY the words, separated by commas. NO sentences, NO extra text.\n" +
+                "Example: 'Quả táo' -> 'apple'. 'Học tập' -> 'study,book'.",
+                term, definition
+        );
+
+        Content content = new Content.Builder().addText(promptForGemini).build();
+        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
+
+        Executor executor = Executors.newSingleThreadExecutor();
+        response.addListener(() -> {
+            try {
+                GenerateContentResponse res = response.get();
+                String keywords = res.getText().trim().toLowerCase()
+                        .replaceAll("[^a-z,]", "")
+                        .replace(" ", "");
+                
+                // Sử dụng Unsplash qua Source (ổn định hơn cho việc lấy đúng đối tượng)
+                // Hoặc giữ LoremFlickr nhưng làm sạch keyword
+                String imageUrl = "https://loremflickr.com/1080/1920/" + keywords + "/all";
+                
+                Log.d("AIService", "Keywords: " + keywords + " -> URL: " + imageUrl);
+                callback.onSuccess(imageUrl);
+            } catch (Exception e) {
+                String fallback = term.toLowerCase().replaceAll("[^a-z]", "");
+                callback.onSuccess("https://loremflickr.com/1080/1920/" + fallback + "/all");
+            }
+        }, executor);
+    }
+
     private List<Flashcard> parseJson(String json) {
         List<Flashcard> cards = new ArrayList<>();
-        // Note: For simplicity in this demo, we assume the AI returns clean JSON.
-        // In a real project, use: new Gson().fromJson(json, new TypeToken<List<Flashcard>>(){}.getType());
         try {
-            // Very basic extraction logic if Gson isn't fully configured yet
             String cleanJson = json.replace("```json", "").replace("```", "").trim();
             org.json.JSONArray array = new org.json.JSONArray(cleanJson);
             for (int i = 0; i < array.length(); i++) {

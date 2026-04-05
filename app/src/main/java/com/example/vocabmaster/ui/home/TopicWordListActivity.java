@@ -16,20 +16,17 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.vocabmaster.R;
-import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityTopicWordListBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.study.StudyActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class TopicWordListActivity extends AppCompatActivity {
     private static final String TAG = "TopicWordListActivity";
@@ -38,6 +35,7 @@ public class TopicWordListActivity extends AppCompatActivity {
     private String topic;
     private String displayTitle;
     private String langCode;
+    private CourseRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,11 +43,11 @@ public class TopicWordListActivity extends AppCompatActivity {
         binding = ActivityTopicWordListBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        repository = new CourseRepository(getApplication());
         topic = getIntent().getStringExtra("topic");
         displayTitle = getIntent().getStringExtra("display_title");
         langCode = getIntent().getStringExtra("lang_code");
 
-        // Chuẩn hóa langCode: "Tiếng Anh" -> "en", "Tiếng Nga" -> "ru"
         if (langCode != null) {
             if (langCode.contains("Anh")) langCode = "en";
             else if (langCode.contains("Nga")) langCode = "ru";
@@ -60,7 +58,6 @@ public class TopicWordListActivity extends AppCompatActivity {
         binding.textHeaderTitle.setText(displayTitle);
         binding.btnBack.setOnClickListener(v -> finish());
 
-        // Change Language Button Listener
         binding.btnChangeLang.setOnClickListener(v -> {
             UiFeedback.performHaptic(this, 10);
             Intent intent = new Intent(this, JourneySetupActivity.class);
@@ -87,32 +84,31 @@ public class TopicWordListActivity extends AppCompatActivity {
 
             @Override
             public void onAddClick(Vocabulary vocab) {
-                saveToLocalLibrary(vocab);
+                saveToLibrary(vocab);
             }
         });
         binding.recyclerWords.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerWords.setAdapter(adapter);
     }
 
-    private void saveToLocalLibrary(Vocabulary v) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            Flashcard card = new Flashcard(v.getWord(), v.getDefinition());
-            card.setImageUrl(v.getImageUrl());
-            card.setAudioUrl(v.getAudioUrl());
-            AppDatabase.getDatabase(this).flashcardDao().insert(card);
-            
-            runOnUiThread(() -> {
-                UiFeedback.showSnack(binding.getRoot(), "Đã thêm '" + v.getWord() + "' vào thư viện");
-                UiFeedback.performHaptic(this, 10);
-            });
-        });
+    private void saveToLibrary(Vocabulary v) {
+        Flashcard card = new Flashcard(v.getWord(), v.getDefinition());
+        card.setImageUrl(v.getImageUrl());
+        card.setAudioUrl(v.getAudioUrl());
+        card.setExample(v.getExampleSentence());
+        card.setTag(displayTitle != null ? displayTitle : topic);
+        
+        // Luôn gọi repository.addPersonalFlashcard để đảm bảo đồng bộ lên Firebase
+        // Logic trong CourseRepository hiện tại đã hỗ trợ lưu Local + Sync Firebase
+        repository.addPersonalFlashcard(card);
+        
+        UiFeedback.showSnack(binding.getRoot(), "Đã thêm '" + v.getWord() + "' vào thư viện");
+        UiFeedback.performHaptic(this, 10);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Reload words in case language was changed
         loadWords();
     }
 
@@ -126,13 +122,10 @@ public class TopicWordListActivity extends AppCompatActivity {
         binding.layoutEmpty.setVisibility(View.GONE);
         
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        
-        // 1. Xác định collection
         String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
         
         Log.d(TAG, "Querying " + collectionPath + " with topic: " + topic);
 
-        // 2. Query Firestore - Chỉ lọc theo topic để tối đa kết quả, lọc lang ở client
         db.collection(collectionPath)
                 .whereEqualTo("topic", topic.toLowerCase())
                 .get()
@@ -145,8 +138,6 @@ public class TopicWordListActivity extends AppCompatActivity {
                             Vocabulary v = doc.toObject(Vocabulary.class);
                             if (v != null) {
                                 v.setVocabularyId(doc.getId());
-                                
-                                // Nếu là collection chung, lọc theo langCode
                                 if ("vocabularies".equals(collectionPath)) {
                                     if (langCode.equalsIgnoreCase(v.getLang())) {
                                         words.add(v);

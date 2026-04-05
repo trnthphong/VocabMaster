@@ -1,119 +1,182 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/card_flashcard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="@dimen/radius_large"
-    app:cardElevation="@dimen/elevation_low"
-    app:strokeWidth="1dp"
-    app:strokeColor="@color/card_border">
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="240dp">
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_flashcard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="32dp"
+        android:minHeight="450dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:strokeColor="@color/card_border"
+        app:strokeWidth="1dp">
 
-        <FrameLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:minHeight="450dp">
 
-            <!-- Front Side -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/card_front"
+            <!-- Delete Button (Top Right) -->
+            <ImageButton
+                android:id="@+id/btn_delete"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_margin="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:elevation="10dp"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@android:drawable/ic_menu_delete"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/brand_primary" />
+
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="@dimen/spacing_16">
+                android:layout_height="wrap_content"
+                android:minHeight="450dp">
 
-                <TextView
-                    android:id="@+id/label_topic"
-                    android:layout_width="wrap_content"
+                <!-- Front Side -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/card_front"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_glass_card"
-                    android:backgroundTint="@color/brand_secondary"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="2dp"
-                    android:text="PERSONAL"
-                    android:textColor="@color/white"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:minHeight="450dp"
+                    android:paddingBottom="24dp">
 
-                <ImageView
-                    android:id="@+id/image_vocab"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:scaleType="centerInside"
-                    android:visibility="gone"
-                    app:layout_constraintBottom_toTopOf="@id/text_term"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/label_topic" />
+                    <TextView
+                        android:id="@+id/label_topic"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginTop="24dp"
+                        android:background="@drawable/bg_glass_card"
+                        android:backgroundTint="@color/brand_secondary"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:text="TOPIC"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-                <TextView
-                    android:id="@+id/text_term"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:textAlignment="center"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                    android:textColor="@color/brand_primary"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/label_topic"
-                    tools:text="Vocabulary" />
+                    <!-- Fixed size image, centered, fitCenter -->
+                    <ImageView
+                        android:id="@+id/image_vocab"
+                        android:layout_width="220dp"
+                        android:layout_height="220dp"
+                        android:layout_marginTop="16dp"
+                        android:scaleType="fitCenter"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/label_topic"
+                        tools:src="@android:drawable/ic_menu_gallery"
+                        tools:visibility="visible" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tap to flip"
-                    android:textSize="10sp"
-                    android:textColor="@color/gray_text"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
+                    <LinearLayout
+                        android:id="@+id/layout_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="24dp"
+                        app:layout_constraintBottom_toTopOf="@id/text_tap_hint"
+                        app:layout_constraintTop_toBottomOf="@id/image_vocab"
+                        app:layout_constraintVertical_bias="0.5">
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                        <TextView
+                            android:id="@+id/text_term"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAlignment="center"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                            android:textColor="@color/brand_primary"
+                            android:textSize="36sp"
+                            android:textStyle="bold"
+                            tools:text="Vocabulary" />
 
-            <!-- Back Side -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/card_back"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="@dimen/spacing_16"
-                android:visibility="gone">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_audio"
+                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:text="Listen"
+                            android:textAllCaps="false"
+                            android:textColor="@color/brand_primary"
+                            app:icon="@android:drawable/ic_lock_silent_mode_off"
+                            app:iconTint="@color/brand_primary" />
+                    </LinearLayout>
 
-                <TextView
-                    android:id="@+id/text_definition"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:textAlignment="center"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                    android:textColor="@color/surface_dark"
-                    app:layout_constraintBottom_toTopOf="@id/text_example"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintVertical_chainStyle="packed"
-                    tools:text="Definition goes here" />
+                    <TextView
+                        android:id="@+id/text_tap_hint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="24dp"
+                        android:text="Tap to flip"
+                        android:textColor="@color/gray_text"
+                        android:textSize="12sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
 
-                <TextView
-                    android:id="@+id/text_example"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textAlignment="center"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                    android:textColor="@color/gray_text"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/text_definition"
-                    tools:text="Example sentence" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </FrameLayout>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</com.google.android.material.card.MaterialCardView>
+                <!-- Back Side -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/card_back"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:minHeight="450dp"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/text_definition"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:textAlignment="center"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/surface_dark"
+                        android:textSize="24sp"
+                        app:layout_constraintBottom_toTopOf="@id/text_example"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintVertical_chainStyle="packed"
+                        tools:text="Definition goes here" />
+
+                    <TextView
+                        android:id="@+id/text_example"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:textAlignment="center"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/gray_text"
+                        android:textSize="16sp"
+                        android:textStyle="italic"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/text_definition"
+                        tools:text="Example sentence using this vocabulary word." />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </FrameLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

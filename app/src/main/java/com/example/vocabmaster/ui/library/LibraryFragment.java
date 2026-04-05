@@ -3,10 +3,12 @@ package com.example.vocabmaster.ui.library;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,8 +25,14 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.example.vocabmaster.data.remote.AIService;
 import com.example.vocabmaster.databinding.DialogCreateFlashcardBinding;
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
@@ -37,6 +45,7 @@ import java.util.Locale;
 public class LibraryFragment extends Fragment {
     private FragmentLibraryBinding binding;
     private LibraryViewModel viewModel;
+    private AIService aiService;
     private CourseAdapter adapter;
     private final List<Course> allCourses = new ArrayList<>();
     
@@ -63,6 +72,7 @@ public class LibraryFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentLibraryBinding.inflate(inflater, container, false);
         viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
+        aiService = new AIService("AIzaSyDEw4mFQqqOzwXDlYoMDwecIURPNkdO4Ko");
         return binding.getRoot();
     }
 
@@ -70,18 +80,10 @@ public class LibraryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        adapter = new CourseAdapter(course -> {
-            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
-            intent.putExtra("course_id", course.getFirestoreId());
-            intent.putExtra("course_title", course.getTitle());
-            startActivity(intent);
-        }, this::showCourseActionMenu);
-        
-        binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
-        binding.recyclerCourses.setAdapter(adapter);
+        setupRecyclerView();
+        setupSelectionBar();
         
         binding.fabAddCourse.setOnClickListener(v -> showCreateFlashcardDialog());
-
         binding.btnAiCreateCourse.setOnClickListener(v -> createCourseByAi());
         
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -105,6 +107,63 @@ public class LibraryFragment extends Fragment {
         observeViewModel();
     }
 
+    private void setupRecyclerView() {
+        adapter = new CourseAdapter(course -> {
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            intent.putExtra("course_id", course.getFirestoreId());
+            intent.putExtra("course_title", course.getTitle());
+            startActivity(intent);
+        }, this::showCourseActionMenu, count -> {
+            updateSelectionBar(count);
+        });
+        
+        binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.recyclerCourses.setAdapter(adapter);
+    }
+
+    private void setupSelectionBar() {
+        binding.btnCancelSelection.setOnClickListener(v -> {
+            adapter.setSelectionMode(false);
+        });
+
+        binding.btnDeleteSelected.setOnClickListener(v -> {
+            List<Course> selected = adapter.getSelectedCourses();
+            if (!selected.isEmpty()) {
+                confirmDeleteMultiple(selected);
+            }
+        });
+    }
+
+    private void updateSelectionBar(int count) {
+        if (count > 0) {
+            binding.cardSelectionBar.setVisibility(View.VISIBLE);
+            binding.layoutBottomActions.setVisibility(View.GONE);
+            binding.fabAddCourse.hide();
+            binding.textSelectionCount.setText(count + " selected");
+        } else {
+            binding.cardSelectionBar.setVisibility(View.GONE);
+            binding.layoutBottomActions.setVisibility(View.VISIBLE);
+            binding.fabAddCourse.show();
+            if (adapter.isSelectionMode()) {
+                adapter.setSelectionMode(false);
+            }
+        }
+    }
+
+    private void confirmDeleteMultiple(List<Course> courses) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete " + courses.size() + " courses?")
+                .setMessage("This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    viewModel.deleteCoursesFromFirestore(courses).addOnSuccessListener(aVoid -> {
+                        UiFeedback.showSnack(binding.getRoot(), "Deleted " + courses.size() + " courses");
+                        adapter.setSelectionMode(false);
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void showCreateFlashcardDialog() {
         DialogCreateFlashcardBinding dialogBinding = DialogCreateFlashcardBinding.inflate(getLayoutInflater());
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
@@ -118,6 +177,52 @@ public class LibraryFragment extends Fragment {
         dialogBinding.cardSelectImage.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             imagePickerLauncher.launch(intent);
+        });
+
+        dialogBinding.btnAiGenerateImage.setOnClickListener(v -> {
+            String term = dialogBinding.editTerm.getText().toString().trim();
+            String definition = dialogBinding.editDefinition.getText().toString().trim();
+            
+            if (TextUtils.isEmpty(term)) {
+                Toast.makeText(requireContext(), "Vui lòng nhập từ vựng trước", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialogBinding.progressImage.setVisibility(View.VISIBLE);
+            dialogBinding.btnAiGenerateImage.setEnabled(false);
+
+            aiService.generateImageFromText(term, definition, new AIService.ImageGenerationCallback() {
+                @Override
+                public void onSuccess(String imageUrl) {
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        dialogBinding.progressImage.setVisibility(View.GONE);
+                        dialogBinding.btnAiGenerateImage.setEnabled(true);
+                        
+                        selectedImageUri = Uri.parse(imageUrl);
+                        
+                        Glide.with(LibraryFragment.this)
+                                .load(imageUrl)
+                                .centerCrop()
+                                .placeholder(android.R.drawable.ic_menu_gallery)
+                                .error(android.R.drawable.stat_notify_error)
+                                .into(dialogImagePreview);
+                                
+                        dialogImagePreview.setVisibility(View.VISIBLE);
+                        dialogImagePrompt.setVisibility(View.GONE);
+                    });
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        dialogBinding.progressImage.setVisibility(View.GONE);
+                        dialogBinding.btnAiGenerateImage.setEnabled(true);
+                        Toast.makeText(requireContext(), "Lỗi AI: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
         });
 
         dialogBinding.btnSaveFlashcard.setOnClickListener(v -> {
@@ -184,12 +289,10 @@ public class LibraryFragment extends Fragment {
         }
         adapter.submitList(new ArrayList<>(result));
         
-        // Show empty state only if both lists are empty
         boolean noCourses = result.isEmpty();
         boolean noPersonal = viewModel.getPersonalFlashcards().getValue() == null || viewModel.getPersonalFlashcards().getValue().isEmpty();
         binding.layoutEmptyState.setVisibility(noCourses && noPersonal ? View.VISIBLE : View.GONE);
         
-        // Hide personal cards if searching
         if (!q.isEmpty()) {
             binding.layoutPersonalCards.getRoot().setVisibility(View.GONE);
         } else if (viewModel.getPersonalFlashcards().getValue() != null && !viewModel.getPersonalFlashcards().getValue().isEmpty()) {
@@ -221,7 +324,6 @@ public class LibraryFragment extends Fragment {
     }
 
     private void createCourseByAi() {
-        // AI logic
     }
 
     @Override
