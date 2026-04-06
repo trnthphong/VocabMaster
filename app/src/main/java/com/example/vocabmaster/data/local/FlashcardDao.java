@@ -37,4 +37,7 @@ public interface FlashcardDao {
 
     @Query("SELECT * FROM flashcards WHERE firestoreId = :firestoreId LIMIT 1")
     Flashcard getFlashcardByFirestoreId(String firestoreId);
+
+    @Query("DELETE FROM flashcards")
+    void deleteAll();
 }

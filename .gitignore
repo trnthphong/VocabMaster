@@ -1,15 +1,20 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea/
 .DS_Store
 /build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase & Services
+app/google-services.json
+backend/your-firebase-service-account.json
+
+# Credentials & Environment
+.env
+backend/.env
+node_modules/
+backend/node_modules/

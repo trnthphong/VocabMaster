@@ -107,6 +107,17 @@
                 app:cornerRadius="@dimen/radius_large" />
 
             <TextView
+                android:id="@+id/text_premium_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                android:textColor="@color/brand_primary"
+                android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                tools:visibility="visible"
+                tools:text="You are a Pro member!"/>
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"

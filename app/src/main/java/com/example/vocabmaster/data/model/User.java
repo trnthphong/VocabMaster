@@ -31,11 +31,20 @@ public class User {
     private boolean notificationsEnabled;
     private String currentUnitTitle;
     
-    // New fields for Roadmap
     private String activeCourseId;
+    private String proficiencyLevel;
+
+    // Stripe
+    private String stripeCustomerId;
 
     public User() {
         this.hearts = 5;
+    }
+
+    public boolean isActivePremium() {
+        if (isPremium) return true;
+        if (premiumUntil == null) return false;
+        return premiumUntil.toDate().getTime() > System.currentTimeMillis();
     }
 
     // Getters and Setters
@@ -59,6 +68,7 @@ public class User {
     public void setSavedSets(List<String> savedSets) { this.savedSets = savedSets; }
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
     public long getXp() { return xp; }
     public void setXp(long xp) { this.xp = xp; }
     public int getHearts() { return hearts; }
@@ -85,4 +95,9 @@ public class User {
     public void setCurrentUnitTitle(String currentUnitTitle) { this.currentUnitTitle = currentUnitTitle; }
     public String getActiveCourseId() { return activeCourseId; }
     public void setActiveCourseId(String activeCourseId) { this.activeCourseId = activeCourseId; }
+    public String getProficiencyLevel() { return proficiencyLevel; }
+    public void setProficiencyLevel(String proficiencyLevel) { this.proficiencyLevel = proficiencyLevel; }
+
+    public String getStripeCustomerId() { return stripeCustomerId; }
+    public void setStripeCustomerId(String stripeCustomerId) { this.stripeCustomerId = stripeCustomerId; }
 }
