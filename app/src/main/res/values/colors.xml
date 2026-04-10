@@ -66,6 +66,7 @@
     <color name="accent_red">@color/error</color>
     <color name="accent_yellow">#EAB308</color>
     <color name="gray_text">@color/text_secondary</color>
+    <color name="gray_dark">#475569</color>
     <color name="gray_light">#CBD5E1</color>
     <color name="gray_lighter">#F1F5F9</color>
     <color name="gray_background">@color/surface_light</color>

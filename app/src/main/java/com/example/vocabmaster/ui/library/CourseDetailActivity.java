@@ -14,18 +14,26 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.model.Challenge;
+import com.example.vocabmaster.data.model.Course;
+import com.example.vocabmaster.data.model.Lesson;
+import com.example.vocabmaster.data.model.Unit;
 import com.example.vocabmaster.databinding.ActivityCourseDetailBinding;
+import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.ui.home.TopicWordListActivity;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,9 +43,14 @@ public class CourseDetailActivity extends AppCompatActivity {
     private ActivityCourseDetailBinding binding;
     private FirebaseFirestore db;
     private String courseId;
+    private String courseTheme;
+    private String displayTitle;
+    private String langCode;
+    
     private RoadmapAdapter adapter;
     private List<RoadmapStep> allStepsList = new ArrayList<>();
     private Set<String> completedChallenges = new HashSet<>();
+    private boolean isCourseInLibrary = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,17 +60,120 @@ public class CourseDetailActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         courseId = getIntent().getStringExtra("course_id");
+        courseTheme = getIntent().getStringExtra("course_theme");
+        displayTitle = getIntent().getStringExtra("display_title");
+        langCode = getIntent().getStringExtra("lang_code");
         
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
+        }
+
+        if (displayTitle != null) {
+            binding.textCourseTheme.setText("Chủ đề: " + displayTitle);
+        } else if (courseTheme != null) {
+            binding.textCourseTheme.setText("Chủ đề: " + courseTheme);
         }
 
         adapter = new RoadmapAdapter(allStepsList);
         binding.recyclerRoadmap.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerRoadmap.setAdapter(adapter);
 
+        setupClickListeners();
         loadUserDataAndRoadmap();
+    }
+
+    private void setupClickListeners() {
+        binding.btnViewVocabulary.setOnClickListener(v -> openVocabList());
+        binding.btnAddToLibrary.setOnClickListener(v -> {
+            if (!isCourseInLibrary) {
+                addCourseToLibrary();
+            }
+        });
+    }
+
+    private void openVocabList() {
+        Intent intent = new Intent(this, TopicWordListActivity.class);
+        intent.putExtra("topic", courseTheme);
+        intent.putExtra("display_title", displayTitle);
+        intent.putExtra("lang_code", "en"); // Luôn là tiếng Anh
+        startActivity(intent);
+    }
+
+    private void addCourseToLibrary() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        binding.btnAddToLibrary.setEnabled(false);
+        binding.btnAddToLibrary.setText("Đang thêm...");
+
+        Course course = new Course();
+        course.setTitle(displayTitle != null ? displayTitle : courseTheme);
+        course.setTheme(courseTheme);
+        course.setCreatorId(uid);
+        course.setPublic(false);
+        course.setStatus("active");
+        course.setCreatedAt(new Date());
+        course.setTargetLanguageId(1); // Tiếng Anh
+
+        db.collection("courses").add(course).addOnSuccessListener(docRef -> {
+            courseId = docRef.getId();
+            generateRoadmapData(courseId, course);
+        }).addOnFailureListener(e -> {
+            binding.btnAddToLibrary.setEnabled(true);
+            binding.btnAddToLibrary.setText("Thêm vào thư viện");
+            Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void generateRoadmapData(String courseId, Course course) {
+        db.collection("vocabularies")
+                .whereEqualTo("topic", courseTheme != null ? courseTheme.toLowerCase() : "")
+                .limit(20)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    WriteBatch batch = db.batch();
+                    String[] unitThemes = {"Khởi đầu", "Cơ bản", "Nâng cao"};
+
+                    for (int i = 0; i < unitThemes.length; i++) {
+                        String unitId = db.collection("units").document().getId();
+                        Unit unit = new Unit("Chương " + (i + 1) + ": " + unitThemes[i], i + 1, (i == 0));
+                        unit.setCourseId(courseId);
+                        unit.setUnitId(unitId);
+                        batch.set(db.collection("units").document(unitId), unit);
+
+                        String[] lessonTitles = {"Từ vựng", "Luyện nghe", "Kiểm tra"};
+                        for (int j = 0; j < lessonTitles.length; j++) {
+                            String lessonId = db.collection("lessons").document().getId();
+                            Lesson lesson = new Lesson(lessonTitles[j], "vocabulary", 10, 15);
+                            lesson.setUnitId(unitId);
+                            lesson.setLessonId(lessonId);
+                            lesson.setOrderNum(j + 1);
+                            batch.set(db.collection("lessons").document(lessonId), lesson);
+
+                            for (int k = 0; k < 2; k++) {
+                                Challenge challenge = new Challenge();
+                                challenge.setLessonId(lessonId);
+                                challenge.setOrderNum(k + 1);
+                                challenge.setType("SELECT");
+                                challenge.setQuestion("Nghĩa của từ này là gì?");
+                                String challengeId = db.collection("challenges").document().getId();
+                                challenge.setId(challengeId);
+                                batch.set(db.collection("challenges").document(challengeId), challenge);
+                            }
+                        }
+                    }
+
+                    batch.commit().addOnSuccessListener(aVoid -> {
+                        isCourseInLibrary = true;
+                        binding.btnAddToLibrary.setVisibility(View.GONE);
+                        binding.layoutEmptyRoadmap.setVisibility(View.GONE);
+                        binding.labelRoadmap.setVisibility(View.VISIBLE);
+                        loadUnitsAndLessons();
+                        UiFeedback.showSnack(binding.getRoot(), "Đã thêm vào thư viện!");
+                    });
+                });
     }
 
     private void loadUserDataAndRoadmap() {
@@ -75,18 +191,21 @@ public class CourseDetailActivity extends AppCompatActivity {
                         completedChallenges.add(doc.getString("challengeId"));
                     }
                     
-                    if (courseId == null) {
-                        findLatestCourse();
+                    if (courseId != null) {
+                        loadCourseDetails();
+                    } else if (courseTheme != null) {
+                        findCourseByTheme(courseTheme);
                     } else {
-                        loadUnitsAndLessons();
+                        binding.progressRoadmap.setVisibility(View.GONE);
                     }
                 });
     }
 
-    private void findLatestCourse() {
+    private void findCourseByTheme(String theme) {
         String uid = FirebaseAuth.getInstance().getUid();
         db.collection("courses")
                 .whereEqualTo("creatorId", uid)
+                .whereEqualTo("theme", theme)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
@@ -98,13 +217,46 @@ public class CourseDetailActivity extends AppCompatActivity {
                             return t2.compareTo(t1);
                         });
                         courseId = docs.get(0).getId();
-                        loadUnitsAndLessons();
+                        isCourseInLibrary = true;
+                        loadCourseDetails();
+                    } else {
+                        isCourseInLibrary = false;
+                        binding.progressRoadmap.setVisibility(View.GONE);
+                        binding.layoutEmptyRoadmap.setVisibility(View.VISIBLE);
+                        binding.btnAddToLibrary.setVisibility(View.VISIBLE); // Hiện nút thêm
                     }
+                })
+                .addOnFailureListener(e -> binding.progressRoadmap.setVisibility(View.GONE));
+    }
+
+    private void loadCourseDetails() {
+        if (courseId == null) return;
+        db.collection("courses").document(courseId).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        isCourseInLibrary = true;
+                        binding.btnAddToLibrary.setVisibility(View.GONE); // Ẩn nếu đã có
+                        Course course = doc.toObject(Course.class);
+                        if (course != null) {
+                            if (courseTheme == null) courseTheme = course.getTheme();
+                            if (displayTitle == null) displayTitle = course.getTitle();
+                            binding.textCourseTheme.setText("Chủ đề: " + (displayTitle != null ? displayTitle : courseTheme));
+                        }
+                    } else {
+                        isCourseInLibrary = false;
+                        binding.btnAddToLibrary.setVisibility(View.VISIBLE);
+                    }
+                    loadUnitsAndLessons();
                 });
     }
 
     private void loadUnitsAndLessons() {
         if (courseId == null) return;
+        
+        binding.progressRoadmap.setVisibility(View.VISIBLE);
+        binding.layoutEmptyRoadmap.setVisibility(View.GONE);
+        binding.labelRoadmap.setVisibility(View.VISIBLE);
+        
         db.collection("units")
                 .whereEqualTo("courseId", courseId)
                 .get()
@@ -139,7 +291,6 @@ public class CourseDetailActivity extends AppCompatActivity {
                     });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading units", e);
                     if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
                 });
     }
@@ -172,10 +323,8 @@ public class CourseDetailActivity extends AppCompatActivity {
 
                 boolean isCompleted = (totalChallenges > 0 && completedCount == totalChallenges);
                 boolean isLocked = false;
-                boolean isActive = false;
 
                 if (!isCompleted && !foundActive) {
-                    isActive = true;
                     foundActive = true;
                 } else if (foundActive) {
                     isLocked = true;
@@ -194,14 +343,19 @@ public class CourseDetailActivity extends AppCompatActivity {
                 ));
             }
             adapter.notifyDataSetChanged();
-            if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
+            if (binding != null) {
+                binding.progressRoadmap.setVisibility(View.GONE);
+                if (allStepsList.isEmpty() && isCourseInLibrary) {
+                    binding.layoutEmptyRoadmap.setVisibility(View.VISIBLE);
+                }
+            }
         });
     }
 
     private void confirmDeleteCourse() {
         new AlertDialog.Builder(this)
-                .setTitle("Xóa khóa học")
-                .setMessage("Bạn có chắc chắn muốn xóa khóa học này không?")
+                .setTitle("Xóa chủ đề")
+                .setMessage("Bạn có chắc chắn muốn xóa chủ đề này khỏi thư viện không?")
                 .setPositiveButton("Xóa", (dialog, which) -> deleteCourse())
                 .setNegativeButton("Hủy", null)
                 .show();
@@ -209,12 +363,10 @@ public class CourseDetailActivity extends AppCompatActivity {
 
     private void deleteCourse() {
         if (courseId == null) return;
-        
-        // Thoát màn hình ngay lập tức để tạo cảm giác tức thì
-        Toast.makeText(this, "Đang xóa khóa học...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Đang xóa chủ đề...", Toast.LENGTH_SHORT).show();
         db.collection("courses").document(courseId).delete()
-                .addOnFailureListener(e -> Log.e(TAG, "Delete failed in background", e));
-        finish();
+                .addOnSuccessListener(aVoid -> finish())
+                .addOnFailureListener(e -> Log.e(TAG, "Delete failed", e));
     }
 
     private long getLong(DocumentSnapshot doc, String field) {
@@ -247,10 +399,22 @@ public class CourseDetailActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem deleteItem = menu.findItem(R.id.action_delete_course);
+        if (deleteItem != null) {
+            deleteItem.setVisible(isCourseInLibrary);
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == android.R.id.home) {
             finish();
+            return true;
+        } else if (id == R.id.action_view_vocab) {
+            openVocabList();
             return true;
         } else if (id == R.id.action_delete_course) {
             confirmDeleteCourse();

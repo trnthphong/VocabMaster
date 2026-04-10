@@ -15,6 +15,7 @@ import com.example.vocabmaster.MainActivity;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.ActivityJourneySetupBinding;
+import com.example.vocabmaster.ui.library.CourseDetailActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -154,11 +155,11 @@ public class JourneySetupActivity extends AppCompatActivity {
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
             } else {
-                Intent intent = new Intent(this, TopicWordListActivity.class);
-                intent.putExtra("topic", selectedTopic);
+                // Thay đổi: Sau khi setup xong, mở CourseDetailActivity (Lộ trình) thay vì TopicWordListActivity
+                Intent intent = new Intent(this, CourseDetailActivity.class);
+                intent.putExtra("course_theme", selectedTopic);
                 intent.putExtra("display_title", displayTitle);
                 intent.putExtra("lang_code", langCode);
-                intent.putExtra("selected_level", selectedLevel); // Truyền thêm level sang màn hình danh sách
                 startActivity(intent);
             }
             finish();

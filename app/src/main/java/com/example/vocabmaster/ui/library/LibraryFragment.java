@@ -1,9 +1,7 @@
 package com.example.vocabmaster.ui.library;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -21,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.ui.home.CreateCourseFlowActivity;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -48,8 +47,9 @@ public class LibraryFragment extends Fragment {
         setupRecyclerView();
         setupSelectionBar();
         
+        // Thay đổi: Nhấn nút + sẽ mở màn hình tạo chủ đề mới (Course)
         binding.fabAddCourse.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), CreateFlashcardActivity.class);
+            Intent intent = new Intent(requireContext(), CreateCourseFlowActivity.class);
             startActivity(intent);
         });
         
@@ -78,9 +78,11 @@ public class LibraryFragment extends Fragment {
 
     private void setupRecyclerView() {
         adapter = new CourseAdapter(course -> {
+            // Thay đổi: Nhấn vào chủ đề trong library sẽ hiện màn hình lộ trình (CourseDetail)
             Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
             intent.putExtra("course_id", course.getFirestoreId());
             intent.putExtra("course_title", course.getTitle());
+            intent.putExtra("course_theme", course.getTheme());
             startActivity(intent);
         }, this::showCourseActionMenu, count -> {
             updateSelectionBar(count);
@@ -140,7 +142,7 @@ public class LibraryFragment extends Fragment {
             allCourses.clear();
             String uid = FirebaseAuth.getInstance().getUid();
             for (Course c : courses) {
-                if (TextUtils.equals(c.getCreatorId(), uid) || c.isPublic()) {
+                if (TextUtils.equals(c.getCreatorId(), uid)) {
                     allCourses.add(c);
                 }
             }

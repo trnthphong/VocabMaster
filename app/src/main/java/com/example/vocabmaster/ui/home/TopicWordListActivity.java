@@ -2,27 +2,25 @@ package com.example.vocabmaster.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.vocabmaster.R;
-import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityTopicWordListBinding;
-import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.study.StudyActivity;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -31,14 +29,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TopicWordListActivity extends AppCompatActivity {
-    private static final String TAG = "TopicWordListActivity";
     private ActivityTopicWordListBinding binding;
     private WordAdapter adapter;
     private String topic;
     private String displayTitle;
     private String langCode;
-    private String selectedLevel; // Thêm trường trình độ
-    private CourseRepository repository;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,146 +42,132 @@ public class TopicWordListActivity extends AppCompatActivity {
         binding = ActivityTopicWordListBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        repository = new CourseRepository(getApplication());
+        db = FirebaseFirestore.getInstance();
         topic = getIntent().getStringExtra("topic");
         displayTitle = getIntent().getStringExtra("display_title");
         langCode = getIntent().getStringExtra("lang_code");
-        selectedLevel = getIntent().getStringExtra("selected_level"); // Nhận từ JourneySetup
 
         if (langCode != null) {
             if (langCode.contains("Anh")) langCode = "en";
             else if (langCode.contains("Nga")) langCode = "ru";
         }
 
-        Log.d(TAG, "onCreate: topic=" + topic + ", level=" + selectedLevel);
-
-        binding.textHeaderTitle.setText(displayTitle + (selectedLevel != null ? " (" + selectedLevel + ")" : ""));
+        binding.textHeaderTitle.setText(displayTitle != null ? displayTitle : "Danh sách từ");
         binding.btnBack.setOnClickListener(v -> finish());
-
-        binding.btnChangeLang.setOnClickListener(v -> {
-            UiFeedback.performHaptic(this, 10);
-            Intent intent = new Intent(this, JourneySetupActivity.class);
-            intent.putExtra("is_change_only", true);
-            intent.putExtra("selected_topic", topic);
-            intent.putExtra("display_title", displayTitle);
-            startActivity(intent);
-        });
+        binding.btnAddNewWord.setOnClickListener(v -> showAddEditWordDialog(null));
+        
+        // Ẩn nút đổi ngôn ngữ nếu ứng dụng chỉ để học tiếng anh (hoặc xử lý theo yêu cầu)
+        binding.btnChangeLang.setVisibility(View.GONE);
 
         setupRecyclerView();
-        
-        // Nếu chưa có level từ intent, thử lấy từ profile user
-        if (selectedLevel == null) {
-            fetchUserLevelAndLoad();
-        } else {
-            loadWords();
-        }
-    }
-
-    private void fetchUserLevelAndLoad() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid != null) {
-            FirebaseFirestore.getInstance().collection("users").document(uid).get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc.exists()) {
-                            selectedLevel = doc.getString("proficiencyLevel");
-                            Log.d(TAG, "User level from profile: " + selectedLevel);
-                        }
-                        loadWords();
-                    })
-                    .addOnFailureListener(e -> loadWords());
-        } else {
-            loadWords();
-        }
+        loadWords();
     }
 
     private void setupRecyclerView() {
         adapter = new WordAdapter(new WordAdapter.OnWordClickListener() {
             @Override
             public void onWordClick(Vocabulary vocab) {
+                ArrayList<String> allIds = new ArrayList<>();
+                List<Vocabulary> currentList = adapter.getWords();
+                for (Vocabulary v : currentList) {
+                    allIds.add(v.getVocabularyId());
+                }
+                int startIndex = currentList.indexOf(vocab);
                 Intent intent = new Intent(TopicWordListActivity.this, StudyActivity.class);
-                intent.putExtra("topic", topic);
-                intent.putExtra("word_id", vocab.getVocabularyId());
-                intent.putExtra("lesson_title", vocab.getWord());
+                intent.putStringArrayListExtra("word_ids", allIds);
+                intent.putExtra("start_index", startIndex);
+                intent.putExtra("lesson_title", displayTitle);
                 startActivity(intent);
             }
 
             @Override
-            public void onAddClick(Vocabulary vocab) {
-                saveToLibrary(vocab);
+            public void onEditClick(Vocabulary vocab) {
+                showAddEditWordDialog(vocab);
+            }
+
+            @Override
+            public void onDeleteClick(Vocabulary vocab) {
+                confirmDeleteWord(vocab);
             }
         });
         binding.recyclerWords.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerWords.setAdapter(adapter);
     }
 
-    private void saveToLibrary(Vocabulary v) {
-        Flashcard card = new Flashcard(v.getWord(), v.getDefinition());
-        card.setImageUrl(v.getImageUrl());
-        card.setAudioUrl(v.getAudioUrl());
-        card.setPhonetic(v.getPhonetic());
-        card.setExample(v.getExampleSentence());
-        card.setTag(displayTitle != null ? displayTitle : topic);
+    private void showAddEditWordDialog(Vocabulary vocab) {
+        View view = getLayoutInflater().inflate(R.layout.dialog_add_word, null);
+        EditText editWord = view.findViewById(R.id.edit_word_name);
+        EditText editDef = view.findViewById(R.id.edit_word_definition);
         
-        repository.addPersonalFlashcard(card);
+        if (vocab != null) {
+            editWord.setText(vocab.getWord());
+            editDef.setText(vocab.getDefinition());
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(vocab == null ? "Thêm từ mới" : "Sửa từ vựng")
+                .setView(view)
+                .setPositiveButton("Lưu", (dialog, which) -> {
+                    String name = editWord.getText().toString().trim();
+                    String def = editDef.getText().toString().trim();
+                    if (name.isEmpty()) return;
+                    
+                    if (vocab == null) {
+                        addNewWordToFirestore(name, def);
+                    } else {
+                        updateWordInFirestore(vocab, name, def);
+                    }
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void addNewWordToFirestore(String name, String def) {
+        Vocabulary v = new Vocabulary();
+        v.setWord(name);
+        v.setDefinition(def);
+        v.setTopic(topic != null ? topic.toLowerCase() : "custom");
         
-        UiFeedback.showSnack(binding.getRoot(), "Đã thêm '" + v.getWord() + "' vào thư viện");
-        UiFeedback.performHaptic(this, 10);
+        db.collection("vocabularies").add(v).addOnSuccessListener(doc -> loadWords());
+    }
+
+    private void updateWordInFirestore(Vocabulary vocab, String name, String def) {
+        vocab.setWord(name);
+        vocab.setDefinition(def);
+        db.collection("vocabularies").document(vocab.getVocabularyId()).set(vocab).addOnSuccessListener(aVoid -> loadWords());
+    }
+
+    private void confirmDeleteWord(Vocabulary vocab) {
+        new AlertDialog.Builder(this)
+                .setTitle("Xóa từ vựng")
+                .setMessage("Bạn có chắc chắn muốn xóa từ '" + vocab.getWord() + "' không?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    db.collection("vocabularies").document(vocab.getVocabularyId()).delete().addOnSuccessListener(aVoid -> loadWords());
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 
     private void loadWords() {
-        if (topic == null || langCode == null) {
-            binding.layoutEmpty.setVisibility(View.VISIBLE);
-            return;
-        }
-
         binding.progressBar.setVisibility(View.VISIBLE);
-        binding.layoutEmpty.setVisibility(View.GONE);
-        
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
-        
-        Log.d(TAG, "Querying " + collectionPath + " | Topic: " + topic + " | Level: " + selectedLevel);
-
-        Query query = db.collection(collectionPath)
-                .whereEqualTo("topic", topic.toLowerCase());
-
-        // CHỈ LỌC THEO TRÌNH ĐỘ NẾU selectedLevel KHÔNG NULL
-        if (selectedLevel != null && !selectedLevel.isEmpty()) {
-            query = query.whereEqualTo("cefr", selectedLevel);
+        Query query = db.collection("vocabularies");
+        if (topic != null) {
+            query = query.whereEqualTo("topic", topic.toLowerCase());
         }
-
-        query.get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<Vocabulary> words = new ArrayList<>();
-                    Log.d(TAG, "Documents found with criteria: " + queryDocumentSnapshots.size());
-                    
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        try {
-                            Vocabulary v = doc.toObject(Vocabulary.class);
-                            if (v != null) {
-                                v.setVocabularyId(doc.getId());
-                                words.add(v);
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing vocabulary: " + doc.getId(), e);
-                        }
-                    }
-                    
-                    binding.progressBar.setVisibility(View.GONE);
-                    adapter.submitList(words);
-                    binding.textCount.setText(words.size() + " từ vựng phù hợp");
-                    
-                    if (words.isEmpty()) {
-                        binding.layoutEmpty.setVisibility(View.VISIBLE);
-                    } else {
-                        binding.layoutEmpty.setVisibility(View.GONE);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading words", e);
-                    binding.progressBar.setVisibility(View.GONE);
-                    Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        
+        query.get().addOnSuccessListener(snapshots -> {
+            List<Vocabulary> words = new ArrayList<>();
+            for (DocumentSnapshot doc : snapshots) {
+                Vocabulary v = doc.toObject(Vocabulary.class);
+                if (v != null) {
+                    v.setVocabularyId(doc.getId());
+                    words.add(v);
+                }
+            }
+            binding.progressBar.setVisibility(View.GONE);
+            adapter.submitList(words);
+            binding.textCount.setText(words.size() + " từ vựng");
+        });
     }
 
     private static class WordAdapter extends RecyclerView.Adapter<WordAdapter.ViewHolder> {
@@ -194,7 +176,8 @@ public class TopicWordListActivity extends AppCompatActivity {
 
         public interface OnWordClickListener {
             void onWordClick(Vocabulary vocab);
-            void onAddClick(Vocabulary vocab);
+            void onEditClick(Vocabulary vocab);
+            void onDeleteClick(Vocabulary vocab);
         }
 
         public WordAdapter(OnWordClickListener listener) {
@@ -205,6 +188,8 @@ public class TopicWordListActivity extends AppCompatActivity {
             this.words = newList;
             notifyDataSetChanged();
         }
+
+        public List<Vocabulary> getWords() { return words; }
 
         @NonNull
         @Override
@@ -217,14 +202,11 @@ public class TopicWordListActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Vocabulary vocab = words.get(position);
             holder.wordText.setText(vocab.getWord());
-            
-            // Hiển thị thêm CEFR Level nếu có
-            String cefr = vocab.getCefr() != null ? "[" + vocab.getCefr() + "] " : "";
-            String pos = vocab.getPartOfSpeech() != null ? "(" + vocab.getPartOfSpeech() + ") " : "";
-            holder.defText.setText(cefr + pos + (vocab.getDefinition() != null ? vocab.getDefinition() : ""));
+            holder.defText.setText(vocab.getDefinition());
             
             holder.itemView.setOnClickListener(v -> listener.onWordClick(vocab));
-            holder.btnAdd.setOnClickListener(v -> listener.onAddClick(vocab));
+            holder.btnEdit.setOnClickListener(v -> listener.onEditClick(vocab));
+            holder.btnDelete.setOnClickListener(v -> listener.onDeleteClick(vocab));
         }
 
         @Override
@@ -232,12 +214,13 @@ public class TopicWordListActivity extends AppCompatActivity {
 
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView wordText, defText;
-            ImageButton btnAdd;
+            ImageButton btnEdit, btnDelete;
             ViewHolder(View itemView) {
                 super(itemView);
                 wordText = itemView.findViewById(R.id.text_word);
                 defText = itemView.findViewById(R.id.text_definition);
-                btnAdd = itemView.findViewById(R.id.btn_add_library);
+                btnEdit = itemView.findViewById(R.id.btn_edit_word);
+                btnDelete = itemView.findViewById(R.id.btn_delete_word);
             }
         }
     }

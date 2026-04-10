@@ -156,8 +156,9 @@ public class HomeFragment extends Fragment {
         boolean hasValidLang = userLang != null && (userLang.equals("en") || userLang.equals("ru"));
 
         if (hasValidLang) {
-            Intent intent = new Intent(requireContext(), TopicWordListActivity.class);
-            intent.putExtra("topic", topic);
+            // Thay đổi: Thay vì TopicWordListActivity, mở CourseDetailActivity (Lộ trình)
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            intent.putExtra("course_theme", topic);
             intent.putExtra("display_title", displayTitle);
             intent.putExtra("lang_code", userLang);
             startActivity(intent);
