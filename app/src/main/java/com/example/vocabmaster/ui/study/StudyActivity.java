@@ -41,7 +41,6 @@ public class StudyActivity extends AppCompatActivity {
     private Vocabulary currentVocab;
     private String lessonId;
     
-    // Animation lật thẻ
     private AnimatorSet frontAnim;
     private AnimatorSet backAnim;
     private boolean isFront = true;
@@ -56,19 +55,13 @@ public class StudyActivity extends AppCompatActivity {
         repository = new CourseRepository(getApplication());
         mediaPlayer = new MediaPlayer();
 
-        // Lấy dữ liệu từ intent
         lessonId = getIntent().getStringExtra("lesson_id");
         ArrayList<String> ids = getIntent().getStringArrayListExtra("word_ids");
         if (ids != null) {
             wordIds.addAll(ids);
-        } else {
-            String singleId = getIntent().getStringExtra("word_id");
-            if (singleId != null) wordIds.add(singleId);
         }
         
         currentIndex = getIntent().getIntExtra("start_index", 0);
-        if (currentIndex >= wordIds.size()) currentIndex = 0;
-
         String lessonTitle = getIntent().getStringExtra("lesson_title");
         if (lessonTitle != null) binding.textHeaderTitle.setText(lessonTitle);
 
@@ -92,105 +85,99 @@ public class StudyActivity extends AppCompatActivity {
                     wordIds.addAll(words);
                     loadCurrentWord();
                 } else {
-                    Toast.makeText(this, "Bài học này chưa có từ vựng", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Bài học chưa có từ vựng", Toast.LENGTH_SHORT).show();
                     finish();
                 }
             }
         }).addOnFailureListener(e -> {
             binding.studyProgress.setIndeterminate(false);
-            Toast.makeText(this, "Lỗi tải bài học", Toast.LENGTH_SHORT).show();
             finish();
         });
     }
 
     private void setupAnimations() {
-        // Thiết lập camera distance để hiệu ứng lật không bị "vỡ" hình
         float scale = getResources().getDisplayMetrics().density;
         binding.cardFront.setCameraDistance(8000 * scale);
         binding.cardBack.setCameraDistance(8000 * scale);
 
-        try {
-            frontAnim = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.front_animator);
-            backAnim = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.back_animator);
-        } catch (Exception e) {
-            Log.e(TAG, "Error loading animators", e);
-        }
+        frontAnim = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.front_animator);
+        backAnim = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.back_animator);
     }
 
     private void setupListeners() {
         binding.btnClose.setOnClickListener(v -> finish());
-        
         binding.cardFlashcard.setOnClickListener(v -> flipCard());
         
-        binding.btnNext.setOnClickListener(v -> {
-            if (currentIndex < wordIds.size() - 1) {
-                currentIndex++;
-                loadCurrentWord();
-            } else {
-                completeLesson();
-            }
-        });
-
-        binding.btnSkip.setOnClickListener(v -> {
-            if (currentIndex < wordIds.size() - 1) {
-                currentIndex++;
-                loadCurrentWord();
-            } else {
-                completeLesson();
-            }
-        });
+        binding.btnNext.setOnClickListener(v -> handleNext());
+        binding.btnSkip.setOnClickListener(v -> handleNext());
 
         binding.btnListen.setOnClickListener(v -> {
-            if (currentVocab != null) {
-                playAudio(currentVocab.getAnyAudioUrl());
-            }
+            if (currentVocab != null) playAudio(currentVocab.getAnyAudioUrl());
         });
 
-        binding.btnSaveToLibrary.setOnClickListener(v -> saveToPersonalLibrary());
+        binding.btnAddFlashcard.setOnClickListener(v -> saveToPersonalLibrary());
+    }
+
+    private void handleNext() {
+        if (currentIndex < wordIds.size() - 1) {
+            currentIndex++;
+            loadCurrentWord();
+        } else {
+            completeLesson();
+        }
     }
 
     private void completeLesson() {
         if (lessonId == null) {
-            Toast.makeText(this, "Chúc mừng! Bạn đã hoàn thành lộ trình này.", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
 
         String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
+        if (uid == null) {
+            finish();
+            return;
+        }
 
         binding.btnNext.setEnabled(false);
-        binding.btnSkip.setEnabled(false);
         Toast.makeText(this, "Đang lưu tiến trình...", Toast.LENGTH_SHORT).show();
 
-        // Tìm tất cả challenges của bài học này và đánh dấu hoàn thành
+        // 1. Tìm tất cả challenges thuộc bài học này
         db.collection("challenges")
                 .whereEqualTo("lessonId", lessonId)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        // Nếu không có challenge, vẫn đóng activity
+                        setResult(RESULT_OK);
+                        finish();
+                        return;
+                    }
+
                     WriteBatch batch = db.batch();
                     for (DocumentSnapshot doc : querySnapshot) {
+                        String challengeId = doc.getId();
                         Map<String, Object> progress = new HashMap<>();
                         progress.put("userId", uid);
-                        progress.put("challengeId", doc.getId());
+                        progress.put("challengeId", challengeId);
                         progress.put("completed", true);
                         progress.put("completedAt", Timestamp.now());
                         
-                        // ID duy nhất: userId + challengeId
-                        batch.set(db.collection("challengeProgress").document(uid + "_" + doc.getId()), progress);
+                        // Tạo hoặc cập nhật progress
+                        batch.set(db.collection("challengeProgress").document(uid + "_" + challengeId), progress);
                     }
                     
                     batch.commit().addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Tuyệt vời! Bài học đã hoàn thành.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Bài học đã hoàn thành!", Toast.LENGTH_SHORT).show();
                         setResult(RESULT_OK);
                         finish();
                     }).addOnFailureListener(e -> {
-                        Log.e(TAG, "Batch failed", e);
+                        Log.e(TAG, "Lỗi lưu tiến trình", e);
                         finish();
                     });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Query challenges failed", e);
+                    Log.e(TAG, "Lỗi truy vấn challenges", e);
                     finish();
                 });
     }
@@ -198,81 +185,25 @@ public class StudyActivity extends AppCompatActivity {
     private void loadCurrentWord() {
         if (wordIds.isEmpty() || currentIndex >= wordIds.size()) return;
 
-        // Reset trạng thái mặt thẻ về mặt trước
-        if (!isFront) {
-            binding.cardFront.setVisibility(View.VISIBLE);
-            binding.cardBack.setVisibility(View.GONE);
-            binding.cardFront.setAlpha(1f);
-            binding.cardBack.setAlpha(0f);
-            binding.cardFront.setRotationY(0);
-            binding.cardBack.setRotationY(-180);
-            isFront = true;
-        } else {
-            // Đảm bảo trạng thái ban đầu đúng
-            binding.cardFront.setVisibility(View.VISIBLE);
-            binding.cardBack.setVisibility(View.GONE);
-            binding.cardFront.setAlpha(1f);
-            binding.cardBack.setAlpha(0f);
-            binding.cardFront.setRotationY(0);
-            binding.cardBack.setRotationY(-180);
-        }
+        isFront = true;
+        binding.cardFront.setAlpha(1f);
+        binding.cardFront.setRotationY(0f);
+        binding.cardBack.setAlpha(0f);
+        binding.cardBack.setRotationY(180f); 
 
         String wordId = wordIds.get(currentIndex);
         updateProgressUI();
 
-        binding.btnNext.setEnabled(false); // Disable cho đến khi load xong
-
         db.collection("vocabularies").document(wordId).get()
             .addOnSuccessListener(doc -> {
                 if (doc.exists()) {
-                    displayVocab(doc.toObject(Vocabulary.class));
-                } else {
-                    db.collection("russian_vocabularies").document(wordId).get()
-                        .addOnSuccessListener(docRu -> {
-                            if (docRu.exists()) displayVocab(docRu.toObject(Vocabulary.class));
-                        });
+                    currentVocab = doc.toObject(Vocabulary.class);
+                    displayVocab(currentVocab);
                 }
-                binding.btnNext.setEnabled(true);
-            })
-            .addOnFailureListener(e -> {
-                binding.btnNext.setEnabled(true);
-                Toast.makeText(this, "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show();
             });
     }
 
-    private void updateProgressUI() {
-        int progress = (int) (((float)(currentIndex + 1) / wordIds.size()) * 100);
-        binding.studyProgress.setProgress(progress);
-        binding.textHeaderTitle.setText("Từ " + (currentIndex + 1) + " / " + wordIds.size());
-    }
-
-    private void displayVocab(Vocabulary vocab) {
-        currentVocab = vocab;
-        if (vocab == null) return;
-
-        binding.textTerm.setText(vocab.getWord());
-        binding.textDefinition.setText(vocab.getDefinition());
-        
-        if (vocab.getPhonetic() != null && !vocab.getPhonetic().isEmpty()) {
-            binding.textPhonetic.setText(vocab.getPhonetic());
-            binding.textPhonetic.setVisibility(View.VISIBLE);
-        } else {
-            binding.textPhonetic.setVisibility(View.GONE);
-        }
-        
-        binding.btnListen.setVisibility(vocab.getAnyAudioUrl() != null ? View.VISIBLE : View.GONE);
-        
-        binding.btnSaveToLibrary.setEnabled(true);
-        binding.btnSaveToLibrary.setText("Lưu vào thư viện");
-        binding.btnSaveToLibrary.setVisibility(View.VISIBLE);
-        
-        binding.btnNext.setVisibility(View.VISIBLE);
-        binding.btnSkip.setVisibility(View.VISIBLE);
-    }
-
     private void flipCard() {
-        if (frontAnim == null || backAnim == null) return;
-        
         if (isFront) {
             frontAnim.setTarget(binding.cardFront);
             backAnim.setTarget(binding.cardBack);
@@ -289,6 +220,37 @@ public class StudyActivity extends AppCompatActivity {
         UiFeedback.performHaptic(this, 5);
     }
 
+    private void updateProgressUI() {
+        int total = wordIds.size();
+        int current = currentIndex + 1;
+        int progress = (int) (((float) current / total) * 100);
+        binding.studyProgress.setProgress(progress);
+        binding.textHeaderTitle.setText("Từ " + current + " / " + total);
+    }
+
+    private void displayVocab(Vocabulary vocab) {
+        if (vocab == null) return;
+        binding.textTerm.setText(vocab.getWord());
+        binding.textDefinition.setText(vocab.getDefinition());
+        binding.textPhonetic.setText(vocab.getPhonetic());
+        binding.textPhonetic.setVisibility(vocab.getPhonetic() != null ? View.VISIBLE : View.GONE);
+        binding.btnListen.setVisibility(vocab.getAnyAudioUrl() != null ? View.VISIBLE : View.GONE);
+        
+        // Reset nút ngôi sao
+        binding.btnAddFlashcard.setImageResource(android.R.drawable.btn_star_big_off);
+    }
+
+    private void saveToPersonalLibrary() {
+        if (currentVocab == null) return;
+        Flashcard card = new Flashcard(currentVocab.getWord(), currentVocab.getDefinition());
+        card.setPhonetic(currentVocab.getPhonetic());
+        card.setAudioUrl(currentVocab.getAnyAudioUrl());
+        repository.addPersonalFlashcard(card);
+        
+        binding.btnAddFlashcard.setImageResource(android.R.drawable.btn_star_big_on);
+        UiFeedback.showSnack(binding.getRoot(), "Đã lưu vào thư viện cá nhân");
+    }
+
     private void playAudio(String url) {
         if (url == null || url.isEmpty()) return;
         try {
@@ -301,28 +263,9 @@ public class StudyActivity extends AppCompatActivity {
         }
     }
 
-    private void saveToPersonalLibrary() {
-        if (currentVocab == null) return;
-        Flashcard card = new Flashcard(currentVocab.getWord(), currentVocab.getDefinition());
-        card.setPhonetic(currentVocab.getPhonetic());
-        card.setAudioUrl(currentVocab.getAnyAudioUrl());
-        card.setImageUrl(currentVocab.getImageUrl());
-        card.setTag(getIntent().getStringExtra("topic") != null ? getIntent().getStringExtra("topic") : "Journey");
-        
-        repository.addPersonalFlashcard(card);
-        
-        binding.btnSaveToLibrary.setEnabled(false);
-        binding.btnSaveToLibrary.setText("Đã lưu");
-        UiFeedback.showSnack(binding.getRoot(), "Đã thêm vào bộ sưu tập cá nhân");
-        UiFeedback.performHaptic(this, 10);
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
+        if (mediaPlayer != null) mediaPlayer.release();
     }
 }

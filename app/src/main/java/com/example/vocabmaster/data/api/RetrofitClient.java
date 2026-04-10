@@ -7,7 +7,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
-    private static final String BASE_URL = "https://mee-uncirculated-emarginately.ngrok-free.dev/";
+    // Sử dụng 10.0.2.2 để kết nối với localhost của máy tính từ Android Emulator
+    private static final String BASE_URL = "http://10.0.2.2:3000/";
     private static Retrofit retrofit = null;
 
     public static Retrofit getClient() {
@@ -17,13 +18,6 @@ public class RetrofitClient {
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(interceptor)
-                    .addInterceptor(chain -> {
-                        // Bỏ qua trang cảnh báo của ngrok cho các API call
-                        Request request = chain.request().newBuilder()
-                                .addHeader("ngrok-skip-browser-warning", "69420")
-                                .build();
-                        return chain.proceed(request);
-                    })
                     .build();
 
             retrofit = new Retrofit.Builder()
