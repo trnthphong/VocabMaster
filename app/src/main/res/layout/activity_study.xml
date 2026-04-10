@@ -99,6 +99,7 @@
                 android:textColor="#000000"
                 android:textStyle="bold" />
         </LinearLayout>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Main Container -->
@@ -116,23 +117,22 @@
             android:id="@+id/card_flashcard"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:cardBackgroundColor="@android:color/white"
+            app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="@dimen/radius_huge"
-            app:cardElevation="4dp"
+            app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <!-- Nút Ngôi Sao (Lưu Flashcard) - Đặt ở đây để không bị xoay theo card -->
+                <!-- Nút lưu nhanh nằm góc trên card -->
                 <ImageButton
                     android:id="@+id/btn_add_flashcard"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_margin="@dimen/spacing_16"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:elevation="10dp"
                     android:src="@android:drawable/btn_star_big_off"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -142,12 +142,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
-                    <!-- MẶT TRƯỚC -->
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/card_front"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@android:color/white"
                         android:padding="@dimen/spacing_32">
 
                         <TextView
@@ -178,12 +176,11 @@
 
                         <TextView
                             android:id="@+id/text_term"
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Term"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Display"
                             android:textAlignment="center"
-                            android:textColor="@android:color/black"
                             app:layout_constraintBottom_toTopOf="@+id/text_phonetic"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
@@ -198,46 +195,45 @@
                             android:text="/phonetic/"
                             android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                             android:textColor="@color/gray_light"
+                            android:visibility="gone"
                             app:layout_constraintBottom_toTopOf="@+id/btn_listen"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/text_term" />
+                            app:layout_constraintTop_toBottomOf="@id/text_term"
+                            tools:visibility="visible" />
 
                         <ImageButton
                             android:id="@+id/btn_listen"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:layout_marginTop="24dp"
-                            android:layout_marginBottom="16dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
                             android:scaleType="centerInside"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginTop="16dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
                             android:src="@drawable/volume"
+                            android:visibility="gone"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@id/text_phonetic"
-                            app:tint="@color/brand_primary" />
+                            app:tint="@color/brand_primary"
+                            tools:visibility="visible" />
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <!-- MẶT SAU -->
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/card_back"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@android:color/white"
                         android:padding="@dimen/spacing_32"
-                        android:alpha="0"
-                        android:rotationY="180">
+                        android:visibility="gone">
 
                         <TextView
                             android:id="@+id/text_definition"
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Definition Placeholder"
                             android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                             android:textAlignment="center"
-                            android:textColor="@android:color/black"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
@@ -247,6 +243,13 @@
                 </FrameLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <FrameLayout
+            android:id="@+id/dynamic_task_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
     </FrameLayout>
 
     <!-- Bottom Controls -->
@@ -258,6 +261,18 @@
         android:orientation="horizontal"
         android:padding="@dimen/spacing_16"
         app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Nút thêm vào thư viện riêng cho Flashcard Journey -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save_to_library"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
+            android:text="Lưu vào thư viện"
+            android:visibility="gone"
+            app:backgroundTint="@color/brand_primary"
+            app:cornerRadius="@dimen/radius_large"
+            app:icon="@android:drawable/ic_input_add" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_skip"
@@ -279,6 +294,7 @@
             android:text="Tiếp tục"
             app:backgroundTint="@color/brand_primary"
             app:cornerRadius="@dimen/radius_large" />
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

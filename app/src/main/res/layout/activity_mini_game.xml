@@ -1,218 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/light_blue">
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <!-- Header -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/header"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="@dimen/bar_height"
-        android:paddingHorizontal="@dimen/spacing_16"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/btn_close"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/close"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/blue" />
-
-        <TextView
-            android:id="@+id/text_mini_score"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Score: 0"
-            android:textColor="@color/blue"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/game_progress"
+        <Button
+            android:id="@+id/btn_tab_match"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp"
-            app:indicatorColor="@color/brand_primary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/text_mini_score"
-            app:layout_constraintStart_toEndOf="@id/btn_close"
-            app:layout_constraintTop_toTopOf="parent"
-            app:trackColor="@color/white"
-            app:trackCornerRadius="10dp"
-            app:trackThickness="8dp"
-            android:progress="0" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:layout_weight="1"
+            android:text="Match" />
 
-    <!-- Content Area -->
-    <FrameLayout
-        android:id="@+id/game_container"
+        <Button
+            android:id="@+id/btn_tab_mcq"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MCQ" />
+
+        <Button
+            android:id="@+id/btn_tab_speed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Speed" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_mini_score"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Score: 0"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/layout_match"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_margin="24dp"
-        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
-        app:layout_constraintTop_toBottomOf="@id/header">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="vertical">
 
-        <com.google.android.material.card.MaterialCardView
+        <TextView android:id="@+id/match_word_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="abundant" />
+        <TextView android:id="@+id/match_def_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="lasting a short time" />
+        <CheckBox android:id="@+id/chk_11" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Pair word 1 with def 1" />
+        <TextView android:id="@+id/match_word_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="brief" />
+        <TextView android:id="@+id/match_def_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="existing in large quantities" />
+        <CheckBox android:id="@+id/chk_22" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Pair word 2 with def 2" />
+
+        <Button
+            android:id="@+id/btn_check_match"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
+            android:layout_height="wrap_content"
+            android:text="Check answers" />
+    </LinearLayout>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="24dp">
-
-                <!-- 1. Listening MCQ -->
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/layout_listen_mcq"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="gone">
-                    <TextView
-                        android:id="@+id/title_listen_mcq"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Nghe và chọn từ đúng"
-                        android:textAlignment="center"
-                        android:textStyle="bold"
-                        app:layout_constraintTop_toTopOf="parent" />
-                    <ImageButton
-                        android:id="@+id/btn_play_audio_mcq"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_circle_accent"
-                        android:src="@drawable/volume"
-                        app:layout_constraintBottom_toTopOf="@id/layout_options_mcq"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/title_listen_mcq"
-                        app:tint="@color/white" />
-                    <LinearLayout
-                        android:id="@+id/layout_options_mcq"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        app:layout_constraintBottom_toBottomOf="parent">
-                        <Button android:id="@+id/btn_opt1" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_option" app:backgroundTint="@null" android:textColor="@color/brand_primary" />
-                        <Button android:id="@+id/btn_opt2" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_option" app:backgroundTint="@null" android:textColor="@color/brand_primary" />
-                        <Button android:id="@+id/btn_opt3" android:layout_width="match_parent" android:layout_height="60dp" android:background="@drawable/bg_selectable_option" app:backgroundTint="@null" android:textColor="@color/brand_primary" />
-                    </LinearLayout>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-                <!-- 2. Listening Writing -->
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/layout_listen_write"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="gone">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Nghe và gõ lại từ"
-                        android:textAlignment="center"
-                        android:textStyle="bold"
-                        app:layout_constraintTop_toTopOf="parent" />
-                    <ImageButton
-                        android:id="@+id/btn_play_audio_write"
-                        android:layout_width="80dp"
-                        android:layout_height="80dp"
-                        android:background="@drawable/bg_circle_accent"
-                        android:src="@drawable/volume"
-                        app:layout_constraintBottom_toTopOf="@id/edit_answer_write"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/white" />
-                    <EditText
-                        android:id="@+id/edit_answer_write"
-                        android:layout_width="match_parent"
-                        android:layout_height="60dp"
-                        android:hint="Gõ từ bạn nghe được..."
-                        android:textAlignment="center"
-                        app:layout_constraintBottom_toBottomOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-                <!-- 3. Meaning MCQ -->
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/layout_meaning_mcq"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="gone">
-                    <TextView
-                        android:id="@+id/text_target_word"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Word"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.Display"
-                        android:textAlignment="center"
-                        app:layout_constraintTop_toTopOf="parent" />
-                    <LinearLayout
-                        android:id="@+id/layout_meaning_options"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        app:layout_constraintBottom_toBottomOf="parent">
-                        <Button android:id="@+id/btn_m_opt1" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_option" app:backgroundTint="@null" android:textColor="@color/brand_primary" />
-                        <Button android:id="@+id/btn_m_opt2" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_option" app:backgroundTint="@null" android:textColor="@color/brand_primary" />
-                        <Button android:id="@+id/btn_m_opt3" android:layout_width="match_parent" android:layout_height="60dp" android:background="@drawable/bg_selectable_option" app:backgroundTint="@null" android:textColor="@color/brand_primary" />
-                    </LinearLayout>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-                <!-- 4. Meaning Writing -->
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/layout_meaning_write"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="gone">
-                    <TextView
-                        android:id="@+id/text_target_definition"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Định nghĩa của từ."
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                        android:textAlignment="center"
-                        app:layout_constraintBottom_toTopOf="@id/edit_word_write"
-                        app:layout_constraintTop_toTopOf="parent" />
-                    <EditText
-                        android:id="@+id/edit_word_write"
-                        android:layout_width="match_parent"
-                        android:layout_height="60dp"
-                        android:hint="Từ này là gì?"
-                        android:textAlignment="center"
-                        app:layout_constraintBottom_toBottomOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </com.google.android.material.card.MaterialCardView>
-    </FrameLayout>
-
-    <!-- Bottom Bar -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottom_bar"
+    <LinearLayout
+        android:id="@+id/layout_mcq"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:paddingHorizontal="24dp"
-        app:layout_constraintBottom_toBottomOf="parent">
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_check_answer"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="KIỂM TRA"
-            app:cornerRadius="16dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/text_mcq_question" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Question" />
+        <Button android:id="@+id/btn_mcq_a" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="A" />
+        <Button android:id="@+id/btn_mcq_b" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="B" />
+        <Button android:id="@+id/btn_mcq_c" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="C" />
+    </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/layout_speed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/text_speed_timer" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Time left: 10s" />
+        <TextView android:id="@+id/text_speed_prompt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Type the matching word..." />
+        <EditText android:id="@+id/edit_speed_answer" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Your answer" />
+        <Button android:id="@+id/btn_start_speed" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Start round" />
+        <Button android:id="@+id/btn_speed_submit" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Submit answer" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_close"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Back" />
+
+</LinearLayout>
