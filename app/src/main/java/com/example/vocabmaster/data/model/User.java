@@ -1,6 +1,7 @@
 package com.example.vocabmaster.data.model;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.PropertyName;
 import java.util.List;
 
 public class User {
@@ -10,7 +11,10 @@ public class User {
     private String avatar;
     private String avatarUrl;
     private String role;
-    private boolean isPremium;
+    
+    // Đổi tên biến để khớp hoàn toàn với Firestore field name
+    private boolean premium; 
+    
     private Timestamp premiumUntil;
     private List<String> savedSets;
     private Timestamp createdAt;
@@ -42,7 +46,7 @@ public class User {
     }
 
     public boolean isActivePremium() {
-        if (isPremium) return true;
+        if (premium) return true;
         if (premiumUntil == null) return false;
         return premiumUntil.toDate().getTime() > System.currentTimeMillis();
     }
@@ -60,8 +64,18 @@ public class User {
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
-    public boolean isPremium() { return isPremium; }
-    public void setPremium(boolean premium) { isPremium = premium; }
+
+    // Sử dụng cả isPremium và premium để Firestore chắc chắn map được
+    @PropertyName("isPremium")
+    public boolean isPremium() { return premium; }
+    @PropertyName("isPremium")
+    public void setPremium(boolean premium) { this.premium = premium; }
+
+    @PropertyName("premium")
+    public boolean getPremium() { return premium; }
+    @PropertyName("premium")
+    public void setPremiumActual(boolean premium) { this.premium = premium; }
+
     public Timestamp getPremiumUntil() { return premiumUntil; }
     public void setPremiumUntil(Timestamp premiumUntil) { this.premiumUntil = premiumUntil; }
     public List<String> getSavedSets() { return savedSets; }

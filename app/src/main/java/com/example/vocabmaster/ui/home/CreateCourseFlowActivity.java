@@ -4,37 +4,41 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
-import com.example.vocabmaster.data.model.Challenge;
 import com.example.vocabmaster.data.model.Course;
-import com.example.vocabmaster.data.model.Lesson;
-import com.example.vocabmaster.data.model.Unit;
 import com.example.vocabmaster.databinding.ActivityCreateCourseFlowBinding;
 import com.example.vocabmaster.ui.library.CourseDetailActivity;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 public class CreateCourseFlowActivity extends AppCompatActivity {
     private static final String TAG = "CreateCourseFlow";
     private ActivityCreateCourseFlowBinding binding;
     private int currentStep = 1;
-    private final int totalSteps = 3; // Giảm xuống 3 bước
+    private final int totalSteps = 4;
     
     private String selectedLanguage = "";
-    private String selectedTheme = "";
+    private String selectedLevel = "";
+    private List<String> selectedTopics = new ArrayList<>();
+    private int selectedTime = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +66,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
                     currentStep++;
                     updateStepUI();
                 } else {
-                    checkIfCourseExists();
+                    startCourseCreationFlow();
                 }
             }
         });
@@ -72,6 +76,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding.layoutStep1.setVisibility(currentStep == 1 ? View.VISIBLE : View.GONE);
         binding.layoutStep2.setVisibility(currentStep == 2 ? View.VISIBLE : View.GONE);
         binding.layoutStep3.setVisibility(currentStep == 3 ? View.VISIBLE : View.GONE);
+        binding.layoutStep4.setVisibility(currentStep == 4 ? View.VISIBLE : View.GONE);
 
         binding.progressFlow.setProgress(currentStep);
         binding.progressFlow.setMax(totalSteps);
@@ -90,123 +95,173 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
                 Toast.makeText(this, "Vui lòng chọn ngôn ngữ", Toast.LENGTH_SHORT).show();
                 return false;
             }
-            RadioButton rb = findViewById(checkedId);
-            selectedLanguage = rb.getText().toString();
+            if (checkedId == R.id.radio_en) selectedLanguage = "en";
+            else if (checkedId == R.id.radio_ja) selectedLanguage = "ja";
+            else if (checkedId == R.id.radio_rus) selectedLanguage = "ru";
+            else if (checkedId == R.id.radio_zh) selectedLanguage = "zh";
             return true;
         } else if (currentStep == 2) {
-            int checkedId = binding.radioGroupThemes.getCheckedRadioButtonId();
+            int checkedId = binding.radioGroupLevel.getCheckedRadioButtonId();
             if (checkedId == -1) {
-                Toast.makeText(this, "Vui lòng chọn chủ đề", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Vui lòng chọn trình độ", Toast.LENGTH_SHORT).show();
                 return false;
             }
-            RadioButton rb = findViewById(checkedId);
-            selectedTheme = rb.getText().toString();
+            if (checkedId == R.id.level_beginner) selectedLevel = "beginner";
+            else if (checkedId == R.id.level_elementary) selectedLevel = "beginner";
+            else if (checkedId == R.id.level_intermediate) selectedLevel = "intermediate";
+            else if (checkedId == R.id.level_advanced) selectedLevel = "advanced";
+            return true;
+        } else if (currentStep == 3) {
+            selectedTopics.clear();
+            if (binding.cbCareer.isChecked()) selectedTopics.add(binding.cbCareer.getText().toString());
+            if (binding.cbSchool.isChecked()) selectedTopics.add(binding.cbSchool.getText().toString());
+            if (binding.cbCulture.isChecked()) selectedTopics.add(binding.cbCulture.getText().toString());
+            if (binding.cbTravel.isChecked()) selectedTopics.add(binding.cbTravel.getText().toString());
+            if (binding.cbFood.isChecked()) selectedTopics.add(binding.cbFood.getText().toString());
+            if (binding.cbTech.isChecked()) selectedTopics.add(binding.cbTech.getText().toString());
+            
+            if (selectedTopics.isEmpty()) {
+                Toast.makeText(this, "Vui lòng chọn ít nhất một chủ đề", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            return true;
+        } else if (currentStep == 4) {
+            int checkedId = binding.radioGroupTime.getCheckedRadioButtonId();
+            if (checkedId == R.id.radio_5min) selectedTime = 5;
+            else if (checkedId == R.id.radio_15min) selectedTime = 15;
+            else selectedTime = 10;
             return true;
         }
         return true;
     }
 
-    private void checkIfCourseExists() {
-        String courseTitle = selectedLanguage + " - " + selectedTheme;
+    private void startCourseCreationFlow() {
         binding.btnNextFlow.setEnabled(false);
-        binding.btnNextFlow.setText("Đang kiểm tra dữ liệu...");
+        binding.btnNextFlow.setText("Đang khởi tạo bài học...");
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("courses")
-                .whereEqualTo("title", courseTitle)
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        CollectionReference personalCoursesRef = db.collection("users").document(uid).collection("personal_courses");
+
+        personalCoursesRef
+                .whereEqualTo("language", selectedLanguage)
+                .whereEqualTo("proficiencyLevel", selectedLevel)
                 .limit(1)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
-                        QueryDocumentSnapshot doc = (QueryDocumentSnapshot) querySnapshot.getDocuments().get(0);
-                        goToRoadmap(doc.getId(), doc.getString("title"), doc.getString("theme"));
+                        String courseId = querySnapshot.getDocuments().get(0).getId();
+                        updateUserActiveCourse(courseId);
+                        goToRoadmap(courseId, querySnapshot.getDocuments().get(0).getString("title"));
                     } else {
-                        createCourseAndFinish();
+                        cloneTemplateToPersonal(db, personalCoursesRef);
                     }
                 })
-                .addOnFailureListener(e -> createCourseAndFinish());
+                .addOnFailureListener(e -> cloneTemplateToPersonal(db, personalCoursesRef));
     }
 
-    private void createCourseAndFinish() {
-        String userId = FirebaseAuth.getInstance().getUid();
-        binding.btnNextFlow.setText("Đang khởi tạo lộ trình...");
+    private void cloneTemplateToPersonal(FirebaseFirestore db, CollectionReference personalRef) {
+        String templateId = selectedLanguage + "_" + selectedLevel + "_course";
+        
+        db.collection("courses").document(templateId).get().addOnSuccessListener(templateDoc -> {
+            if (templateDoc.exists()) {
+                Map<String, Object> courseData = templateDoc.getData();
+                if (courseData != null) {
+                    courseData.put("creatorId", FirebaseAuth.getInstance().getUid());
+                    courseData.put("createdAt", new Date());
+                    courseData.put("updatedAt", new Date());
+                    courseData.put("isPublic", false);
+                    courseData.put("dailyTimeMinutes", selectedTime);
+                    courseData.put("status", "active");
+                    if (!selectedTopics.isEmpty()) {
+                        courseData.put("theme", selectedTopics.get(0));
+                    }
 
-        Course course = new Course();
-        course.setTitle(selectedLanguage + " - " + selectedTheme);
-        course.setDescription("Lộ trình học tập " + selectedLanguage);
-        course.setTheme(selectedTheme);
-        course.setCreatorId(userId);
-        course.setPublic(true);
-        course.setCreatedAt(new Date());
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("courses").add(course).addOnSuccessListener(docRef -> {
-            String courseId = docRef.getId();
-            fetchVocabAndGenerateDuolingoPath(db, courseId, selectedTheme, course);
-        }).addOnFailureListener(e -> {
-            resetButton();
-            Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        });
-    }
-
-    private void fetchVocabAndGenerateDuolingoPath(FirebaseFirestore db, String courseId, String theme, Course course) {
-        db.collection("vocabularies").limit(40).get().addOnSuccessListener(querySnapshot -> {
-            List<QueryDocumentSnapshot> allVocabs = new ArrayList<>();
-            for (QueryDocumentSnapshot doc : querySnapshot) allVocabs.add(doc);
-            generateDuolingoUnits(db, courseId, theme, allVocabs, course);
-        }).addOnFailureListener(e -> generateDuolingoUnits(db, courseId, theme, new ArrayList<>(), course));
-    }
-
-    private void generateDuolingoUnits(FirebaseFirestore db, String courseId, String theme, List<QueryDocumentSnapshot> vocabs, Course course) {
-        WriteBatch batch = db.batch();
-        String[] unitThemes = {"Khởi đầu", "Cơ bản", "Nâng cao " + theme};
-
-        for (int i = 0; i < unitThemes.length; i++) {
-            String unitId = db.collection("units").document().getId();
-            Unit unit = new Unit("Chương " + (i + 1) + ": " + unitThemes[i], i + 1, (i == 0));
-            unit.setCourseId(courseId);
-            unit.setUnitId(unitId);
-            batch.set(db.collection("units").document(unitId), unit);
-
-            createLessons(db, batch, unitId, vocabs, i);
-        }
-
-        batch.commit().addOnSuccessListener(aVoid -> {
-            goToRoadmap(courseId, course.getTitle(), course.getTheme());
-        }).addOnFailureListener(e -> {
-            resetButton();
-            Toast.makeText(this, "Lỗi lưu dữ liệu: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        });
-    }
-
-    private void createLessons(FirebaseFirestore db, WriteBatch batch, String unitId, List<QueryDocumentSnapshot> allVocabs, int unitIndex) {
-        String[] lessonTitles = {"Từ vựng", "Luyện nghe", "Kiểm tra"};
-        for (int j = 0; j < lessonTitles.length; j++) {
-            String lessonId = db.collection("lessons").document().getId();
-            Lesson lesson = new Lesson(lessonTitles[j], "vocabulary", 10, 15);
-            lesson.setUnitId(unitId);
-            lesson.setLessonId(lessonId);
-            lesson.setOrderNum(j + 1);
-            batch.set(db.collection("lessons").document(lessonId), lesson);
-
-            for (int k = 0; k < 2; k++) {
-                Challenge challenge = new Challenge();
-                challenge.setLessonId(lessonId);
-                challenge.setOrderNum(k + 1);
-                challenge.setType("SELECT");
-                challenge.setQuestion("Nghĩa của từ này là gì?");
-                String challengeId = db.collection("challenges").document().getId();
-                challenge.setId(challengeId);
-                batch.set(db.collection("challenges").document(challengeId), challenge);
+                    personalRef.add(courseData).addOnSuccessListener(docRef -> {
+                        String newCourseId = docRef.getId();
+                        updateUserActiveCourse(newCourseId);
+                        performDeepClone(db, templateId, docRef);
+                    });
+                }
+            } else {
+                createNewEmptyCourse(personalRef);
             }
+        }).addOnFailureListener(e -> createNewEmptyCourse(personalRef));
+    }
+
+    private void performDeepClone(FirebaseFirestore db, String templateCourseId, DocumentReference newCourseRef) {
+        db.collection("units").whereEqualTo("courseId", templateCourseId).get().addOnSuccessListener(unitSnapshots -> {
+            if (unitSnapshots.isEmpty()) {
+                goToRoadmap(newCourseRef.getId(), "Lộ trình mới");
+                return;
+            }
+
+            List<Task<Void>> allCloneTasks = new ArrayList<>();
+
+            for (QueryDocumentSnapshot unitDoc : unitSnapshots) {
+                Map<String, Object> unitData = unitDoc.getData();
+                unitData.put("courseId", newCourseRef.getId());
+                String originalUnitId = unitDoc.getId();
+                
+                TaskCompletionSource<Void> unitAndLessonsSc = new TaskCompletionSource<>();
+                allCloneTasks.add(unitAndLessonsSc.getTask());
+
+                newCourseRef.collection("units").add(unitData).addOnSuccessListener(newUnitRef -> {
+                    db.collection("lessons").whereEqualTo("unitId", originalUnitId).get().addOnSuccessListener(lessonSnapshots -> {
+                        if (lessonSnapshots.isEmpty()) {
+                            unitAndLessonsSc.setResult(null);
+                            return;
+                        }
+                        
+                        WriteBatch batch = db.batch();
+                        for (QueryDocumentSnapshot lessonDoc : lessonSnapshots) {
+                            Map<String, Object> lessonData = lessonDoc.getData();
+                            lessonData.put("unitId", newUnitRef.getId());
+                            lessonData.put("completed", false);
+                            DocumentReference newLessonRef = newUnitRef.collection("lessons").document();
+                            batch.set(newLessonRef, lessonData);
+                        }
+                        batch.commit().addOnCompleteListener(task -> unitAndLessonsSc.setResult(null));
+                    }).addOnFailureListener(e -> unitAndLessonsSc.setResult(null));
+                }).addOnFailureListener(e -> unitAndLessonsSc.setResult(null));
+            }
+
+            Tasks.whenAllComplete(allCloneTasks).addOnCompleteListener(t -> {
+                newCourseRef.get().addOnSuccessListener(d -> goToRoadmap(newCourseRef.getId(), d.getString("title")));
+            });
+        });
+    }
+
+    private void createNewEmptyCourse(CollectionReference personalRef) {
+        Course course = new Course();
+        course.setTitle("Lộ trình " + selectedLanguage);
+        course.setLanguage(selectedLanguage);
+        course.setProficiencyLevel(selectedLevel);
+        course.setCreatorId(FirebaseAuth.getInstance().getUid());
+        course.setCreatedAt(new Date());
+        course.setStatus("active");
+        
+        personalRef.add(course).addOnSuccessListener(docRef -> {
+            updateUserActiveCourse(docRef.getId());
+            goToRoadmap(docRef.getId(), course.getTitle());
+        });
+    }
+
+    private void updateUserActiveCourse(String courseId) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            FirebaseFirestore.getInstance().collection("users").document(uid)
+                    .update("activeCourseId", courseId);
         }
     }
 
-    private void goToRoadmap(String courseId, String title, String theme) {
+    private void goToRoadmap(String courseId, String title) {
         Intent intent = new Intent(this, CourseDetailActivity.class);
         intent.putExtra("course_id", courseId);
         intent.putExtra("course_title", title);
-        intent.putExtra("course_theme", theme);
+        intent.putExtra("is_personal", true);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();

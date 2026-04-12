@@ -81,6 +81,7 @@ public class LibraryFragment extends Fragment {
             Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
             intent.putExtra("course_id", course.getFirestoreId());
             intent.putExtra("course_title", course.getTitle());
+            intent.putExtra("is_personal", true);
             startActivity(intent);
         }, this::showCourseActionMenu, count -> {
             updateSelectionBar(count);
@@ -136,13 +137,12 @@ public class LibraryFragment extends Fragment {
     private void observeViewModel() {
         if (binding == null) return;
         binding.progressSkeleton.setVisibility(View.VISIBLE);
-        viewModel.getCoursesFromFirestore().observe(getViewLifecycleOwner(), courses -> {
+        
+        // Quan sát personal_courses thay vì global courses
+        viewModel.getPersonalCoursesFromFirestore().observe(getViewLifecycleOwner(), courses -> {
             allCourses.clear();
-            String uid = FirebaseAuth.getInstance().getUid();
-            for (Course c : courses) {
-                if (TextUtils.equals(c.getCreatorId(), uid) || c.isPublic()) {
-                    allCourses.add(c);
-                }
+            if (courses != null) {
+                allCourses.addAll(courses);
             }
             if (binding != null) {
                 binding.progressSkeleton.setVisibility(View.GONE);

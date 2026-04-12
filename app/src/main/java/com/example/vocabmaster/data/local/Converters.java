@@ -23,15 +23,28 @@ public class Converters {
     }
 
     @TypeConverter
-    public static String fromList(List<Integer> list) {
+    public static String fromIntegerList(List<Integer> list) {
         if (list == null) return null;
         return gson.toJson(list);
     }
 
     @TypeConverter
-    public static List<Integer> toList(String value) {
+    public static List<Integer> toIntegerList(String value) {
         if (value == null) return null;
         Type listType = new TypeToken<List<Integer>>() {}.getType();
+        return gson.fromJson(value, listType);
+    }
+
+    @TypeConverter
+    public static String fromStringList(List<String> list) {
+        if (list == null) return null;
+        return gson.toJson(list);
+    }
+
+    @TypeConverter
+    public static List<String> toStringList(String value) {
+        if (value == null) return null;
+        Type listType = new TypeToken<List<String>>() {}.getType();
         return gson.fromJson(value, listType);
     }
 }

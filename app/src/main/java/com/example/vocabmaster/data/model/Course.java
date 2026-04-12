@@ -1,10 +1,12 @@
 package com.example.vocabmaster.data.model;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
 import com.example.vocabmaster.data.local.Converters;
+import com.google.firebase.firestore.PropertyName;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,21 +23,21 @@ public class Course {
     private String theme;
     private String creatorId;
     private boolean isPublic;
+    private String language; 
     private int flashcardCount;
-    private int level; // Cấp độ của khóa học (legacy)
+    private int level;
 
-    // New fields from schema
     private int targetLanguageId;
     private int sourceLanguageId;
     private int dailyTimeMinutes;
-    private List<Integer> favoriteTopics;
-    private String proficiencyLevel; // beginner, elementary, intermediate, advanced, proficient
+    private List<String> favoriteTopics; 
+    private String proficiencyLevel; 
     private String learningGoal;
     private Date startDate;
     private Date lastActiveDate;
     private int streakDays;
     private double progressPercentage;
-    private String status; // active, paused, completed, archived
+    private String status; 
     private Date createdAt;
     private Date updatedAt;
 
@@ -48,28 +50,12 @@ public class Course {
         this.streakDays = 0;
         this.progressPercentage = 0.0;
         this.status = "active";
-        this.sourceLanguageId = 1; // Default to Vietnamese (as per schema requirement)
+        this.sourceLanguageId = 1;
     }
 
-    // Constructor cũ để tương thích
-    public Course(String title, String description, String creatorId, boolean isPublic) {
-        this();
-        this.title = title;
-        this.description = description;
-        this.creatorId = creatorId;
-        this.isPublic = isPublic;
-    }
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
 
-    public Course(String title, String description, String theme, String creatorId, boolean isPublic) {
-        this();
-        this.title = title;
-        this.description = description;
-        this.theme = theme;
-        this.creatorId = creatorId;
-        this.isPublic = isPublic;
-    }
-
-    // Getters and Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getFirestoreId() { return firestoreId; }
@@ -82,21 +68,31 @@ public class Course {
     public void setTheme(String theme) { this.theme = theme; }
     public String getCreatorId() { return creatorId; }
     public void setCreatorId(String creatorId) { this.creatorId = creatorId; }
+    
+    @PropertyName("isPublic")
     public boolean isPublic() { return isPublic; }
+    
+    @PropertyName("isPublic")
     public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
+
+    @PropertyName("public")
+    public boolean isPublicLegacy() { return isPublic; }
+    
+    @PropertyName("public")
+    public void setPublicLegacy(boolean isPublic) { this.isPublic = isPublic; }
+
     public int getFlashcardCount() { return flashcardCount; }
     public void setFlashcardCount(int flashcardCount) { this.flashcardCount = flashcardCount; }
     public int getLevel() { return level; }
     public void setLevel(int level) { this.level = level; }
-
     public int getTargetLanguageId() { return targetLanguageId; }
     public void setTargetLanguageId(int targetLanguageId) { this.targetLanguageId = targetLanguageId; }
     public int getSourceLanguageId() { return sourceLanguageId; }
     public void setSourceLanguageId(int sourceLanguageId) { this.sourceLanguageId = sourceLanguageId; }
     public int getDailyTimeMinutes() { return dailyTimeMinutes; }
     public void setDailyTimeMinutes(int dailyTimeMinutes) { this.dailyTimeMinutes = dailyTimeMinutes; }
-    public List<Integer> getFavoriteTopics() { return favoriteTopics; }
-    public void setFavoriteTopics(List<Integer> favoriteTopics) { this.favoriteTopics = favoriteTopics; }
+    public List<String> getFavoriteTopics() { return favoriteTopics; }
+    public void setFavoriteTopics(List<String> favoriteTopics) { this.favoriteTopics = favoriteTopics; }
     public String getProficiencyLevel() { return proficiencyLevel; }
     public void setProficiencyLevel(String proficiencyLevel) { this.proficiencyLevel = proficiencyLevel; }
     public String getLearningGoal() { return learningGoal; }

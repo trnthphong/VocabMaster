@@ -13,12 +13,13 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.vocabmaster.databinding.ActivityMainBinding;
+import com.example.vocabmaster.util.DataSeeder;
 
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState) ;
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
@@ -26,6 +27,10 @@ public class MainActivity extends AppCompatActivity {
 
         ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // CHỈ CHẠY DÒNG NÀY 1 LẦN DUY NHẤT ĐỂ ĐẨY DỮ LIỆU BÀI HỌC LÊN FIREBASE
+        // Sau khi dữ liệu đã lên Firestore, bạn nên xóa hoặc comment dòng này lại.
+        //new DataSeeder().seedAllData();
 
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
@@ -43,17 +48,9 @@ public class MainActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavContainer, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-
-
             mlp.bottomMargin = insets.bottom;
             v.setLayoutParams(mlp);
-
             return WindowInsetsCompat.CONSUMED;
         });
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
     }
 }

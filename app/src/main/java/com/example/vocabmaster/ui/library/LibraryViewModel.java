@@ -41,6 +41,10 @@ public class LibraryViewModel extends AndroidViewModel {
         return repository.getCoursesFromFirestore();
     }
 
+    public LiveData<List<Course>> getPersonalCoursesFromFirestore() {
+        return repository.getPersonalCoursesFromFirestore();
+    }
+
     public void addCourseAndSync(Course course) {
         repository.addCourseAndSync(course);
     }

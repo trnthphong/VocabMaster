@@ -31,6 +31,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -117,6 +118,7 @@ public class HomeFragment extends Fragment {
                 intent.putExtra("lesson_title", nextLessonDoc.getString("title"));
                 if (activeCourse != null) {
                     intent.putExtra("course_id", activeCourse.getFirestoreId());
+                    intent.putExtra("is_personal", activeCourse.getCreatorId() != null);
                 }
                 startActivity(intent);
             } else {
@@ -124,6 +126,7 @@ public class HomeFragment extends Fragment {
                 if (activeCourse != null && activeCourse.getFirestoreId() != null) {
                     intent.putExtra("course_id", activeCourse.getFirestoreId());
                     intent.putExtra("course_title", activeCourse.getTitle());
+                    intent.putExtra("is_personal", activeCourse.getCreatorId() != null);
                 }
                 startActivity(intent);
             }
@@ -146,7 +149,6 @@ public class HomeFragment extends Fragment {
     private void startJourneyFlow(String topic, String displayTitle) {
         UiFeedback.performHaptic(requireContext(), 10);
         
-        // Luồng 4: Hết tim chặn không làm tiếp
         if (currentUser != null && currentUser.getHearts() <= 0 && !currentUser.isActivePremium()) {
             showHeartsModal();
             return;
@@ -170,13 +172,11 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // Luồng 4: HeartsModal hiện ra khi hearts = 0
     private void showHeartsModal() {
         UiFeedback.showConfirmDialog(requireContext(), 
             "Out of Hearts!", 
             "Get unlimited hearts and learn without limits with VocabMaster Pro.",
             () -> {
-                // Click "Get unlimited hearts" → redirect Premium (Shop)
                 NavHostFragment.findNavController(this).navigate(R.id.navigation_premium);
             });
     }
@@ -205,12 +205,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // Luồng 5: Promo widget (tận dụng UI hiện có hoặc badge)
     private void updatePremiumUI() {
         if (currentUser == null) return;
         boolean isPro = currentUser.isActivePremium();
         
-        // Hiển thị badge PRO hoặc Promo nếu !isPro
         binding.textPremiumBadge.setVisibility(isPro ? View.GONE : View.VISIBLE);
         if (!isPro) {
             binding.textPremiumBadge.setText("UPGRADE TODAY");
@@ -218,7 +216,6 @@ public class HomeFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.navigation_premium));
         }
         
-        // Unlimited hearts for Pro
         if (isPro) {
             binding.textHearts.setText("∞");
             binding.cardHeartRegen.setVisibility(View.GONE);
@@ -226,93 +223,124 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadActiveCourse(String uid) {
-        db.collection("courses")
-                .whereEqualTo("creatorId", uid)
+        // Ưu tiên lấy activeCourseId từ user profile
+        if (currentUser != null && currentUser.getActiveCourseId() != null) {
+            // Kiểm tra trong personal_courses trước
+            db.collection("users").document(uid).collection("personal_courses")
+                    .document(currentUser.getActiveCourseId()).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            handleLoadedCourse(doc);
+                        } else {
+                            // Nếu không thấy trong personal, tìm trong global courses
+                            db.collection("courses").document(currentUser.getActiveCourseId()).get()
+                                    .addOnSuccessListener(docGlobal -> {
+                                        if (docGlobal.exists()) {
+                                            handleLoadedCourse(docGlobal);
+                                        } else {
+                                            searchAllUserCourses(uid);
+                                        }
+                                    });
+                        }
+                    });
+        } else {
+            searchAllUserCourses(uid);
+        }
+    }
+
+    private void searchAllUserCourses(String uid) {
+        // Tìm tất cả các khóa học trong personal_courses của user
+        db.collection("users").document(uid).collection("personal_courses")
+                .orderBy("updatedAt", Query.Direction.DESCENDING)
+                .limit(1)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                    if (binding == null || !isAdded()) return;
-                    
-                    activeCourse = null;
                     if (!querySnapshot.isEmpty()) {
-                        List<DocumentSnapshot> docs = new ArrayList<>(querySnapshot.getDocuments());
-                        Collections.sort(docs, (d1, d2) -> {
-                            Date date1 = d1.getDate("updatedAt");
-                            if (date1 == null) date1 = d1.getDate("createdAt");
-                            Date date2 = d2.getDate("updatedAt");
-                            if (date2 == null) date2 = d2.getDate("createdAt");
-                            if (date1 == null || date2 == null) return 0;
-                            return date2.compareTo(date1);
-                        });
-
-                        for (DocumentSnapshot doc : docs) {
-                            Course c = doc.toObject(Course.class);
-                            if (c != null && "active".equals(c.getStatus())) {
-                                c.setFirestoreId(doc.getId());
-                                activeCourse = c;
-                                break; 
-                            }
-                        }
-                    }
-
-                    if (activeCourse != null) {
-                        findNextLesson(activeCourse.getFirestoreId());
+                        handleLoadedCourse(querySnapshot.getDocuments().get(0));
                     } else {
-                        nextLessonDoc = null;
-                        updateProfileUI();
+                        // Nếu không có personal, tìm trong global (cho backward compatibility)
+                        db.collection("courses")
+                                .whereEqualTo("creatorId", uid)
+                                .get()
+                                .addOnSuccessListener(globalSnapshot -> {
+                                    if (!globalSnapshot.isEmpty()) {
+                                        handleLoadedCourse(globalSnapshot.getDocuments().get(0));
+                                    } else {
+                                        activeCourse = null;
+                                        nextLessonDoc = null;
+                                        updateProfileUI();
+                                    }
+                                });
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading active course", e);
-                    if (isAdded()) updateProfileUI();
                 });
     }
 
-    private void findNextLesson(String courseId) {
-        db.collection("units")
-                .whereEqualTo("courseId", courseId)
-                .get()
-                .addOnSuccessListener(unitSnapshots -> {
-                    if (unitSnapshots.isEmpty()) {
-                        updateProfileUI();
-                        return;
-                    }
+    private void handleLoadedCourse(DocumentSnapshot doc) {
+        activeCourse = doc.toObject(Course.class);
+        if (activeCourse != null) {
+            activeCourse.setFirestoreId(doc.getId());
+            findNextLesson(activeCourse.getFirestoreId(), doc.getReference().getParent().getPath().contains("personal_courses"));
+        } else {
+            updateProfileUI();
+        }
+    }
 
-                    List<DocumentSnapshot> units = new ArrayList<>(unitSnapshots.getDocuments());
-                    Collections.sort(units, (u1, u2) -> {
-                        long o1 = u1.getLong("orderNum") != null ? u1.getLong("orderNum") : 0;
-                        long o2 = u2.getLong("orderNum") != null ? u2.getLong("orderNum") : 0;
-                        return Long.compare(o1, o2);
-                    });
+    private void findNextLesson(String courseId, boolean isPersonal) {
+        String unitsPath = isPersonal ? 
+                "users/" + FirebaseAuth.getInstance().getUid() + "/personal_courses/" + courseId + "/units" : 
+                "units";
+        
+        Query unitsQuery = isPersonal ? 
+                db.collection(unitsPath) : 
+                db.collection("units").whereEqualTo("courseId", courseId);
 
-                    List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
-                    for (DocumentSnapshot unit : units) {
-                        lessonTasks.add(db.collection("lessons").whereEqualTo("unitId", unit.getId()).get());
-                    }
+        unitsQuery.get().addOnSuccessListener(unitSnapshots -> {
+            if (unitSnapshots.isEmpty()) {
+                updateProfileUI();
+                return;
+            }
 
-                    Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
-                        if (binding == null || !isAdded()) return;
-                        nextLessonDoc = null;
-                        for (int i = 0; i < units.size(); i++) {
-                            Task<QuerySnapshot> task = lessonTasks.get(i);
-                            if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                                List<DocumentSnapshot> lessons = new ArrayList<>(task.getResult().getDocuments());
-                                Collections.sort(lessons, (l1, l2) -> {
-                                    long o1 = l1.getLong("orderNum") != null ? l1.getLong("orderNum") : 0;
-                                    long o2 = l2.getLong("orderNum") != null ? l2.getLong("orderNum") : 0;
-                                    return Long.compare(o1, o2);
-                                });
-                                for (DocumentSnapshot lesson : lessons) {
-                                    if (!Boolean.TRUE.equals(lesson.getBoolean("completed"))) {
-                                        nextLessonDoc = lesson;
-                                        break;
-                                    }
-                                }
+            List<DocumentSnapshot> units = new ArrayList<>(unitSnapshots.getDocuments());
+            Collections.sort(units, (u1, u2) -> {
+                long o1 = u1.getLong("orderNum") != null ? u1.getLong("orderNum") : 0;
+                long o2 = u2.getLong("orderNum") != null ? u2.getLong("orderNum") : 0;
+                return Long.compare(o1, o2);
+            });
+
+            List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
+            for (DocumentSnapshot unit : units) {
+                String lessonsPath = isPersonal ? unit.getReference().getPath() + "/lessons" : "lessons";
+                if (isPersonal) {
+                    lessonTasks.add(db.collection(lessonsPath).get());
+                } else {
+                    lessonTasks.add(db.collection("lessons").whereEqualTo("unitId", unit.getId()).get());
+                }
+            }
+
+            Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
+                if (binding == null || !isAdded()) return;
+                nextLessonDoc = null;
+                for (int i = 0; i < units.size(); i++) {
+                    Task<QuerySnapshot> task = lessonTasks.get(i);
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        List<DocumentSnapshot> lessons = new ArrayList<>(task.getResult().getDocuments());
+                        Collections.sort(lessons, (l1, l2) -> {
+                            long o1 = l1.getLong("orderNum") != null ? l1.getLong("orderNum") : 0;
+                            long o2 = l2.getLong("orderNum") != null ? l2.getLong("orderNum") : 0;
+                            return Long.compare(o1, o2);
+                        });
+                        for (DocumentSnapshot lesson : lessons) {
+                            if (!Boolean.TRUE.equals(lesson.getBoolean("completed"))) {
+                                nextLessonDoc = lesson;
+                                break;
                             }
-                            if (nextLessonDoc != null) break;
                         }
-                        updateProfileUI();
-                    });
-                });
+                    }
+                    if (nextLessonDoc != null) break;
+                }
+                updateProfileUI();
+            });
+        });
     }
 
     private void updateProfileUI() {
@@ -440,10 +468,10 @@ public class HomeFragment extends Fragment {
             int heartsToRegen = (int) (diff / REGEN_TIME_MS);
             int newHearts = Math.min(5, currentUser.getHearts() + heartsToRegen);
             long remainingMs = diff % REGEN_TIME_MS;
-            long newLastRegenTime = now - remainingMs;
+            long lastRegenTime = now - remainingMs;
 
             currentUser.setHearts(newHearts);
-            currentUser.setLastHeartRegen(new Timestamp(new Date(newLastRegenTime)));
+            currentUser.setLastHeartRegen(new Timestamp(new Date(lastRegenTime)));
             updateUserHeartsInFirestore(newHearts, currentUser.getLastHeartRegen());
             binding.textHearts.setText(String.valueOf(newHearts));
             

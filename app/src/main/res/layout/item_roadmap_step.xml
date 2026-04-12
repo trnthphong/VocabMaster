@@ -3,68 +3,111 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingBottom="16dp">
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="8dp">
 
     <View
-        android:id="@+id/view_line"
-        android:layout_width="2dp"
-        android:layout_height="0dp"
+        android:id="@+id/unit_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
         android:background="@color/gray_light"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@id/image_step_icon"
-        app:layout_constraintStart_toStartOf="@id/image_step_icon"
-        app:layout_constraintTop_toBottomOf="@id/image_step_icon" />
-
-    <ImageView
-        android:id="@+id/image_step_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="@drawable/bg_circle_accent"
-        android:padding="12dp"
-        android:src="@drawable/ic_listen"
-        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="0dp"
+    <TextView
+        android:id="@+id/text_unit_header"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="8dp"
+        android:fontFamily="sans-serif-black"
+        android:text="UNIT 1"
+        android:textAllCaps="true"
+        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/image_step_icon"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/unit_divider" />
 
-        <LinearLayout
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_step"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/light_blue"
+        app:layout_constraintTop_toBottomOf="@id/text_unit_header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:id="@+id/text_step_level"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Level 1"
-                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                android:textColor="@color/brand_primary" />
+            <ImageView
+                android:id="@+id/image_step_icon"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_circle_glass"
+                android:padding="14dp"
+                android:src="@drawable/ic_listen"
+                android:backgroundTint="@color/blue"
+                app:tint="@color/white"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
-                android:id="@+id/text_step_title"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Kỹ năng Nghe"
-                android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+                android:layout_marginStart="16dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/image_step_icon"
+                app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/text_step_desc"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Luyện tập nhận diện âm thanh và từ vựng cơ bản."
-                android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
+                <TextView
+                    android:id="@+id/text_step_level"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Level 1"
+                    android:visibility="gone"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                    android:textColor="@color/brand_primary" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/text_step_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kỹ năng Nghe"
+                    android:fontFamily="sans-serif-medium"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:id="@+id/text_step_desc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Luyện tập nhận diện âm thanh và từ vựng cơ bản."
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall"
+                    android:textColor="@color/text_secondary" />
+
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/image_lock"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_lock"
+                android:visibility="gone"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:tint="@color/text_secondary" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

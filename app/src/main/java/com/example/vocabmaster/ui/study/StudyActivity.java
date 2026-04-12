@@ -5,31 +5,37 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.vocabmaster.data.local.AppDatabase;
+import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Challenge;
 import com.example.vocabmaster.data.model.Flashcard;
-import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityStudyBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.io.IOException;
 import java.util.ArrayList;
+  import java.util.Collections;
 import java.util.List;
 
 public class StudyActivity extends AppCompatActivity {
     private static final String TAG = "StudyActivity";
     private ActivityStudyBinding binding;
     private FirebaseFirestore db;
+    private String lessonId;
     private String wordId;
+    private List<Challenge> challenges = new ArrayList<>();
+    private int currentChallengeIndex = 0;
     private Vocabulary currentVocab;
     private CourseRepository repository;
     private MediaPlayer mediaPlayer;
@@ -46,6 +52,7 @@ public class StudyActivity extends AppCompatActivity {
         repository = new CourseRepository(getApplication());
         mediaPlayer = new MediaPlayer();
         
+        lessonId = getIntent().getStringExtra("lesson_id");
         wordId = getIntent().getStringExtra("word_id");
         String lessonTitle = getIntent().getStringExtra("lesson_title");
         if (lessonTitle != null) binding.textHeaderTitle.setText(lessonTitle);
@@ -53,19 +60,18 @@ public class StudyActivity extends AppCompatActivity {
         if (wordId != null || getIntent().hasExtra("topic")) {
             isFlashcardMode = true;
             setupFlashcardOnlyUI();
+            loadSingleWordData();
+        } else if (lessonId != null) {
+            loadLessonChallenges();
         }
 
         setupListeners();
-        
-        if (isFlashcardMode) {
-            loadSingleWordData();
-        }
     }
 
     private void setupFlashcardOnlyUI() {
         binding.layoutStats.setVisibility(View.GONE);
-        binding.btnSkip.setVisibility(View.GONE);
-        binding.btnNext.setVisibility(View.GONE);
+        binding.btnSkip.setVisibility(View.VISIBLE);
+        binding.btnNext.setVisibility(View.VISIBLE);
         binding.btnSaveToLibrary.setVisibility(View.VISIBLE);
         binding.cardFlashcard.setVisibility(View.VISIBLE);
         binding.dynamicTaskLayout.setVisibility(View.GONE);
@@ -77,6 +83,22 @@ public class StudyActivity extends AppCompatActivity {
         binding.cardFlashcard.setOnClickListener(v -> flipCard());
         binding.btnSaveToLibrary.setOnClickListener(v -> saveToFirebaseLibrary());
         
+        binding.btnSkip.setOnClickListener(v -> {
+            if (isFlashcardMode) {
+                finish();
+            } else {
+                nextChallenge();
+            }
+        });
+
+        binding.btnNext.setOnClickListener(v -> {
+            if (isFlashcardMode) {
+                finish();
+            } else {
+                nextChallenge();
+            }
+        });
+
         binding.btnListen.setOnClickListener(v -> {
             if (currentVocab != null) {
                 String url = currentVocab.getAnyAudioUrl();
@@ -87,6 +109,84 @@ public class StudyActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void loadLessonChallenges() {
+        if (lessonId == null) return;
+
+        db.collection("challenges")
+                .whereEqualTo("lessonId", lessonId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    challenges = queryDocumentSnapshots.toObjects(Challenge.class);
+                    if (challenges != null && !challenges.isEmpty()) {
+                        // Sắp xếp tay theo orderNum để không cần Firestore Index
+                        Collections.sort(challenges, (c1, c2) -> Integer.compare(c1.getOrderNum(), c2.getOrderNum()));
+                        displayChallenge();
+                    } else {
+                        Toast.makeText(this, "Không tìm thấy thử thách cho bài học này", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading challenges", e);
+                    Toast.makeText(this, "Lỗi khi tải dữ liệu", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void displayChallenge() {
+        if (currentChallengeIndex >= challenges.size()) {
+            Toast.makeText(this, "Chúc mừng! Bạn đã hoàn thành bài học", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        Challenge challenge = challenges.get(currentChallengeIndex);
+        binding.cardFlashcard.setVisibility(View.GONE);
+        binding.dynamicTaskLayout.setVisibility(View.VISIBLE);
+        binding.dynamicTaskLayout.removeAllViews();
+
+        int progress = (int) (((float) (currentChallengeIndex + 1) / challenges.size()) * 100);
+        binding.studyProgress.setProgress(progress);
+
+        View challengeView = getLayoutInflater().inflate(R.layout.layout_challenge_select, binding.dynamicTaskLayout, false);
+        TextView textQuestion = challengeView.findViewById(R.id.text_question);
+        LinearLayout optionsContainer = challengeView.findViewById(R.id.options_container);
+
+        textQuestion.setText(challenge.getQuestion());
+        
+        List<Challenge.ChallengeOption> options = challenge.getOptions();
+        if (options != null) {
+            for (Challenge.ChallengeOption option : options) {
+                Button btnOption = new Button(this);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                params.setMargins(0, 16, 0, 16);
+                btnOption.setLayoutParams(params);
+                btnOption.setText(option.getText());
+                btnOption.setAllCaps(false);
+                btnOption.setBackgroundResource(R.drawable.button_primary);
+                
+                btnOption.setOnClickListener(v -> {
+                    if (option.isCorrect()) {
+                        Toast.makeText(this, "Chính xác!", Toast.LENGTH_SHORT).show();
+                        nextChallenge();
+                    } else {
+                        UiFeedback.performHaptic(this, 20);
+                        Toast.makeText(this, "Sai rồi, thử lại nhé!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                optionsContainer.addView(btnOption);
+            }
+        }
+
+        binding.dynamicTaskLayout.addView(challengeView);
+    }
+
+    private void nextChallenge() {
+        currentChallengeIndex++;
+        displayChallenge();
     }
 
     private void playAudio(String url) {
@@ -118,7 +218,6 @@ public class StudyActivity extends AppCompatActivity {
     private void loadSingleWordData() {
         if (wordId == null) return;
         
-        // Luôn tải từ Firebase để khớp dữ liệu mới nhất
         db.collection("vocabularies").document(wordId).get()
             .addOnSuccessListener(doc -> {
                 if (doc.exists()) {
@@ -133,15 +232,12 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     private void displayVocab(DocumentSnapshot doc) {
-        // Mapping tự động từ Firebase sang Model mới đã cập nhật
         currentVocab = doc.toObject(Vocabulary.class);
         if (currentVocab == null) return;
 
-        // Cập nhật UI
         binding.textTerm.setText(currentVocab.getWord());
         binding.textDefinition.setText(currentVocab.getDefinition());
         
-        // HIỂN THỊ PHIÊN ÂM
         String phonetic = currentVocab.getPhonetic();
         if (phonetic != null && !phonetic.trim().isEmpty()) {
             binding.textPhonetic.setText(phonetic);
@@ -150,7 +246,6 @@ public class StudyActivity extends AppCompatActivity {
             binding.textPhonetic.setVisibility(View.GONE);
         }
 
-        // HIỂN THỊ NÚT NGHE
         String audioUrl = currentVocab.getAnyAudioUrl();
         if (audioUrl != null && !audioUrl.trim().isEmpty()) {
             binding.btnListen.setVisibility(View.VISIBLE);
@@ -160,7 +255,6 @@ public class StudyActivity extends AppCompatActivity {
 
         if (currentVocab.getImageUrl() != null && !currentVocab.getImageUrl().trim().isEmpty()) {
             binding.imageVocab.setVisibility(View.VISIBLE);
-            // Có thể dùng Glide để load ảnh ở đây
         }
     }
 

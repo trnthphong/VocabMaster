@@ -136,7 +136,7 @@
                 </RadioGroup>
             </LinearLayout>
 
-            <!-- Step 2: Theme -->
+            <!-- Step 2: Proficiency Level -->
             <LinearLayout
                 android:id="@+id/layout_step_2"
                 android:layout_width="match_parent"
@@ -147,17 +147,92 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Chọn chủ đề yêu thích"
+                    android:text="Trình độ của bạn?"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                     android:layout_marginBottom="@dimen/spacing_24"/>
 
                 <RadioGroup
-                    android:id="@+id/radio_group_themes"
+                    android:id="@+id/radio_group_level"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
                     <RadioButton
-                        android:id="@+id/radio_career"
+                        android:id="@+id/level_beginner"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:paddingStart="20dp"
+                        android:text="Mới bắt đầu (Beginner)"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+                    <RadioButton
+                        android:id="@+id/level_elementary"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:paddingStart="20dp"
+                        android:text="Cơ bản (Elementary)"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+                    <RadioButton
+                        android:id="@+id/level_intermediate"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:paddingStart="20dp"
+                        android:text="Trung cấp (Intermediate)"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+                    <RadioButton
+                        android:id="@+id/level_advanced"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_selectable_card"
+                        android:button="@null"
+                        android:paddingStart="20dp"
+                        android:text="Nâng cao (Advanced)"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Step 3: Favorite Topics (Linear list with images) -->
+            <LinearLayout
+                android:id="@+id/layout_step_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chọn các chủ đề yêu thích"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:layout_marginBottom="@dimen/spacing_8"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bạn có thể chọn nhiều chủ đề"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/gray_dark"
+                    android:layout_marginBottom="@dimen/spacing_24"/>
+
+                <LinearLayout
+                    android:id="@+id/list_topics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/cb_career"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
@@ -171,8 +246,8 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         android:textColor="@color/surface_dark" />
 
-                    <RadioButton
-                        android:id="@+id/radio_school"
+                    <CheckBox
+                        android:id="@+id/cb_school"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
@@ -186,8 +261,8 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         android:textColor="@color/surface_dark" />
 
-                    <RadioButton
-                        android:id="@+id/radio_culture"
+                    <CheckBox
+                        android:id="@+id/cb_culture"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
@@ -201,8 +276,8 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         android:textColor="@color/surface_dark" />
 
-                    <RadioButton
-                        android:id="@+id/radio_travel"
+                    <CheckBox
+                        android:id="@+id/cb_travel"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
@@ -216,8 +291,8 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         android:textColor="@color/surface_dark" />
 
-                    <RadioButton
-                        android:id="@+id/radio_food"
+                    <CheckBox
+                        android:id="@+id/cb_food"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
@@ -231,26 +306,26 @@
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         android:textColor="@color/surface_dark" />
 
-                    <RadioButton
-                        android:id="@+id/radio_brain"
+                    <CheckBox
+                        android:id="@+id/cb_tech"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
                         android:background="@drawable/bg_selectable_card"
                         android:button="@null"
-                        android:drawableStart="@drawable/brain"
+                        android:drawableStart="@drawable/brainskill"
                         android:drawablePadding="16dp"
                         android:paddingStart="20dp"
                         android:paddingEnd="20dp"
-                        android:text="Luyện trí não"
+                        android:text="Công nghệ"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                         android:textColor="@color/surface_dark" />
-                </RadioGroup>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Step 3: Time -->
+            <!-- Step 4: Time -->
             <LinearLayout
-                android:id="@+id/layout_step_3"
+                android:id="@+id/layout_step_4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"

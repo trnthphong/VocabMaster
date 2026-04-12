@@ -37,10 +37,14 @@ public class CourseRepository {
     private final FirebaseFirestore firestore;
     private final CollectionReference coursesRef;
     private CollectionReference personalFlashcardsRef;
+    private CollectionReference personalCoursesRef;
     
     private final MutableLiveData<List<Course>> firestoreCoursesLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Course>> personalCoursesLiveData = new MutableLiveData<>();
+    
     private ListenerRegistration coursesListener;
     private ListenerRegistration personalFlashcardsListener;
+    private ListenerRegistration personalCoursesListener;
 
     public CourseRepository(Application application) {
         AppDatabase db = AppDatabase.getDatabase(application);
@@ -51,9 +55,10 @@ public class CourseRepository {
         coursesRef = firestore.collection("courses");
         
         checkUserChanged(application);
-        setupPersonalFlashcardsRef();
+        setupRefs();
         startListeningToCourses();
         startListeningToPersonalFlashcards();
+        startListeningToPersonalCourses();
     }
 
     private void checkUserChanged(Context context) {
@@ -71,10 +76,11 @@ public class CourseRepository {
         }
     }
 
-    private void setupPersonalFlashcardsRef() {
+    private void setupRefs() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null) {
             personalFlashcardsRef = firestore.collection("users").document(uid).collection("personal_flashcards");
+            personalCoursesRef = firestore.collection("users").document(uid).collection("personal_courses");
         }
     }
 
@@ -97,17 +103,36 @@ public class CourseRepository {
         });
     }
 
+    private void startListeningToPersonalCourses() {
+        if (personalCoursesRef == null) setupRefs();
+        if (personalCoursesRef == null) return;
+
+        if (personalCoursesListener != null) personalCoursesListener.remove();
+
+        personalCoursesListener = personalCoursesRef.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.e(TAG, "Listen personal courses failed.", error);
+                return;
+            }
+            if (value != null) {
+                List<Course> courses = new ArrayList<>();
+                for (QueryDocumentSnapshot document : value) {
+                    Course course = document.toObject(Course.class);
+                    course.setFirestoreId(document.getId());
+                    courses.add(course);
+                    // Sync to local
+                    executorService.execute(() -> courseDao.insert(course));
+                }
+                personalCoursesLiveData.setValue(courses);
+            }
+        });
+    }
+
     private void startListeningToPersonalFlashcards() {
-        if (personalFlashcardsRef == null) {
-            setupPersonalFlashcardsRef();
-        }
+        if (personalFlashcardsRef == null) setupRefs();
         if (personalFlashcardsRef == null) return;
         
-        // Luôn gỡ bỏ listener cũ nếu có để tránh leak dữ liệu giữa các user
-        if (personalFlashcardsListener != null) {
-            personalFlashcardsListener.remove();
-            personalFlashcardsListener = null;
-        }
+        if (personalFlashcardsListener != null) personalFlashcardsListener.remove();
 
         personalFlashcardsListener = personalFlashcardsRef.addSnapshotListener((value, error) -> {
             if (error != null) {
@@ -144,9 +169,20 @@ public class CourseRepository {
         return firestoreCoursesLiveData;
     }
 
+    public LiveData<List<Course>> getPersonalCoursesFromFirestore() {
+        return personalCoursesLiveData;
+    }
+
     public Task<Void> deleteCourseFromFirestore(String firestoreId) {
         if (firestoreId != null) {
-            return coursesRef.document(firestoreId).delete();
+            // Check in global first, then personal
+            return coursesRef.document(firestoreId).delete()
+                    .continueWithTask(task -> {
+                        if (personalCoursesRef != null) {
+                            return personalCoursesRef.document(firestoreId).delete();
+                        }
+                        return task;
+                    });
         }
         return Tasks.forException(new Exception("Invalid ID"));
     }
@@ -176,11 +212,18 @@ public class CourseRepository {
     public void updateCourseInFirestore(Course course) {
         if (course.getFirestoreId() != null) {
             coursesRef.document(course.getFirestoreId()).set(course);
+            if (personalCoursesRef != null) {
+                personalCoursesRef.document(course.getFirestoreId()).set(course);
+            }
         }
     }
 
     public void addCourseToFirestore(Course course) {
-        coursesRef.add(course).addOnSuccessListener(doc -> course.setFirestoreId(doc.getId()));
+        if (personalCoursesRef != null) {
+            personalCoursesRef.add(course).addOnSuccessListener(doc -> course.setFirestoreId(doc.getId()));
+        } else {
+            coursesRef.add(course).addOnSuccessListener(doc -> course.setFirestoreId(doc.getId()));
+        }
     }
 
     public void addCourseAndSync(Course course) {

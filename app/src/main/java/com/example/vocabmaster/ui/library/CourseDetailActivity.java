@@ -19,10 +19,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,7 @@ public class CourseDetailActivity extends AppCompatActivity {
     private ActivityCourseDetailBinding binding;
     private FirebaseFirestore db;
     private String courseId;
+    private boolean isPersonal = false;
     private RoadmapAdapter adapter;
     private List<RoadmapStep> allStepsList = new ArrayList<>();
     private Set<String> completedChallenges = new HashSet<>();
@@ -47,10 +49,15 @@ public class CourseDetailActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         courseId = getIntent().getStringExtra("course_id");
+        isPersonal = getIntent().getBooleanExtra("is_personal", false);
+        String initialTitle = getIntent().getStringExtra("course_title");
         
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            if (initialTitle != null) {
+                getSupportActionBar().setTitle(initialTitle);
+            }
         }
 
         adapter = new RoadmapAdapter(allStepsList);
@@ -78,81 +85,139 @@ public class CourseDetailActivity extends AppCompatActivity {
                     if (courseId == null) {
                         findLatestCourse();
                     } else {
-                        loadUnitsAndLessons();
+                        fetchCourseDetails();
                     }
                 });
     }
 
+    private void fetchCourseDetails() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        DocumentSnapshot courseDoc;
+        
+        Task<DocumentSnapshot> courseTask;
+        if (isPersonal && uid != null) {
+            courseTask = db.collection("users").document(uid).collection("personal_courses").document(courseId).get();
+        } else {
+            courseTask = db.collection("courses").document(courseId).get();
+        }
+
+        courseTask.addOnSuccessListener(doc -> {
+            if (doc.exists() && getSupportActionBar() != null) {
+                String title = doc.getString("title");
+                if (title != null) {
+                    // Logic lọc tiêu đề chỉ lấy ngôn ngữ (ví dụ: "Lộ trình Tiếng Anh" -> "Tiếng Anh")
+                    String cleanTitle = title.replace("Lộ trình ", "").split(" - ")[0];
+                    getSupportActionBar().setTitle(cleanTitle);
+                }
+                String desc = doc.getString("description");
+                if (desc != null) binding.textCourseDescription.setText(desc);
+            }
+            loadUnitsAndLessons();
+        });
+    }
+
     private void findLatestCourse() {
         String uid = FirebaseAuth.getInstance().getUid();
-        db.collection("courses")
-                .whereEqualTo("creatorId", uid)
+        db.collection("users").document(uid).collection("personal_courses")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(1)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
-                        List<DocumentSnapshot> docs = querySnapshot.getDocuments();
-                        Collections.sort(docs, (d1, d2) -> {
-                            Timestamp t1 = d1.getTimestamp("createdAt");
-                            Timestamp t2 = d2.getTimestamp("createdAt");
-                            if (t1 == null || t2 == null) return 0;
-                            return t2.compareTo(t1);
-                        });
-                        courseId = docs.get(0).getId();
-                        loadUnitsAndLessons();
+                        courseId = querySnapshot.getDocuments().get(0).getId();
+                        isPersonal = true;
+                        fetchCourseDetails();
+                    } else {
+                        db.collection("courses")
+                                .whereEqualTo("creatorId", uid)
+                                .get()
+                                .addOnSuccessListener(globalSnapshot -> {
+                                    if (!globalSnapshot.isEmpty()) {
+                                        courseId = globalSnapshot.getDocuments().get(0).getId();
+                                        isPersonal = false;
+                                        fetchCourseDetails();
+                                    } else {
+                                        binding.progressRoadmap.setVisibility(View.GONE);
+                                    }
+                                });
                     }
                 });
     }
 
     private void loadUnitsAndLessons() {
         if (courseId == null) return;
-        db.collection("units")
-                .whereEqualTo("courseId", courseId)
-                .get()
-                .addOnSuccessListener(unitSnapshots -> {
-                    List<DocumentSnapshot> units = new ArrayList<>(unitSnapshots.getDocuments());
-                    Collections.sort(units, (u1, u2) -> Long.compare(getLong(u1, "orderNum"), getLong(u2, "orderNum")));
+        String uid = FirebaseAuth.getInstance().getUid();
+        
+        CollectionReference unitsRef;
+        if (isPersonal && uid != null) {
+            unitsRef = db.collection("users").document(uid).collection("personal_courses").document(courseId).collection("units");
+        } else {
+            unitsRef = db.collection("units");
+        }
 
-                    List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
-                    for (DocumentSnapshot unitDoc : units) {
-                        lessonTasks.add(db.collection("lessons").whereEqualTo("unitId", unitDoc.getId()).get());
-                    }
+        Query unitsQuery = isPersonal ? unitsRef.orderBy("orderNum") : unitsRef.whereEqualTo("courseId", courseId).orderBy("orderNum");
 
-                    Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
-                        List<LessonWithChallenges> allLessons = new ArrayList<>();
-                        for (int i = 0; i < units.size(); i++) {
-                            Task<QuerySnapshot> task = lessonTasks.get(i);
-                            if (task.isSuccessful()) {
-                                List<DocumentSnapshot> lessons = task.getResult().getDocuments();
-                                for (DocumentSnapshot lessonDoc : lessons) {
-                                    allLessons.add(new LessonWithChallenges(lessonDoc, units.get(i)));
-                                }
-                            }
+        unitsQuery.get().addOnSuccessListener(unitSnapshots -> {
+            List<DocumentSnapshot> units = unitSnapshots.getDocuments();
+            if (units.isEmpty()) {
+                binding.progressRoadmap.setVisibility(View.GONE);
+                return;
+            }
+
+            List<Task<QuerySnapshot>> lessonTasks = new ArrayList<>();
+            for (DocumentSnapshot unitDoc : units) {
+                if (isPersonal) {
+                    lessonTasks.add(unitDoc.getReference().collection("lessons").orderBy("orderNum").get());
+                } else {
+                    lessonTasks.add(db.collection("lessons").whereEqualTo("unitId", unitDoc.getId()).orderBy("orderNum").get());
+                }
+            }
+
+            Tasks.whenAllComplete(lessonTasks).addOnCompleteListener(t -> {
+                List<LessonWithChallenges> allLessons = new ArrayList<>();
+                for (int i = 0; i < units.size(); i++) {
+                    Task<QuerySnapshot> task = lessonTasks.get(i);
+                    if (task.isSuccessful()) {
+                        List<DocumentSnapshot> lessons = task.getResult().getDocuments();
+                        for (DocumentSnapshot lessonDoc : lessons) {
+                            allLessons.add(new LessonWithChallenges(lessonDoc, units.get(i)));
                         }
-                        
-                        Collections.sort(allLessons, (l1, l2) -> {
-                            int unitComp = Long.compare(getLong(l1.unitDoc, "orderNum"), getLong(l2.unitDoc, "orderNum"));
-                            if (unitComp != 0) return unitComp;
-                            return Long.compare(getLong(l1.lessonDoc, "orderNum"), getLong(l2.lessonDoc, "orderNum"));
-                        });
-
-                        fetchChallengesAndBuildRoadmap(allLessons);
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading units", e);
-                    if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
-                });
+                    }
+                }
+                
+                // Dữ liệu đã được sort theo orderNum từ Query
+                fetchChallengesAndBuildRoadmap(allLessons);
+            });
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Error loading units", e);
+            if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
+        });
     }
 
     private void fetchChallengesAndBuildRoadmap(List<LessonWithChallenges> lessons) {
+        if (lessons.isEmpty()) {
+            if (binding != null) binding.progressRoadmap.setVisibility(View.GONE);
+            return;
+        }
+
         List<Task<QuerySnapshot>> challengeTasks = new ArrayList<>();
         for (LessonWithChallenges lc : lessons) {
-            challengeTasks.add(db.collection("challenges").whereEqualTo("lessonId", lc.lessonDoc.getId()).get());
+            // Đối với khóa học cá nhân, challenge cũng có thể nằm trong sub-collection hoặc global.
+            // Ở đây ta ưu tiên tìm trong sub-collection của lesson nếu có.
+            challengeTasks.add(lc.lessonDoc.getReference().collection("challenges").get().continueWithTask(task -> {
+                if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                    return task;
+                }
+                // Fallback về global challenges nếu không có sub-collection
+                return db.collection("challenges").whereEqualTo("lessonId", lc.lessonDoc.getId()).get();
+            }));
         }
 
         Tasks.whenAllComplete(challengeTasks).addOnCompleteListener(t -> {
             allStepsList.clear();
             boolean foundActive = false;
+            String lastUnitId = "";
+            int lessonIndexInUnit = 0;
 
             for (int i = 0; i < lessons.size(); i++) {
                 LessonWithChallenges lc = lessons.get(i);
@@ -161,7 +226,7 @@ public class CourseDetailActivity extends AppCompatActivity {
                 int totalChallenges = 0;
                 int completedCount = 0;
 
-                if (task.isSuccessful()) {
+                if (task.isSuccessful() && task.getResult() != null) {
                     for (DocumentSnapshot challengeDoc : task.getResult()) {
                         totalChallenges++;
                         if (completedChallenges.contains(challengeDoc.getId())) {
@@ -170,7 +235,9 @@ public class CourseDetailActivity extends AppCompatActivity {
                     }
                 }
 
-                boolean isCompleted = (totalChallenges > 0 && completedCount == totalChallenges);
+                if (totalChallenges == 0) totalChallenges = 1;
+
+                boolean isCompleted = (completedCount >= totalChallenges);
                 boolean isLocked = false;
                 boolean isActive = false;
 
@@ -181,13 +248,31 @@ public class CourseDetailActivity extends AppCompatActivity {
                     isLocked = true;
                 }
 
+                // Chọn icon dựa trên vị trí TRONG UNIT: start (lesson 1), speedup (lesson 2), finish (lesson 3)
+                String currentUnitId = lc.unitDoc.getId();
+                if (!currentUnitId.equals(lastUnitId)) {
+                    lastUnitId = currentUnitId;
+                    lessonIndexInUnit = 0;
+                } else {
+                    lessonIndexInUnit++;
+                }
+
+                int iconRes;
+                if (lessonIndexInUnit == 0) {
+                    iconRes = R.drawable.start;
+                } else if (lessonIndexInUnit == 1) {
+                    iconRes = R.drawable.speedup;
+                } else {
+                    iconRes = R.drawable.finish;
+                }
+
                 String type = lc.lessonDoc.getString("type");
                 allStepsList.add(new RoadmapStep(
                         lc.lessonDoc.getId(),
                         lc.unitTitle,
                         lc.lessonDoc.getString("title"),
                         completedCount + "/" + totalChallenges + " Challenges",
-                        getIconForType(type),
+                        iconRes,
                         isLocked,
                         isCompleted,
                         type
@@ -209,11 +294,23 @@ public class CourseDetailActivity extends AppCompatActivity {
 
     private void deleteCourse() {
         if (courseId == null) return;
+        String uid = FirebaseAuth.getInstance().getUid();
         
-        // Thoát màn hình ngay lập tức để tạo cảm giác tức thì
         Toast.makeText(this, "Đang xóa khóa học...", Toast.LENGTH_SHORT).show();
-        db.collection("courses").document(courseId).delete()
-                .addOnFailureListener(e -> Log.e(TAG, "Delete failed in background", e));
+        
+        Task<Void> deleteTask;
+        if (isPersonal && uid != null) {
+            deleteTask = db.collection("users").document(uid).collection("personal_courses").document(courseId).delete();
+        } else {
+            deleteTask = db.collection("courses").document(courseId).delete();
+        }
+
+        deleteTask.addOnSuccessListener(aVoid -> {
+            if (uid != null) {
+                db.collection("users").document(uid).update("activeCourseId", null);
+            }
+        }).addOnFailureListener(e -> Log.e(TAG, "Delete failed", e));
+
         finish();
     }
 
@@ -221,12 +318,6 @@ public class CourseDetailActivity extends AppCompatActivity {
         if (doc == null) return 0;
         Long val = doc.getLong(field);
         return val != null ? val : 0;
-    }
-
-    private int getIconForType(String type) {
-        if ("quiz".equals(type)) return R.drawable.exp;
-        if ("listening".equals(type)) return R.drawable.ic_listen;
-        return R.drawable.vocab;
     }
 
     private static class LessonWithChallenges {
