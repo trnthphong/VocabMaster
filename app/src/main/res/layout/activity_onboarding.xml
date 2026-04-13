@@ -3,30 +3,48 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/gray_background"
+    android:background="#4046d8"
     android:padding="24dp">
 
     <TextView
-        android:id="@+id/indicator"
+        android:id="@+id/btn_skip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="1/3"
+        android:text="Skip"
+        android:textColor="@color/white"
+        android:textSize="16sp"
         android:textStyle="bold"
+        android:padding="8dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/logo_title"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_marginTop="36dp"
+        android:adjustViewBounds="true"
+        android:contentDescription="Logo"
+        android:scaleType="centerInside"
+        android:src="@drawable/hdsd"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/text_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
         android:gravity="center"
+        app:fontFamily="@font/adlam_display"
         android:text="Master vocabulary faster"
-        android:textSize="32sp"
+        android:textSize="30sp"
         android:textStyle="bold"
+        android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/logo_title"/>
 
     <TextView
         android:id="@+id/text_body"
@@ -34,31 +52,60 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:text="Learn with adaptive flashcards and spaced repetition."
-        android:textColor="@color/gray_text"
+        android:text="Get started for new journey."
+        android:textColor="@color/white"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_title" />
 
-    <Button
-        android:id="@+id/btn_next"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Next"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/btn_skip"
+    <!-- Indicators -->
+    <ImageView
+        android:id="@+id/dot1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:text="Skip"
-        android:textColor="@color/gray_text"
-        app:layout_constraintBottom_toTopOf="@id/btn_next"
+        android:src="@drawable/ic_dot_active"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_next"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btn_next" />
+
+    <ImageView
+        android:id="@+id/dot2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_dot_inactive"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_next"
+        app:layout_constraintStart_toEndOf="@+id/dot1"
+        app:layout_constraintTop_toTopOf="@+id/btn_next" />
+
+    <ImageView
+        android:id="@+id/dot3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_dot_inactive"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_next"
+        app:layout_constraintStart_toEndOf="@+id/dot2"
+        app:layout_constraintTop_toTopOf="@+id/btn_next" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_next"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
+        android:layout_marginStart="16dp"
+        android:text="Next"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/bg_grey"
+        android:backgroundTint="@color/light_green"
+        app:cornerRadius="16dp"
+        app:icon="@drawable/ic_arrow_forward"
+        app:iconGravity="textEnd"
+        app:iconPadding="8dp"
+        app:iconTint="@color/bg_grey"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toEndOf="@+id/dot3" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
