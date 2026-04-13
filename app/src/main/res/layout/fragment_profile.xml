@@ -70,8 +70,6 @@
                     android:textColor="@color/white"
                     android:textAppearance="@style/TextAppearance.VocabMaster.Display" />
 
-
-
                 <TextView
                     android:id="@+id/text_joined_year"
                     android:layout_width="wrap_content"
@@ -152,7 +150,6 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_add_friend_action"
-
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -196,12 +193,67 @@
             android:paddingHorizontal="@dimen/spacing_16"
             android:paddingBottom="@dimen/spacing_32">
 
-            <!-- Learning Stats Card -->
+            <!-- Premium Banner (Moved Up) -->
             <com.google.android.material.card.MaterialCardView
-
+                android:id="@+id/card_premium_banner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_8"
+                android:layout_marginTop="@dimen/spacing_16"
+                app:cardBackgroundColor="#F3E5F5"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/spacing_16">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/btn_star_big_on"
+                        app:tint="#7B1FA2" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Nâng cấp Premium"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                            android:textStyle="bold"
+                            android:textColor="#7B1FA2" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mở khóa tất cả tính năng"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                            android:textColor="#9C27B0" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="#7B1FA2" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Learning Stats Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_16"
                 app:cardBackgroundColor="@color/white"
                 app:strokeWidth="0dp">
 
@@ -439,18 +491,6 @@
                             android:textStyle="bold"
                             android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
                     </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_upgrade_premium"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_16"
-                        android:text="Nâng cấp Premium"
-                        app:icon="@android:drawable/btn_star_big_on" />
-
-
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

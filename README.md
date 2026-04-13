@@ -33,7 +33,7 @@
 | STT | MSSV | Họ và Tên | GitHub | Email |
 |----|------|-----------|--------|-------|
 | 1 | 23521175 | Trần Thế Phong | https://github.com/trnthphong | 23521175@gm.uit.edu.vn |
-| 2 | 23521406 | Trần Lê Duy Tân | https://github.com/username | 23521406@gm.uit.edu.vn |
+| 2 | 23521406 | Trần Lê Duy Tân | https://github.com/DiTan1606 | 23521406@gm.uit.edu.vn |
 | 3 | 23521613 | Nguyễn Đoàn Thùy Trâm | https://github.com/iambis | 23521613@gm.uit.edu.vn |
 
 ---

@@ -58,7 +58,7 @@ public class ProfileFragment extends Fragment {
         binding.cardAvatar.setOnClickListener(v -> showAvatarSelectionDialog());
         binding.btnSaveProfile.setOnClickListener(v -> saveProfile());
         
-        binding.btnUpgradePremium.setOnClickListener(v -> 
+        binding.cardPremiumBanner.setOnClickListener(v -> 
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_premium));
 
         View.OnClickListener toSocial = v -> {
@@ -105,7 +105,10 @@ public class ProfileFragment extends Fragment {
             binding.editName.setText(name == null ? "" : name);
             binding.textDisplayName.setText(name == null || name.isEmpty() ? "User" : name);
             binding.textJoinedYear.setText("Thành viên từ " + joinYear);
-            binding.textPremiumStatus.setText(Boolean.TRUE.equals(premium) ? "Premium" : "Free");
+            
+            boolean isPremium = Boolean.TRUE.equals(premium);
+            binding.textPremiumStatus.setText(isPremium ? "Premium" : "Free");
+            binding.cardPremiumBanner.setVisibility(isPremium ? View.GONE : View.VISIBLE);
             
             binding.textXpValue.setText(String.valueOf(xp == null ? 0 : xp));
             binding.textStreakValue.setText(String.valueOf(streak == null ? 0 : streak));
@@ -127,7 +130,6 @@ public class ProfileFragment extends Fragment {
                     if (!isAdded() || binding == null) return;
                     
                     if (querySnapshot.isEmpty()) {
-                        // HIỂN THỊ MẶC ĐỊNH: NO COURSES + CỜ VIỆT NAM
                         updateCourseUI(null);
                         return;
                     }
@@ -201,7 +203,6 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateCourseUI(String language) {
-        // Luôn hiển thị No courses và cờ Việt Nam khi được gọi với null
         binding.imageCourseFlag.setImageResource(R.drawable.vietnam);
         binding.textCourseName.setText("No courses");
         binding.imageStatCourse.setImageResource(R.drawable.vietnam);

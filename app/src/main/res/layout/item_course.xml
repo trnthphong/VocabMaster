@@ -1,26 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="@dimen/spacing_8"
-    android:layout_marginVertical="@dimen/spacing_8"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="@dimen/radius_large"
-    app:cardElevation="@dimen/elevation_low"
-    app:strokeColor="@color/card_border"
-    app:strokeWidth="1dp">
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#E5E5EA"
+    app:strokeWidth="1.2dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/spacing_16">
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/img_course_flag"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="#F2F2F7"
+            android:padding="8dp"
             android:scaleType="centerInside"
             android:src="@drawable/eng"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -31,92 +33,62 @@
             android:id="@+id/text_course_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_16"
-            android:text="Tiếng Anh"
+            android:layout_marginStart="16dp"
+            android:text="My Topic"
             android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-            app:layout_constraintBottom_toTopOf="@id/layout_stats"
+            android:textSize="18sp"
+            android:textColor="#1C1C1E"
             app:layout_constraintEnd_toStartOf="@id/icon_more"
             app:layout_constraintStart_toEndOf="@id/img_course_flag"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_chainStyle="packed" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <LinearLayout
             android:id="@+id/layout_stats"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_16"
-            android:layout_marginTop="4dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/img_course_flag"
             app:layout_constraintTop_toBottomOf="@id/text_course_title">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/text_flashcard_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_glass_card"
-                android:backgroundTint="@color/surface_light"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp">
+                android:text="0 words"
+                android:textColor="#8E8E93"
+                android:textSize="13sp" />
 
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/diamond"
-                    app:tint="@color/brand_primary" />
+            <View
+                android:layout_width="3dp"
+                android:layout_height="3dp"
+                android:layout_marginHorizontal="8dp"
+                android:background="@drawable/bg_circle"
+                android:backgroundTint="#C7C7CC" />
 
-                <TextView
-                    android:id="@+id/text_flashcard_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="120 cards"
-                    android:textColor="@color/brand_primary"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_level"
+            <TextView
+                android:id="@+id/text_course_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_glass_card"
-                android:backgroundTint="#FFF9C4"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp">
-
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/level"
-                    app:tint="@color/brand_secondary" />
-
-                <TextView
-                    android:id="@+id/text_course_level"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="Lvl 1"
-                    android:textColor="@color/brand_secondary"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                android:text="Level 1"
+                android:textColor="#8E8E93"
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <ImageView
+        <ImageButton
             android:id="@+id/icon_more"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:scaleType="centerInside"
             android:src="@android:drawable/ic_menu_more"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/gray_light" />
+            app:tint="#8E8E93" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
