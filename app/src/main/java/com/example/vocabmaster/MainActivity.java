@@ -65,15 +65,28 @@ public class MainActivity extends AppCompatActivity {
         if (intent != null && intent.getData() != null) {
             Uri data = intent.getData();
             if ("vocabmaster".equals(data.getScheme()) && "payment-success".equals(data.getHost())) {
+                // SỬA TẠI ĐÂY: Dùng đúng key "plan_name" như trong nav_graph.xml
                 String planName = data.getQueryParameter("plan");
-                int days = Integer.parseInt(data.getQueryParameter("days") != null ? data.getQueryParameter("days") : "30");
+                if (planName == null) planName = "Premium";
+                
+                String daysStr = data.getQueryParameter("days");
+                int days = 30;
+                try {
+                    if (daysStr != null) days = Integer.parseInt(daysStr);
+                } catch (NumberFormatException e) {
+                    days = 30;
+                }
                 
                 Bundle bundle = new Bundle();
-                bundle.putString("plan_name", planName);
+                bundle.putString("plan_name", planName); // Phải là "plan_name"
                 bundle.putInt("days", days);
                 
                 if (navController != null) {
-                    navController.navigate(R.id.navigation_premium_success, bundle);
+                    try {
+                        navController.navigate(R.id.navigation_premium_success, bundle);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

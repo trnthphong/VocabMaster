@@ -54,19 +54,24 @@ public class ManagePlansFragment extends Fragment {
                 String name = snapshot.getString("name");
                 binding.textUserName.setText("Tên: " + (name != null ? name : "Người dùng"));
 
+                // Kiểm tra cả 2 trường để đảm bảo không bị sót
                 Boolean isPremium = snapshot.getBoolean("premium");
+                if (isPremium == null) isPremium = snapshot.getBoolean("isPremium");
+                
                 binding.containerActivePlans.removeAllViews();
                 
                 if (Boolean.TRUE.equals(isPremium)) {
                     binding.textNoPlans.setVisibility(View.GONE);
                     
                     String planType = snapshot.getString("premiumPlanType");
-                    int days = snapshot.getLong("premiumDays") != null ? snapshot.getLong("premiumDays").intValue() : 30;
-                    long price = snapshot.getLong("premiumPrice") != null ? snapshot.getLong("premiumPrice") : 89000;
+                    if (planType == null) planType = "Premium";
+                    
+                    int days = snapshot.getLong("premiumDays") != null ? snapshot.getLong("premiumDays").intValue() : 365;
+                    long price = snapshot.getLong("premiumPrice") != null ? snapshot.getLong("premiumPrice") : 0;
                     Date regDate = snapshot.getDate("premiumRegDate");
                     Date expiryDate = snapshot.getDate("premiumUntil");
                     String method = snapshot.getString("paymentMethod");
-                    String status = snapshot.getString("premiumStatus"); // e.g. "ACTIVE", "EXPIRED", "CANCELLED"
+                    String status = snapshot.getString("premiumStatus");
                     
                     if (status == null) {
                         status = (expiryDate != null && expiryDate.before(new Date())) ? "EXPIRED" : "ACTIVE";
@@ -92,38 +97,23 @@ public class ManagePlansFragment extends Fragment {
         TextView textExp = cardView.findViewById(R.id.text_plan_expiry);
         TextView textAuto = cardView.findViewById(R.id.text_auto_renewal);
         
-        textTitle.setText("Gói " + (type != null ? type : "Premium") + " " + days + " ngày");
+        textTitle.setText("Gói " + type + " (" + days + " ngày)");
         
-        // Dynamic Status Color & Text
-        int colorRes;
-        String statusText;
-        int textColorRes = R.color.black;
+        int colorRes = R.color.light_green;
+        String statusText = "Đang sử dụng";
 
-        if ("ACTIVE".equalsIgnoreCase(status)) {
-            statusText = "Đang sử dụng";
-            colorRes = R.color.light_green;
-        } else if ("EXPIRED".equalsIgnoreCase(status)) {
+        if ("EXPIRED".equalsIgnoreCase(status)) {
             statusText = "Hết hạn";
             colorRes = R.color.light_yellow;
         } else if ("CANCELLED".equalsIgnoreCase(status)) {
             statusText = "Đã hủy";
             colorRes = R.color.light_red;
-        } else {
-            statusText = "Đang sử dụng";
-            colorRes = R.color.light_green;
         }
 
         badgeStatus.setText(statusText);
         badgeStatus.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(colorRes)));
-        badgeStatus.setTextColor(getResources().getColor(R.color.text_primary));
 
-        if ("STUDENT".equalsIgnoreCase(type)) {
-            textFeatures.setText("• Tính năng cơ bản\n• Hạn chế trò chơi");
-        } else if ("VVIP".equalsIgnoreCase(type)) {
-            textFeatures.setText("• Không giới hạn Heart\n• Full tính năng Try Again\n• Toàn bộ khóa học");
-        } else {
-            textFeatures.setText("• Toàn bộ tính năng và khóa học\n• Không quảng cáo\n• Hỗ trợ ưu tiên");
-        }
+        textFeatures.setText("• Toàn bộ tính năng và khóa học\n• Không quảng cáo\n• Hỗ trợ ưu tiên");
 
         NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
         textPrice.setText(formatter.format(price) + " ₫");

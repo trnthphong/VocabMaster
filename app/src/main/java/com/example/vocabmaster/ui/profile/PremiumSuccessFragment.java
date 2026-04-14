@@ -39,8 +39,16 @@ public class PremiumSuccessFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        String planName = getArguments() != null ? getArguments().getString("plan_name", "Premium") : "Premium";
-        int days = getArguments() != null ? getArguments().getInt("days", 30) : 30;
+        // Cách lấy an toàn để không crash trên Android cũ
+        String planName = "Premium";
+        int days = 30;
+        
+        if (getArguments() != null) {
+            if (getArguments().containsKey("plan_name")) {
+                planName = getArguments().getString("plan_name");
+            }
+            days = getArguments().getInt("days", 30);
+        }
 
         binding.textPlanName.setText(planName);
         binding.textSuccessMessage.setText("Bạn đã đăng ký thành công " + planName + "\nHành trình chinh phục từ vựng bắt đầu ngay bây giờ!");
