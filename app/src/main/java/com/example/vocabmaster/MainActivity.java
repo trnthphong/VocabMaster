@@ -1,6 +1,8 @@
 package com.example.vocabmaster;
 
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,9 +15,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.vocabmaster.databinding.ActivityMainBinding;
-import com.example.vocabmaster.util.DataSeeder;
 
 public class MainActivity extends AppCompatActivity {
+
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,21 +31,19 @@ public class MainActivity extends AppCompatActivity {
         ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // CHỈ CHẠY DÒNG NÀY 1 LẦN DUY NHẤT ĐỂ ĐẨY DỮ LIỆU BÀI HỌC LÊN FIREBASE
-        // Sau khi dữ liệu đã lên Firestore, bạn nên xóa hoặc comment dòng này lại.
-        //new DataSeeder().seedAllData();
-
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
 
         if (navHostFragment != null) {
-            NavController navController = navHostFragment.getNavController();
+            navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(binding.navView, navController);
             binding.navView.getMenu().getItem(2).setEnabled(false);
 
             binding.fabCreate.setOnClickListener(v -> {
                 navController.navigate(R.id.navigation_add_course);
             });
+
+            handleIntent(getIntent());
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavContainer, (v, windowInsets) -> {
@@ -52,5 +53,29 @@ public class MainActivity extends AppCompatActivity {
             v.setLayoutParams(mlp);
             return WindowInsetsCompat.CONSUMED;
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getData() != null) {
+            Uri data = intent.getData();
+            if ("vocabmaster".equals(data.getScheme()) && "payment-success".equals(data.getHost())) {
+                String planName = data.getQueryParameter("plan");
+                int days = Integer.parseInt(data.getQueryParameter("days") != null ? data.getQueryParameter("days") : "30");
+                
+                Bundle bundle = new Bundle();
+                bundle.putString("plan_name", planName);
+                bundle.putInt("days", days);
+                
+                if (navController != null) {
+                    navController.navigate(R.id.navigation_premium_success, bundle);
+                }
+            }
+        }
     }
 }

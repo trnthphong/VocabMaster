@@ -193,64 +193,12 @@
             android:paddingHorizontal="@dimen/spacing_16"
             android:paddingBottom="@dimen/spacing_32">
 
-            <!-- Premium Banner (Moved Up) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_premium_banner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_16"
-                app:cardBackgroundColor="#F3E5F5"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:clickable="true"
-                android:focusable="true">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="@dimen/spacing_16">
 
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@android:drawable/btn_star_big_on"
-                        app:tint="#7B1FA2" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Nâng cấp Premium"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="#7B1FA2" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Mở khóa tất cả tính năng"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                            android:textColor="#9C27B0" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_chevron_right"
-                        app:tint="#7B1FA2" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
             <!-- Learning Stats Card -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_learning_stats"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
@@ -402,7 +350,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Personal Info Card -->
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -447,13 +395,16 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Account Card -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btn_manage_premium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
-                app:cardBackgroundColor="@color/white"
-                app:strokeWidth="0dp">
+                app:cardBackgroundColor="#F3E5F5"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -461,35 +412,74 @@
                     android:orientation="vertical"
                     android:padding="@dimen/spacing_16">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tài khoản"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="@color/brand_primary" />
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_16"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                        <TextView
+                        <ImageView
+                            android:id="@+id/image_premium_status"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@android:drawable/btn_star_big_on"
+                            app:tint="#7B1FA2" />
+
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
-                            android:text="Loại tài khoản"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/text_subscription_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Nâng cấp Premium"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                android:textStyle="bold"
+                                android:textColor="#7B1FA2" />
+
+                            <TextView
+                                android:id="@+id/text_subscription_desc"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Mở khóa tất cả tính năng"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="#9C27B0" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="#7B1FA2" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_premium_details"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
 
                         <TextView
-                            android:id="@+id/text_premium_status"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Free"
-                            android:textColor="@color/brand_secondary"
+                            android:text="Hết hạn: "
+                            android:textSize="12sp"
+                            android:textColor="#7B1FA2" />
+
+                        <TextView
+                            android:id="@+id/text_premium_expiry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                            android:textColor="#7B1FA2" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -531,12 +521,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Pending reports: 0" />
-
-                    <TextView
-                        android:id="@+id/text_admin_subs"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Active subscriptions: 0" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_admin_refresh"

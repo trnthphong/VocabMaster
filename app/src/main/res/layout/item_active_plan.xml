@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/card_border">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Header: Plan Name and Status Badge -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/text_plan_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@id/badge_status"
+                android:layout_alignParentStart="true"
+                android:text="Gói VIP 30 ngày"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                android:textColor="@color/brand_primary" />
+
+            <TextView
+                android:id="@+id/badge_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_toggle_pill"
+                android:backgroundTint="@color/brand_secondary"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="2dp"
+                android:text="Đang sử dụng"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <!-- Features description -->
+        <TextView
+            android:id="@+id/text_plan_features"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="• Toàn bộ tính năng và khóa học\n• Không quảng cáo"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="2dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/card_border"
+            android:layout_marginVertical="16dp" />
+
+        <!-- Info Grid -->
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:alignmentMode="alignMargins">
+
+            <!-- Price -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Giá thanh toán"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
+                <TextView
+                    android:id="@+id/text_plan_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="89.000 ₫"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Payment Method -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Phương thức"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
+                <TextView
+                    android:id="@+id/text_payment_method"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ví MoMo"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+            </LinearLayout>
+
+            <!-- Registration Date -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ngày đăng ký"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
+                <TextView
+                    android:id="@+id/text_reg_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="15/11/2024"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+            </LinearLayout>
+
+            <!-- Expiry Date -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thời hạn sử dụng"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
+                <TextView
+                    android:id="@+id/text_plan_expiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="15/12/2024"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+            </LinearLayout>
+        </GridLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Gia hạn tự động"
+                android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+            <TextView
+                android:id="@+id/text_auto_renewal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Có"
+                android:textColor="@color/brand_primary"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel_subscription"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Hủy gói"
+                android:textColor="@color/error"
+                app:backgroundTint="#FFF5F5"
+                app:cornerRadius="12dp" />
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="match_parent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel_renewal"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Hủy gia hạn"
+                android:textColor="@color/warning"
+                app:backgroundTint="#FFF8E1"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

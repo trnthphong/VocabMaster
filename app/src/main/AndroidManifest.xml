@@ -38,6 +38,7 @@
         <activity android:name=".ui.auth.LoginActivity" />
         <activity android:name=".ui.auth.RegisterActivity" />
         <activity android:name=".ui.auth.ForgotPasswordActivity" />
+        <activity android:name=".ui.auth.VerifyEmailActivity" />
 
         <activity
             android:name=".MainActivity"

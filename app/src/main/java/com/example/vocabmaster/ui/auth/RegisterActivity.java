@@ -82,10 +82,7 @@ public class RegisterActivity extends AppCompatActivity {
                         db.collection("users").document(userId)
                                 .set(user)
                                 .addOnSuccessListener(aVoid -> {
-                                    binding.progressBar.setVisibility(View.GONE);
-                                    UiFeedback.showSnack(binding.getRoot(), "Account created successfully");
-                                    MotionSystem.startScreen(this, new Intent(RegisterActivity.this, MainActivity.class));
-                                    finishAffinity();
+                                    sendEmailVerification();
                                 })
                                 .addOnFailureListener(e -> {
                                     binding.progressBar.setVisibility(View.GONE);
@@ -97,5 +94,23 @@ public class RegisterActivity extends AppCompatActivity {
                                 task.getException() != null ? task.getException().getMessage() : "Unknown error");
                     }
                 });
+    }
+
+    private void sendEmailVerification() {
+        if (mAuth.getCurrentUser() != null) {
+            mAuth.getCurrentUser().sendEmailVerification()
+                    .addOnCompleteListener(task -> {
+                        binding.progressBar.setVisibility(View.GONE);
+                        if (task.isSuccessful()) {
+                            UiFeedback.showSnack(binding.getRoot(), "Verification email sent. Please check your inbox.");
+                            // Chuyển sang màn hình đợi xác thực email
+                            startActivity(new Intent(RegisterActivity.this, VerifyEmailActivity.class));
+                            finish();
+                        } else {
+                            UiFeedback.showErrorDialog(this, "Verification failed",
+                                    task.getException() != null ? task.getException().getMessage() : "Could not send verification email");
+                        }
+                    });
+        }
     }
 }

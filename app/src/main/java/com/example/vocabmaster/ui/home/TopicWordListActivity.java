@@ -1,7 +1,9 @@
 package com.example.vocabmaster.ui.home;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,23 +20,28 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Vocabulary;
-import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityTopicWordListBinding;
 import com.example.vocabmaster.ui.study.StudyActivity;
+import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TopicWordListActivity extends AppCompatActivity {
     private ActivityTopicWordListBinding binding;
-    private WordAdapter adapter;
+    private WordAdapter listAdapter;
+    private TopicFlashcardAdapter swipeAdapter;
     private String topic;
     private String displayTitle;
     private String langCode;
+    private String selectedLevel;
     private FirebaseFirestore db;
+    private List<Vocabulary> currentWords = new ArrayList<>();
+    private MediaPlayer mediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,9 +50,12 @@ public class TopicWordListActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         db = FirebaseFirestore.getInstance();
-        topic = getIntent().getStringExtra("topic");
+        mediaPlayer = new MediaPlayer();
+        
+        topic = getIntent().getStringExtra("selected_topic");
         displayTitle = getIntent().getStringExtra("display_title");
         langCode = getIntent().getStringExtra("lang_code");
+        selectedLevel = getIntent().getStringExtra("selected_level");
 
         if (langCode != null) {
             if (langCode.contains("Anh")) langCode = "en";
@@ -53,31 +63,28 @@ public class TopicWordListActivity extends AppCompatActivity {
         }
 
         binding.textHeaderTitle.setText(displayTitle != null ? displayTitle : "Danh sách từ");
-        binding.btnBack.setOnClickListener(v -> finish());
-        binding.btnAddNewWord.setOnClickListener(v -> showAddEditWordDialog(null));
+        binding.btnBack.setOnClickListener(v -> {
+            if (binding.layoutSwipe.getVisibility() == View.VISIBLE) {
+                showListView();
+            } else {
+                finish();
+            }
+        });
         
-        // Ẩn nút đổi ngôn ngữ nếu ứng dụng chỉ để học tiếng anh (hoặc xử lý theo yêu cầu)
+        binding.btnAddNewWord.setOnClickListener(v -> showAddEditWordDialog(null));
         binding.btnChangeLang.setVisibility(View.GONE);
+        binding.tabLayoutLevel.setVisibility(View.GONE);
 
-        setupRecyclerView();
+        setupAdapters();
         loadWords();
     }
 
-    private void setupRecyclerView() {
-        adapter = new WordAdapter(new WordAdapter.OnWordClickListener() {
+    private void setupAdapters() {
+        // List Adapter
+        listAdapter = new WordAdapter(new WordAdapter.OnWordClickListener() {
             @Override
             public void onWordClick(Vocabulary vocab) {
-                ArrayList<String> allIds = new ArrayList<>();
-                List<Vocabulary> currentList = adapter.getWords();
-                for (Vocabulary v : currentList) {
-                    allIds.add(v.getVocabularyId());
-                }
-                int startIndex = currentList.indexOf(vocab);
-                Intent intent = new Intent(TopicWordListActivity.this, StudyActivity.class);
-                intent.putStringArrayListExtra("word_ids", allIds);
-                intent.putExtra("start_index", startIndex);
-                intent.putExtra("lesson_title", displayTitle);
-                startActivity(intent);
+                showSwipeView(currentWords.indexOf(vocab));
             }
 
             @Override
@@ -91,7 +98,47 @@ public class TopicWordListActivity extends AppCompatActivity {
             }
         });
         binding.recyclerWords.setLayoutManager(new LinearLayoutManager(this));
-        binding.recyclerWords.setAdapter(adapter);
+        binding.recyclerWords.setAdapter(listAdapter);
+
+        // Swipe Adapter (Flashcard mode)
+        swipeAdapter = new TopicFlashcardAdapter(this, url -> playAudio(url));
+        binding.viewPagerFlashcards.setAdapter(swipeAdapter);
+        
+        // Cấu hình hiệu ứng vuốt giống My Library
+        binding.viewPagerFlashcards.setOffscreenPageLimit(3);
+        binding.viewPagerFlashcards.setClipToPadding(false);
+        binding.viewPagerFlashcards.setClipChildren(false);
+        float margin = 40 * getResources().getDisplayMetrics().density;
+        binding.viewPagerFlashcards.setPageTransformer((page, position) -> {
+            float absPos = Math.abs(position);
+            page.setScaleY(0.85f + (1 - absPos) * 0.15f);
+            page.setAlpha(0.5f + (1 - absPos) * 0.5f);
+            page.setTranslationX(-position * margin);
+        });
+    }
+
+    private void showListView() {
+        binding.layoutList.setVisibility(View.VISIBLE);
+        binding.layoutSwipe.setVisibility(View.GONE);
+        binding.textHeaderTitle.setText(displayTitle);
+    }
+
+    private void showSwipeView(int position) {
+        binding.layoutList.setVisibility(View.GONE);
+        binding.layoutSwipe.setVisibility(View.VISIBLE);
+        binding.viewPagerFlashcards.setCurrentItem(position, false);
+        binding.textHeaderTitle.setText("Flashcards");
+    }
+
+    private void playAudio(String url) {
+        try {
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+        } catch (IOException e) {
+            Log.e("TopicWordList", "Error playing audio", e);
+        }
     }
 
     private void showAddEditWordDialog(Vocabulary vocab) {
@@ -127,14 +174,17 @@ public class TopicWordListActivity extends AppCompatActivity {
         v.setWord(name);
         v.setDefinition(def);
         v.setTopic(topic != null ? topic.toLowerCase() : "custom");
+        v.setCefr(selectedLevel != null ? selectedLevel : "A1");
         
-        db.collection("vocabularies").add(v).addOnSuccessListener(doc -> loadWords());
+        String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
+        db.collection(collectionPath).add(v).addOnSuccessListener(doc -> loadWords());
     }
 
     private void updateWordInFirestore(Vocabulary vocab, String name, String def) {
         vocab.setWord(name);
         vocab.setDefinition(def);
-        db.collection("vocabularies").document(vocab.getVocabularyId()).set(vocab).addOnSuccessListener(aVoid -> loadWords());
+        String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
+        db.collection(collectionPath).document(vocab.getVocabularyId()).set(vocab).addOnSuccessListener(aVoid -> loadWords());
     }
 
     private void confirmDeleteWord(Vocabulary vocab) {
@@ -142,32 +192,68 @@ public class TopicWordListActivity extends AppCompatActivity {
                 .setTitle("Xóa từ vựng")
                 .setMessage("Bạn có chắc chắn muốn xóa từ '" + vocab.getWord() + "' không?")
                 .setPositiveButton("Xóa", (dialog, which) -> {
-                    db.collection("vocabularies").document(vocab.getVocabularyId()).delete().addOnSuccessListener(aVoid -> loadWords());
+                    String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
+                    db.collection(collectionPath).document(vocab.getVocabularyId()).delete().addOnSuccessListener(aVoid -> loadWords());
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
     }
 
     private void loadWords() {
-        binding.progressBar.setVisibility(View.VISIBLE);
-        Query query = db.collection("vocabularies");
+        if (binding.progressBar != null) binding.progressBar.setVisibility(View.VISIBLE);
+        String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
+        Query query = db.collection(collectionPath);
+        
         if (topic != null) {
             query = query.whereEqualTo("topic", topic.toLowerCase());
         }
         
+        if (selectedLevel != null) {
+            query = query.whereEqualTo("cefr", selectedLevel);
+        }
+        
         query.get().addOnSuccessListener(snapshots -> {
-            List<Vocabulary> words = new ArrayList<>();
+            currentWords.clear();
             for (DocumentSnapshot doc : snapshots) {
                 Vocabulary v = doc.toObject(Vocabulary.class);
                 if (v != null) {
                     v.setVocabularyId(doc.getId());
-                    words.add(v);
+                    currentWords.add(v);
                 }
             }
-            binding.progressBar.setVisibility(View.GONE);
-            adapter.submitList(words);
-            binding.textCount.setText(words.size() + " từ vựng");
+            if (binding.progressBar != null) binding.progressBar.setVisibility(View.GONE);
+            listAdapter.submitList(currentWords);
+            swipeAdapter.submitList(currentWords);
+            
+            binding.textCount.setText(currentWords.size() + " từ vựng (" + selectedLevel + ")");
+            
+            if (currentWords.isEmpty()) {
+                binding.layoutEmpty.setVisibility(View.VISIBLE);
+            } else {
+                binding.layoutEmpty.setVisibility(View.GONE);
+            }
+        }).addOnFailureListener(e -> {
+            if (binding.progressBar != null) binding.progressBar.setVisibility(View.GONE);
+            Toast.makeText(this, "Lỗi khi tải từ vựng", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (binding.layoutSwipe.getVisibility() == View.VISIBLE) {
+            showListView();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 
     private static class WordAdapter extends RecyclerView.Adapter<WordAdapter.ViewHolder> {
@@ -188,8 +274,6 @@ public class TopicWordListActivity extends AppCompatActivity {
             this.words = newList;
             notifyDataSetChanged();
         }
-
-        public List<Vocabulary> getWords() { return words; }
 
         @NonNull
         @Override

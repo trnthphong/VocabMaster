@@ -155,16 +155,19 @@ public class HomeFragment extends Fragment {
         }
 
         String userLang = (currentUser != null) ? currentUser.getLanguage() : null;
+        String userLevel = (currentUser != null) ? currentUser.getProficiencyLevel() : null;
         boolean hasValidLang = userLang != null && (userLang.equals("en") || userLang.equals("ru"));
 
-        if (hasValidLang) {
-            // Thay đổi: Thay vì TopicWordListActivity, mở CourseDetailActivity (Lộ trình)
-            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
-            intent.putExtra("course_theme", topic);
+        if (hasValidLang && userLevel != null) {
+            // Đã có cả ngôn ngữ và trình độ (level) -> Mở trực tiếp danh sách từ vựng theo level của user
+            Intent intent = new Intent(requireContext(), TopicWordListActivity.class);
+            intent.putExtra("selected_topic", topic);
             intent.putExtra("display_title", displayTitle);
             intent.putExtra("lang_code", userLang);
+            intent.putExtra("selected_level", userLevel);
             startActivity(intent);
         } else {
+            // Thiếu ngôn ngữ hoặc trình độ -> Bắt đầu JourneySetup
             Intent intent = new Intent(requireContext(), JourneySetupActivity.class);
             intent.putExtra("selected_topic", topic);
             intent.putExtra("display_title", displayTitle);

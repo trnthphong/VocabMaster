@@ -6,7 +6,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
-import android.widget.RadioButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,7 +14,6 @@ import com.example.vocabmaster.MainActivity;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.ActivityJourneySetupBinding;
-import com.example.vocabmaster.ui.library.CourseDetailActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -146,48 +144,18 @@ public class JourneySetupActivity extends AppCompatActivity {
         currentStep = 3; // Chuyển sang View Loading
         updateUI();
 
-        // LOG CÁC TỪ VỰNG PHÙ HỢP YÊU CẦU (Topic + Level)
-        logMatchingVocabularies();
-
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (isChangeOnly) {
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-            } else {
-                // Thay đổi: Sau khi setup xong, mở CourseDetailActivity (Lộ trình) thay vì TopicWordListActivity
-                Intent intent = new Intent(this, CourseDetailActivity.class);
-                intent.putExtra("course_theme", selectedTopic);
-                intent.putExtra("display_title", displayTitle);
-                intent.putExtra("lang_code", langCode);
-                startActivity(intent);
-            }
+            // Sau khi tạo journey xong, ở lại trang TopicWordListActivity thay vì quay lại Home
+            Intent intent = new Intent(this, TopicWordListActivity.class);
+            intent.putExtra("selected_topic", selectedTopic);
+            intent.putExtra("display_title", displayTitle);
+            intent.putExtra("lang_code", langCode);
+            intent.putExtra("selected_level", selectedLevel);
+            // Thêm flag để TopicWordListActivity biết đây là journey mới và có thể quay lại home sau
+            intent.putExtra("is_new_journey", true);
+            
+            startActivity(intent);
             finish();
         }, 2000);
-    }
-
-    private void logMatchingVocabularies() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        String collectionPath = "ru".equals(langCode) ? "russian_vocabularies" : "vocabularies";
-        
-        Log.d(TAG, "--- ĐANG LỌC TỪ VỰNG ---");
-        Log.d(TAG, "Ngôn ngữ: " + langCode);
-        Log.d(TAG, "Chủ đề: " + selectedTopic);
-        Log.d(TAG, "Trình độ (CEFR): " + selectedLevel);
-
-        db.collection(collectionPath)
-                .whereEqualTo("topic", selectedTopic.toLowerCase())
-                .whereEqualTo("cefr", selectedLevel)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Log.d(TAG, "Kết quả: Tìm thấy " + queryDocumentSnapshots.size() + " từ phù hợp.");
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        Vocabulary v = doc.toObject(Vocabulary.class);
-                        if (v != null) {
-                            Log.i(TAG, "MATCHED: " + v.getWord() + " [" + selectedLevel + "] - " + v.getDefinition());
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> Log.e(TAG, "Lỗi khi lọc từ vựng: ", e));
     }
 }

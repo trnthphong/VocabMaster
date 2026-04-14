@@ -51,5 +51,28 @@
         android:id="@+id/navigation_premium"
         android:name="com.example.vocabmaster.ui.profile.PremiumFragment"
         android:label="Premium"
-        tools:layout="@layout/fragment_premium" />
+        tools:layout="@layout/fragment_premium">
+        <action
+            android:id="@+id/action_premium_to_success"
+            app:destination="@id/navigation_premium_success" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_premium_success"
+        android:name="com.example.vocabmaster.ui.profile.PremiumSuccessFragment"
+        android:label="Premium Success"
+        tools:layout="@layout/fragment_premium_success" >
+        <argument
+            android:name="plan_name"
+            app:argType="string" />
+        <argument
+            android:name="days"
+            app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_manage_plans"
+        android:name="com.example.vocabmaster.ui.profile.ManagePlansFragment"
+        android:label="Manage Plans"
+        tools:layout="@layout/fragment_manage_plans" />
 </navigation>

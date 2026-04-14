@@ -27,11 +27,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Settings"
+            android:text="Cài đặt"
             android:textAppearance="@style/TextAppearance.VocabMaster.H2"
             android:textColor="@color/brand_primary" />
     </RelativeLayout>
 
+    <!-- App Preferences -->
     <com.google.android.material.card.MaterialCardView
         style="@style/Widget.VocabMaster.Card"
         android:layout_width="match_parent"
@@ -48,7 +49,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="App Preferences"
+                android:text="Tùy chọn ứng dụng"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
             <com.google.android.material.materialswitch.MaterialSwitch
@@ -56,14 +57,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
-                android:text="Dark Mode" />
+                android:text="Chế độ tối" />
 
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
-                android:hint="Daily XP Goal">
+                android:hint="Mục tiêu XP hàng ngày">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edit_daily_goal"
@@ -78,20 +79,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_16"
-                android:text="Save Settings" />
+                android:text="Lưu cài đặt" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Subscription Info Card -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_subscription"
+        android:id="@+id/card_subscription_info"
         style="@style/Widget.VocabMaster.Card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_16"
-        android:visibility="gone"
         app:cardBackgroundColor="@color/white"
-        app:strokeWidth="0dp"
-        tools:visibility="visible">
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -102,25 +102,81 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Subscription"
+                android:text="Thông tin gói dịch vụ"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="You are a Premium member"
-                android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                 />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_cancel_premium"
-                style="@style/Widget.VocabMaster.Button.Primary"
+            <!-- Option 1: Buy Plan -->
+            <LinearLayout
+                android:id="@+id/layout_buy_plan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_16"
-                android:text="Hủy gói Premium"
-                android:textColor="@color/white" />
+                android:layout_marginTop="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingVertical="12dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/cart"
+                    app:tint="@color/brand_primary" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:text="Mua gói cước"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/next"
+                    app:tint="@color/text_secondary" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/card_border" />
+
+            <!-- Option 2: Manage Plans -->
+            <LinearLayout
+                android:id="@+id/layout_manage_plans"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingVertical="12dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/premium"
+                    app:tint="@color/brand_primary" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:text="Quản lý gói cước"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/next"
+                    app:tint="@color/text_secondary" />
+            </LinearLayout>
+
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

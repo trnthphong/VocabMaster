@@ -12,6 +12,7 @@ import com.example.vocabmaster.databinding.ActivityLoginBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -27,9 +28,15 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         MotionSystem.applyPressState(binding.btnLogin);
 
-        if (mAuth.getCurrentUser() != null) {
-            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-            finish();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            if (currentUser.isEmailVerified()) {
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            } else {
+                // Nếu user chưa verify mà lỡ kẹt ở đây thì yêu cầu verify
+                UiFeedback.showSnack(binding.getRoot(), "Please verify your email to continue.");
+            }
         }
 
         // Chuyển sang trang Register khi nhấn tab Sign Up hoặc dòng text bên dưới
@@ -63,8 +70,15 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     binding.progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
-                        MotionSystem.startScreen(this, new Intent(LoginActivity.this, MainActivity.class));
-                        finish();
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null && user.isEmailVerified()) {
+                            MotionSystem.startScreen(this, new Intent(LoginActivity.this, MainActivity.class));
+                            finish();
+                        } else {
+                            UiFeedback.showErrorDialog(this, "Email not verified",
+                                    "Please check your inbox and verify your email address before logging in.");
+                            mAuth.signOut();
+                        }
                     } else {
                         UiFeedback.showErrorDialog(this, "Sign in failed",
                                 task.getException() != null ? task.getException().getMessage() : "Unknown error");

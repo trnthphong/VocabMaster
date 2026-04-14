@@ -18,6 +18,7 @@ import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityStudyBinding;
+import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -25,12 +26,13 @@ import com.google.firebase.firestore.Query;
 
 import java.io.IOException;
 import java.util.ArrayList;
-  import java.util.Collections;
+import java.util.Collections;
 import java.util.List;
 
 public class StudyActivity extends AppCompatActivity {
     private static final String TAG = "StudyActivity";
     private ActivityStudyBinding binding;
+    private LayoutFlashcardTopicBinding topicBinding;
     private FirebaseFirestore db;
     private String lessonId;
     private String wordId;
@@ -41,6 +43,7 @@ public class StudyActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     
     private boolean isFlashcardMode = false;
+    private boolean useTopicLayout = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,7 @@ public class StudyActivity extends AppCompatActivity {
         
         lessonId = getIntent().getStringExtra("lesson_id");
         wordId = getIntent().getStringExtra("word_id");
+        useTopicLayout = getIntent().getBooleanExtra("use_topic_layout", false);
         String lessonTitle = getIntent().getStringExtra("lesson_title");
         if (lessonTitle != null) binding.textHeaderTitle.setText(lessonTitle);
 
@@ -70,11 +74,30 @@ public class StudyActivity extends AppCompatActivity {
 
     private void setupFlashcardOnlyUI() {
         binding.layoutStats.setVisibility(View.GONE);
-        binding.btnSkip.setVisibility(View.VISIBLE);
-        binding.btnNext.setVisibility(View.VISIBLE);
-        binding.btnSaveToLibrary.setVisibility(View.VISIBLE);
-        binding.cardFlashcard.setVisibility(View.VISIBLE);
-        binding.dynamicTaskLayout.setVisibility(View.GONE);
+        
+        if (useTopicLayout) {
+            // Star New Journey: Chỉ hiện nút "Lưu vào thư viện", ẩn "Bỏ qua" và "Tiếp tục"
+            binding.btnSkip.setVisibility(View.GONE);
+            binding.btnNext.setVisibility(View.GONE);
+            binding.btnSaveToLibrary.setVisibility(View.VISIBLE);
+            
+            binding.cardFlashcard.setVisibility(View.GONE);
+            binding.dynamicTaskLayout.setVisibility(View.VISIBLE);
+            binding.dynamicTaskLayout.removeAllViews();
+            
+            topicBinding = LayoutFlashcardTopicBinding.inflate(getLayoutInflater(), binding.dynamicTaskLayout, true);
+            topicBinding.cardFlashcard.setOnClickListener(v -> flipTopicCard());
+            topicBinding.btnAudio.setOnClickListener(v -> playCurrentAudio());
+            topicBinding.btnDelete.setVisibility(View.GONE);
+        } else {
+            // Chế độ Flashcard thông thường
+            binding.btnSkip.setVisibility(View.VISIBLE);
+            binding.btnNext.setVisibility(View.VISIBLE);
+            binding.btnSaveToLibrary.setVisibility(View.VISIBLE);
+            binding.cardFlashcard.setVisibility(View.VISIBLE);
+            binding.dynamicTaskLayout.setVisibility(View.GONE);
+        }
+        
         binding.studyProgress.setProgress(100);
     }
 
@@ -83,32 +106,20 @@ public class StudyActivity extends AppCompatActivity {
         binding.cardFlashcard.setOnClickListener(v -> flipCard());
         binding.btnSaveToLibrary.setOnClickListener(v -> saveToFirebaseLibrary());
         
-        binding.btnSkip.setOnClickListener(v -> {
-            if (isFlashcardMode) {
-                finish();
-            } else {
-                nextChallenge();
-            }
-        });
+        binding.btnSkip.setOnClickListener(v -> finish());
+        binding.btnNext.setOnClickListener(v -> finish());
+        binding.btnListen.setOnClickListener(v -> playCurrentAudio());
+    }
 
-        binding.btnNext.setOnClickListener(v -> {
-            if (isFlashcardMode) {
-                finish();
+    private void playCurrentAudio() {
+        if (currentVocab != null) {
+            String url = currentVocab.getAnyAudioUrl();
+            if (url != null && !url.trim().isEmpty()) {
+                playAudio(url);
             } else {
-                nextChallenge();
+                Toast.makeText(this, "Không có âm thanh cho từ này", Toast.LENGTH_SHORT).show();
             }
-        });
-
-        binding.btnListen.setOnClickListener(v -> {
-            if (currentVocab != null) {
-                String url = currentVocab.getAnyAudioUrl();
-                if (url != null && !url.trim().isEmpty()) {
-                    playAudio(url);
-                } else {
-                    Toast.makeText(this, "Không có âm thanh cho từ này", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        }
     }
 
     private void loadLessonChallenges() {
@@ -120,7 +131,6 @@ public class StudyActivity extends AppCompatActivity {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     challenges = queryDocumentSnapshots.toObjects(Challenge.class);
                     if (challenges != null && !challenges.isEmpty()) {
-                        // Sắp xếp tay theo orderNum để không cần Firestore Index
                         Collections.sort(challenges, (c1, c2) -> Integer.compare(c1.getOrderNum(), c2.getOrderNum()));
                         displayChallenge();
                     } else {
@@ -215,6 +225,17 @@ public class StudyActivity extends AppCompatActivity {
         }
     }
 
+    private void flipTopicCard() {
+        if (topicBinding == null) return;
+        if (topicBinding.cardFront.getVisibility() == View.VISIBLE) {
+            topicBinding.cardFront.setVisibility(View.GONE);
+            topicBinding.cardBack.setVisibility(View.VISIBLE);
+        } else {
+            topicBinding.cardFront.setVisibility(View.VISIBLE);
+            topicBinding.cardBack.setVisibility(View.GONE);
+        }
+    }
+
     private void loadSingleWordData() {
         if (wordId == null) return;
         
@@ -235,26 +256,39 @@ public class StudyActivity extends AppCompatActivity {
         currentVocab = doc.toObject(Vocabulary.class);
         if (currentVocab == null) return;
 
-        binding.textTerm.setText(currentVocab.getWord());
-        binding.textDefinition.setText(currentVocab.getDefinition());
-        
-        String phonetic = currentVocab.getPhonetic();
-        if (phonetic != null && !phonetic.trim().isEmpty()) {
-            binding.textPhonetic.setText(phonetic);
-            binding.textPhonetic.setVisibility(View.VISIBLE);
+        if (useTopicLayout && topicBinding != null) {
+            topicBinding.textTerm.setText(currentVocab.getWord());
+            topicBinding.textDefinition.setText(currentVocab.getDefinition());
+            topicBinding.textPhonetic.setText(currentVocab.getPhonetic());
+            topicBinding.textPhonetic.setVisibility(currentVocab.getPhonetic() != null ? View.VISIBLE : View.GONE);
+            topicBinding.labelTopic.setText(currentVocab.getTopic() != null ? currentVocab.getTopic().toUpperCase() : "VOCAB");
+            topicBinding.textExample.setText(currentVocab.getExampleSentence());
+            topicBinding.textExample.setVisibility(currentVocab.getExampleSentence() != null ? View.VISIBLE : View.GONE);
+            
+            String audioUrl = currentVocab.getAnyAudioUrl();
+            topicBinding.btnAudio.setVisibility(audioUrl != null && !audioUrl.isEmpty() ? View.VISIBLE : View.GONE);
         } else {
-            binding.textPhonetic.setVisibility(View.GONE);
-        }
+            binding.textTerm.setText(currentVocab.getWord());
+            binding.textDefinition.setText(currentVocab.getDefinition());
+            
+            String phonetic = currentVocab.getPhonetic();
+            if (phonetic != null && !phonetic.trim().isEmpty()) {
+                binding.textPhonetic.setText(phonetic);
+                binding.textPhonetic.setVisibility(View.VISIBLE);
+            } else {
+                binding.textPhonetic.setVisibility(View.GONE);
+            }
 
-        String audioUrl = currentVocab.getAnyAudioUrl();
-        if (audioUrl != null && !audioUrl.trim().isEmpty()) {
-            binding.btnListen.setVisibility(View.VISIBLE);
-        } else {
-            binding.btnListen.setVisibility(View.GONE);
-        }
+            String audioUrl = currentVocab.getAnyAudioUrl();
+            if (audioUrl != null && !audioUrl.trim().isEmpty()) {
+                binding.btnListen.setVisibility(View.VISIBLE);
+            } else {
+                binding.btnListen.setVisibility(View.GONE);
+            }
 
-        if (currentVocab.getImageUrl() != null && !currentVocab.getImageUrl().trim().isEmpty()) {
-            binding.imageVocab.setVisibility(View.VISIBLE);
+            if (currentVocab.getImageUrl() != null && !currentVocab.getImageUrl().trim().isEmpty()) {
+                binding.imageVocab.setVisibility(View.VISIBLE);
+            }
         }
     }
 

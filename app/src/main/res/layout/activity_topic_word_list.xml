@@ -63,25 +63,63 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_add_new_word"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_layout_level"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:text="+ Thêm từ vựng mới"
-        android:textAllCaps="false"
-        android:textColor="@color/brand_primary"
-        app:layout_constraintTop_toBottomOf="@id/top_bar" />
+        android:background="@android:color/transparent"
+        app:layout_constraintTop_toBottomOf="@id/top_bar"
+        app:tabIndicatorColor="@color/brand_primary"
+        app:tabIndicatorHeight="3dp"
+        app:tabSelectedTextColor="@color/brand_primary"
+        app:tabTextAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+        app:tabTextColor="@color/gray_text"
+        android:visibility="gone" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_words"
+    <!-- RecyclerView List Container -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_add_new_word" />
+        app:layout_constraintTop_toBottomOf="@id/top_bar">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_new_word"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:text="+ Thêm từ vựng mới"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_primary"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_words"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:clipToPadding="false"
+            android:padding="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_add_new_word" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ViewPager2 Flashcard Container (Swipe Mode) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_swipe"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/top_bar">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/view_pager_flashcards"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ProgressBar
         android:id="@+id/progress_bar"

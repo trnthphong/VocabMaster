@@ -1,14 +1,10 @@
 package com.example.vocabmaster.ui.profile;
 
-import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,7 +20,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class SettingsFragment extends Fragment {
-    private static final String TAG = "SettingsFragment";
     private FragmentSettingsBinding binding;
     private FirebaseFirestore db;
     private User currentUser;
@@ -47,14 +42,16 @@ public class SettingsFragment extends Fragment {
         binding.btnLogout.setOnClickListener(v -> logout());
         binding.btnSaveSettings.setOnClickListener(v -> {
             int goal = 20;
-            try {
-                goal = Integer.parseInt(binding.editDailyGoal.getText().toString().trim());
-            } catch (Exception ignored) {}
+            try { goal = Integer.parseInt(binding.editDailyGoal.getText().toString().trim()); } catch (Exception ignored) {}
             saveSetting("dailyGoal", goal);
         });
 
-        // Nút hủy gói Premium
-        binding.btnCancelPremium.setOnClickListener(v -> showCancelSubscriptionDialog());
+        // Điều hướng Premium - Đã sửa lỗi crash bằng cách gọi trực tiếp ID destination
+        binding.layoutBuyPlan.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.navigation_premium));
+
+        binding.layoutManagePlans.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.navigation_manage_plans));
 
         loadSettings();
     }
@@ -62,49 +59,15 @@ public class SettingsFragment extends Fragment {
     private void loadSettings() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-
         db.collection("users").document(uid).addSnapshotListener((snapshot, e) -> {
-            if (snapshot != null && snapshot.exists() && isAdded() && binding != null) {
+            if (snapshot != null && snapshot.exists() && isAdded()) {
                 currentUser = snapshot.toObject(User.class);
                 if (currentUser != null) {
-                    currentUser.setUid(uid);
-                    
                     binding.editDailyGoal.setText(String.valueOf(currentUser.getDailyGoal() == 0 ? 20 : currentUser.getDailyGoal()));
                     binding.switchDarkMode.setChecked(currentUser.isDarkMode());
-                    
-                    // Hiện/Ẩn mục Subscription dựa trên trạng thái Premium
-                    binding.cardSubscription.setVisibility(currentUser.isActivePremium() ? View.VISIBLE : View.GONE);
                 }
             }
         });
-    }
-
-    private void showCancelSubscriptionDialog() {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Hủy gói Premium")
-                .setMessage("Bạn có chắc chắn muốn hủy gói Premium không? Bạn sẽ mất các quyền lợi Premium ngay lập tức.")
-                .setPositiveButton("Xác nhận hủy", (dialog, which) -> cancelSubscription())
-                .setNegativeButton("Quay lại", null)
-                .show();
-    }
-
-    private void cancelSubscription() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
-
-        // Cập nhật Firestore để hủy Premium
-        db.collection("users").document(uid)
-                .update("isPremium", false, "premiumUntil", null)
-                .addOnSuccessListener(unused -> {
-                    if (isAdded()) {
-                        Toast.makeText(requireContext(), "Đã hủy gói Premium thành công", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (isAdded()) {
-                        Toast.makeText(requireContext(), "Lỗi khi hủy gói: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 
     private void saveSetting(String key, Object value) {

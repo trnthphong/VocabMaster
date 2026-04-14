@@ -1,8 +1,6 @@
 package com.example.vocabmaster.ui.profile;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,20 +14,18 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.vocabmaster.R;
-import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.databinding.FragmentProfileBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Locale;
 
 public class ProfileFragment extends Fragment {
-    private static final String TAG = "ProfileFragment";
     private FragmentProfileBinding binding;
     private FirebaseFirestore db;
 
@@ -58,7 +54,7 @@ public class ProfileFragment extends Fragment {
         binding.cardAvatar.setOnClickListener(v -> showAvatarSelectionDialog());
         binding.btnSaveProfile.setOnClickListener(v -> saveProfile());
         
-        binding.cardPremiumBanner.setOnClickListener(v -> 
+        binding.btnManagePremium.setOnClickListener(v -> 
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_premium));
 
         View.OnClickListener toSocial = v -> {
@@ -90,15 +86,33 @@ public class ProfileFragment extends Fragment {
             String avatar = snapshot.getString("avatar");
             String language = snapshot.getString("language");
             
+            // Premium handling
+            boolean isPremium = Boolean.TRUE.equals(premium);
+            if (isPremium) {
+                binding.textSubscriptionTitle.setText("Tài khoản Premium");
+                binding.textSubscriptionDesc.setText("Bạn đang tận hưởng mọi quyền lợi");
+                binding.imagePremiumStatus.setColorFilter(getResources().getColor(R.color.brand_secondary));
+                binding.layoutPremiumDetails.setVisibility(View.VISIBLE);
+                
+                Date expiryDate = snapshot.getDate("premiumUntil");
+                if (expiryDate != null) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", new Locale("vi", "VN"));
+                    binding.textPremiumExpiry.setText(sdf.format(expiryDate));
+                } else {
+                    binding.textPremiumExpiry.setText("Vô thời hạn");
+                }
+            } else {
+                binding.textSubscriptionTitle.setText("Tài khoản Free");
+                binding.textSubscriptionDesc.setText("Nâng cấp để mở khóa mọi tính năng");
+                binding.imagePremiumStatus.setColorFilter(getResources().getColor(R.color.text_secondary));
+                binding.layoutPremiumDetails.setVisibility(View.GONE);
+            }
+
             Object createdAtObj = snapshot.get("createdAt");
             int joinYear = 2024;
             if (createdAtObj instanceof Long) {
                 Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis((Long) createdAtObj);
-                joinYear = cal.get(Calendar.YEAR);
-            } else if (FirebaseAuth.getInstance().getCurrentUser() != null && FirebaseAuth.getInstance().getCurrentUser().getMetadata() != null) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTimeInMillis(FirebaseAuth.getInstance().getCurrentUser().getMetadata().getCreationTimestamp());
                 joinYear = cal.get(Calendar.YEAR);
             }
 
@@ -106,17 +120,12 @@ public class ProfileFragment extends Fragment {
             binding.textDisplayName.setText(name == null || name.isEmpty() ? "User" : name);
             binding.textJoinedYear.setText("Thành viên từ " + joinYear);
             
-            boolean isPremium = Boolean.TRUE.equals(premium);
-            binding.textPremiumStatus.setText(isPremium ? "Premium" : "Free");
-            binding.cardPremiumBanner.setVisibility(isPremium ? View.GONE : View.VISIBLE);
-            
             binding.textXpValue.setText(String.valueOf(xp == null ? 0 : xp));
             binding.textStreakValue.setText(String.valueOf(streak == null ? 0 : streak));
             binding.textHeartsValue.setText(String.valueOf(hearts == null ? 5 : hearts));
             
             binding.adminPanel.setVisibility("admin".equals(role) ? View.VISIBLE : View.GONE);
             updateAvatarUI(avatar);
-            
             loadLatestCourse(uid, language);
         });
         binding.btnAdminRefresh.setOnClickListener(v -> loadAdminData());
@@ -128,47 +137,29 @@ public class ProfileFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!isAdded() || binding == null) return;
-                    
                     if (querySnapshot.isEmpty()) {
                         updateCourseUI(null);
                         return;
                     }
-                    
                     DocumentSnapshot latestDoc = null;
                     Date latestDate = null;
-                    
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                         Date updatedAt = doc.getDate("updatedAt");
                         if (updatedAt == null) updatedAt = doc.getDate("createdAt");
-                        
                         if (updatedAt != null && (latestDate == null || updatedAt.after(latestDate))) {
                             latestDate = updatedAt;
                             latestDoc = doc;
                         }
                     }
-                    
                     if (latestDoc != null) {
                         String title = latestDoc.getString("title");
                         Long langId = latestDoc.getLong("targetLanguageId");
-                        int flagRes = (langId != null) ? getFlagForLanguageId(langId.intValue()) : -1;
-                        
-                        if (flagRes == -1) flagRes = guessFlagFromText(title != null ? title : "");
-                        if (flagRes == -1) flagRes = R.drawable.vietnam;
-
-                        String displayTitle = title;
-                        if (displayTitle == null || displayTitle.isEmpty() || displayTitle.equalsIgnoreCase("en")) displayTitle = "Tiếng Anh";
-                        else if (displayTitle.equalsIgnoreCase("ru")) displayTitle = "Tiếng Nga";
-
+                        int flagRes = (langId != null) ? getFlagForLanguageId(langId.intValue()) : R.drawable.vietnam;
                         binding.imageCourseFlag.setImageResource(flagRes);
-                        binding.textCourseName.setText(displayTitle);
+                        binding.textCourseName.setText(title);
                         binding.imageStatCourse.setImageResource(flagRes);
-                        binding.textStatsCourseTitle.setText(displayTitle);
-                    } else {
-                        updateCourseUI(null);
+                        binding.textStatsCourseTitle.setText(title);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    if (isAdded()) updateCourseUI(null);
                 });
     }
 
@@ -178,15 +169,8 @@ public class ProfileFragment extends Fragment {
             case 2: return R.drawable.japan;
             case 4: return R.drawable.china;
             case 5: return R.drawable.russia;
-            default: return -1;
+            default: return R.drawable.vietnam;
         }
-    }
-
-    private int guessFlagFromText(String text) {
-        String lower = text.toLowerCase();
-        if (lower.contains("en") || lower.contains("anh")) return R.drawable.eng;
-        if (lower.contains("ru") || lower.contains("nga")) return R.drawable.russia;
-        return -1;
     }
 
     private void updateAvatarUI(String avatarValue) {
@@ -203,6 +187,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateCourseUI(String language) {
+        if (binding == null) return;
         binding.imageCourseFlag.setImageResource(R.drawable.vietnam);
         binding.textCourseName.setText("No courses");
         binding.imageStatCourse.setImageResource(R.drawable.vietnam);
