@@ -7,7 +7,6 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.vocabmaster.MainActivity;
 import com.example.vocabmaster.databinding.ActivityRegisterBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
@@ -16,6 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -33,14 +33,12 @@ public class RegisterActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         MotionSystem.applyPressState(binding.btnRegister);
 
-        // Chuyển sang trang Login khi nhấn tab Login hoặc dòng text bên dưới
         View.OnClickListener goToLogin = v -> {
             startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
             finish();
         };
 
         binding.textLogin.setOnClickListener(goToLogin);
-
         binding.btnRegister.setOnClickListener(v -> registerUser());
     }
 
@@ -68,30 +66,50 @@ public class RegisterActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         String userId = mAuth.getCurrentUser().getUid();
-                        Map<String, Object> user = new HashMap<>();
-                        user.put("name", name);
-                        user.put("email", email);
-                        user.put("premium", false);
-                        user.put("xp", 0);
-                        user.put("streak", 0);
-                        user.put("hearts", 5);
-                        user.put("role", "user");
-                        user.put("darkMode", false);
-                        user.put("dailyGoal", 20);
+                        generateUniqueShortId(shortId -> {
+                            Map<String, Object> user = new HashMap<>();
+                            user.put("name", name);
+                            user.put("email", email);
+                            user.put("shortId", shortId);
+                            user.put("premium", false);
+                            user.put("xp", 0);
+                            user.put("streak", 0);
+                            user.put("hearts", 5);
+                            user.put("role", "user");
+                            user.put("darkMode", false);
+                            user.put("dailyGoal", 20);
+                            user.put("createdAt", System.currentTimeMillis());
 
-                        db.collection("users").document(userId)
-                                .set(user)
-                                .addOnSuccessListener(aVoid -> {
-                                    sendEmailVerification();
-                                })
-                                .addOnFailureListener(e -> {
-                                    binding.progressBar.setVisibility(View.GONE);
-                                    UiFeedback.showErrorDialog(this, "Registration error", e.getMessage());
-                                });
+                            db.collection("users").document(userId)
+                                    .set(user)
+                                    .addOnSuccessListener(aVoid -> sendEmailVerification())
+                                    .addOnFailureListener(e -> {
+                                        binding.progressBar.setVisibility(View.GONE);
+                                        UiFeedback.showErrorDialog(this, "Registration error", e.getMessage());
+                                    });
+                        });
                     } else {
                         binding.progressBar.setVisibility(View.GONE);
                         UiFeedback.showErrorDialog(this, "Registration failed",
                                 task.getException() != null ? task.getException().getMessage() : "Unknown error");
+                    }
+                });
+    }
+
+    private interface ShortIdCallback {
+        void onGenerated(String shortId);
+    }
+
+    private void generateUniqueShortId(ShortIdCallback callback) {
+        Random random = new Random();
+        String candidateId = String.valueOf(100000 + random.nextInt(900000)); // Tạo số có 6 chữ số
+
+        db.collection("users").whereEqualTo("shortId", candidateId).get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        callback.onGenerated(candidateId);
+                    } else {
+                        generateUniqueShortId(callback); // Thử lại nếu trùng
                     }
                 });
     }
@@ -103,7 +121,6 @@ public class RegisterActivity extends AppCompatActivity {
                         binding.progressBar.setVisibility(View.GONE);
                         if (task.isSuccessful()) {
                             UiFeedback.showSnack(binding.getRoot(), "Verification email sent. Please check your inbox.");
-                            // Chuyển sang màn hình đợi xác thực email
                             startActivity(new Intent(RegisterActivity.this, VerifyEmailActivity.class));
                             finish();
                         } else {

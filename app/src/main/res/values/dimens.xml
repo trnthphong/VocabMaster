@@ -18,6 +18,7 @@
     <dimen name="text_h3">18sp</dimen>
     <dimen name="text_body_large">16sp</dimen>
     <dimen name="text_body_medium">14sp</dimen>
+    <dimen name="text_body_small">12sp</dimen>
     <dimen name="text_caption">12sp</dimen>
 
     <!-- Corner Radius -->

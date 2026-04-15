@@ -52,4 +52,37 @@
         <item name="android:background">@android:color/transparent</item>
         <item name="backgroundTint">@android:color/transparent</item>
     </style>
+    <style name="ShapeAppearance.VocabMaster.BlobCard" parent="">
+        <item name="cornerFamily">rounded</item>
+        <!-- Tạo sóng: Góc trái trên bo cực lớn, góc phải trên bo nhỏ hơn -->
+        <item name="cornerSizeTopLeft">120dp</item>
+        <item name="cornerSizeTopRight">30dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.VocabMaster.WaveBottom" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <!-- Tạo đường lượn sóng bất đối xứng ở cạnh dưới -->
+        <item name="cornerSizeBottomLeft">140dp</item>
+        <item name="cornerSizeBottomRight">20dp</item>
+    </style>
+
+    <style name="ShapeAppearance.VocabMaster.Card.BottomRounded" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomLeft">64dp</item>
+        <item name="cornerSizeBottomRight">64dp</item>
+    </style>
+
+    <style name="VocabMaster.Dialog.Transparent" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
 </resources>

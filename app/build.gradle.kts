@@ -83,6 +83,9 @@ dependencies {
     // AI
     implementation(libs.generativeai)
 
+    // QR Code
+    implementation(libs.zxing)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

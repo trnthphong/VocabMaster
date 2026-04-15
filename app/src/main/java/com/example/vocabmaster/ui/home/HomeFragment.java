@@ -51,6 +51,7 @@ public class HomeFragment extends Fragment {
     private Course activeCourse;
     private DocumentSnapshot nextLessonDoc;
     private ListenerRegistration userListener;
+    private ListenerRegistration notificationListener;
 
     private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
     private final int[] avatarResIds = {
@@ -75,6 +76,7 @@ public class HomeFragment extends Fragment {
         setupListeners();
         runEntranceAnimation();
         observeUserData();
+        observeNotifications();
     }
 
     private void setupInitialAnimations() {
@@ -130,6 +132,11 @@ public class HomeFragment extends Fragment {
                 }
                 startActivity(intent);
             }
+        });
+
+        binding.btnNotify.setOnClickListener(v -> {
+            UiFeedback.performHaptic(requireContext(), 10);
+            NavHostFragment.findNavController(this).navigate(R.id.action_home_to_notifications);
         });
 
         setupTopicListener(binding.cardTopicCareer, "nghề nghiệp", "Career");
@@ -207,6 +214,23 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private void observeNotifications() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        if (notificationListener != null) notificationListener.remove();
+
+        notificationListener = db.collection("users").document(uid)
+                .collection("notifications")
+                .whereEqualTo("read", false)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || binding == null || !isAdded()) return;
+                    
+                    boolean hasUnread = snapshot != null && !snapshot.isEmpty();
+                    binding.viewNotificationDot.setVisibility(hasUnread ? View.VISIBLE : View.GONE);
+                });
     }
 
     private void updatePremiumUI() {
@@ -530,6 +554,7 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         observeUserData();
+        observeNotifications();
     }
 
     @Override
@@ -537,6 +562,7 @@ public class HomeFragment extends Fragment {
         super.onDestroyView();
         stopTimer();
         if (userListener != null) userListener.remove();
+        if (notificationListener != null) notificationListener.remove();
         binding = null;
     }
 }

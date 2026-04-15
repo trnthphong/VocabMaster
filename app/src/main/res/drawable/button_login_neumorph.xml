@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow / Bottom Layer (Darker Green) -->
+    <item android:top="6dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="#A5C85E" />
+        </shape>
+    </item>
+    <!-- Top layer (Main Green) -->
+    <item android:bottom="6dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="@color/light_green" />
+        </shape>
+    </item>
+</layer-list>

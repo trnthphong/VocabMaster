@@ -11,6 +11,7 @@ public class User {
     private String avatar;
     private String avatarUrl;
     private String role;
+    private String shortId;
     
     // Đổi tên biến để khớp hoàn toàn với Firestore field name
     private boolean premium; 
@@ -28,6 +29,7 @@ public class User {
     private Timestamp lastActive;
     private String timezone;
     private int dailyGoal;
+    private int friendsCount;
 
     // Settings
     private boolean darkMode;
@@ -64,6 +66,8 @@ public class User {
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public String getShortId() { return shortId; }
+    public void setShortId(String shortId) { this.shortId = shortId; }
 
     // Sử dụng cả isPremium và premium để Firestore chắc chắn map được
     @PropertyName("isPremium")
@@ -99,6 +103,8 @@ public class User {
     public void setTimezone(String timezone) { this.timezone = timezone; }
     public int getDailyGoal() { return dailyGoal; }
     public void setDailyGoal(int dailyGoal) { this.dailyGoal = dailyGoal; }
+    public int getFriendsCount() { return friendsCount; }
+    public void setFriendsCount(int friendsCount) { this.friendsCount = friendsCount; }
     public boolean isDarkMode() { return darkMode; }
     public void setDarkMode(boolean darkMode) { this.darkMode = darkMode; }
     public String getLanguage() { return language; }

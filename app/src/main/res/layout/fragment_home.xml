@@ -62,22 +62,29 @@
                         android:textColor="@color/surface_dark" />
                 </LinearLayout>
 
-                <LinearLayout
+                <FrameLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_centerVertical="true">
 
                     <ImageView
                         android:id="@+id/btn_notify"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_margin="4dp"
                         android:src="@drawable/notify"
                         app:tint="#9260F4" />
-                </LinearLayout>
+
+                    <View
+                        android:id="@+id/view_notification_dot"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="top|end"
+                        android:background="@drawable/bg_circle_red"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </FrameLayout>
             </RelativeLayout>
 
             <!-- Stats Grid (Combined Course Progress & Global Stats) -->

@@ -78,8 +78,11 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding.layoutStep3.setVisibility(currentStep == 3 ? View.VISIBLE : View.GONE);
         binding.layoutStep4.setVisibility(currentStep == 4 ? View.VISIBLE : View.GONE);
 
-        binding.progressFlow.setProgress(currentStep);
-        binding.progressFlow.setMax(totalSteps);
+        // Update dot indicators
+        binding.dot1.setImageResource(currentStep >= 1 ? R.drawable.ic_dot_active : R.drawable.ic_dot_inactive);
+        binding.dot2.setImageResource(currentStep >= 2 ? R.drawable.ic_dot_active : R.drawable.ic_dot_inactive);
+        binding.dot3.setImageResource(currentStep >= 3 ? R.drawable.ic_dot_active : R.drawable.ic_dot_inactive);
+        binding.dot4.setImageResource(currentStep >= 4 ? R.drawable.ic_dot_active : R.drawable.ic_dot_inactive);
 
         if (currentStep == totalSteps) {
             binding.btnNextFlow.setText("Hoàn tất");

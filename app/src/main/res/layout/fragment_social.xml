@@ -30,7 +30,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="@dimen/spacing_24"
-                    android:text="Leaderboard"
+                    android:text="Cộng đồng"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                     android:textColor="@color/text_primary" />
 
@@ -67,7 +67,7 @@
                             android:layout_marginStart="@dimen/spacing_12"
                             android:layout_weight="1"
                             android:background="@null"
-                            android:hint="Find friends by email..."
+                            android:hint="Tìm bạn bằng Email hoặc mã ID..."
                             android:inputType="textEmailAddress"
                             android:paddingVertical="@dimen/spacing_12"
                             android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
@@ -80,7 +80,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:minHeight="40dp"
-                            android:text="Find"
+                            android:text="Tìm"
                             app:backgroundTint="@color/brand_primary"
                             android:textColor="@color/white" />
                     </LinearLayout>
@@ -118,7 +118,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Keep the streak!"
+                                android:text="Duy trì chuỗi học tập!"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                                 android:textColor="@color/white"
                                 android:textStyle="bold" />
@@ -126,7 +126,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Top 10% this week"
+                                android:text="Top 10% trong tuần này"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
                                 android:textColor="#E0E7FF" />
                         </LinearLayout>
@@ -151,12 +151,12 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Global" />
+                android:text="Toàn cầu" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Friends" />
+                android:text="Bạn bè" />
 
         </com.google.android.material.tabs.TabLayout>
     </com.google.android.material.appbar.AppBarLayout>
@@ -201,7 +201,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_16"
                     android:gravity="center"
-                    android:text="No data yet"
+                    android:text="Chưa có dữ liệu"
                     android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
             </LinearLayout>
 

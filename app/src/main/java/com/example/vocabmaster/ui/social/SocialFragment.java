@@ -2,6 +2,7 @@ package com.example.vocabmaster.ui.social;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,28 +11,44 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.model.Notification;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.DialogSearchFriendBinding;
 import com.example.vocabmaster.databinding.FragmentSocialBinding;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SocialFragment extends Fragment {
+    private static final String TAG = "SocialFragment";
     private FragmentSocialBinding binding;
     private FirebaseFirestore db;
     private LeaderboardAdapter adapter;
     private String currentUserId;
+    private User currentUserData;
     private final List<String> followingIds = new ArrayList<>();
+    private final List<String> followerIds = new ArrayList<>();
+    private ListenerRegistration followingListener;
+    private ListenerRegistration followerListener;
 
     @Nullable
     @Override
@@ -48,14 +65,24 @@ public class SocialFragment extends Fragment {
         
         setupRecyclerView();
         setupTabs();
-        loadFollowingList();
+        loadCurrentUserData();
+        startFollowingFollowerListeners();
         setupSearch();
 
         loadLeaderboard();
     }
 
+    private void loadCurrentUserData() {
+        if (currentUserId == null) return;
+        db.collection("users").document(currentUserId).get().addOnSuccessListener(snapshot -> {
+            currentUserData = snapshot.toObject(User.class);
+            if (currentUserData != null) currentUserData.setUid(currentUserId);
+        });
+    }
+
     private void setupRecyclerView() {
         adapter = new LeaderboardAdapter();
+        adapter.setOnUserClickListener(this::showUserActionDialog);
         binding.recyclerLeaderboard.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerLeaderboard.setAdapter(adapter);
     }
@@ -65,8 +92,10 @@ public class SocialFragment extends Fragment {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 0) {
+                    adapter.setShowRank(true);
                     loadLeaderboard();
                 } else {
+                    adapter.setShowRank(false);
                     loadFriends();
                 }
             }
@@ -78,10 +107,7 @@ public class SocialFragment extends Fragment {
     }
 
     private void setupSearch() {
-        // Handle search button click
         binding.btnSearch.setOnClickListener(v -> performSearch());
-
-        // Handle "Search" action on keyboard
         binding.editSearchEmail.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 performSearch();
@@ -92,72 +118,118 @@ public class SocialFragment extends Fragment {
     }
 
     private void performSearch() {
-        String email = binding.editSearchEmail.getText().toString().trim();
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(getContext(), "Please enter an email", Toast.LENGTH_SHORT).show();
+        String input = binding.editSearchEmail.getText().toString().trim();
+        if (TextUtils.isEmpty(input)) {
+            Toast.makeText(getContext(), "Vui lòng nhập Email hoặc mã ID", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Show a simple loading or just start query
-        db.collection("users")
-                .whereEqualTo("email", email)
-                .get()
-                .addOnSuccessListener(qs -> {
-                    if (!qs.isEmpty()) {
-                        User foundUser = qs.getDocuments().get(0).toObject(User.class);
-                        if (foundUser != null) {
-                            if (foundUser.getUid() == null) {
-                                foundUser.setUid(qs.getDocuments().get(0).getId());
-                            }
-                            showUserProfile(foundUser);
-                        }
-                    } else {
-                        Toast.makeText(getContext(), "No user found with this email", Toast.LENGTH_SHORT).show();
+        Query query;
+        if (input.matches("\\d{6}")) {
+            query = db.collection("users").whereEqualTo("shortId", input);
+        } else {
+            query = db.collection("users").whereEqualTo("email", input);
+        }
+
+        query.get().addOnSuccessListener(qs -> {
+            if (!qs.isEmpty()) {
+                User foundUser = qs.getDocuments().get(0).toObject(User.class);
+                if (foundUser != null) {
+                    if (foundUser.getUid() == null) {
+                        foundUser.setUid(qs.getDocuments().get(0).getId());
                     }
-                })
-                .addOnFailureListener(e -> Toast.makeText(getContext(), "Search failed", Toast.LENGTH_SHORT).show());
+                    showUserActionDialog(foundUser);
+                }
+            } else {
+                Toast.makeText(getContext(), "Không tìm thấy người dùng này", Toast.LENGTH_SHORT).show();
+            }
+        }).addOnFailureListener(e -> Toast.makeText(getContext(), "Lỗi tìm kiếm", Toast.LENGTH_SHORT).show());
     }
 
-    private void showUserProfile(User user) {
-        // Now we show the result in a BottomSheet, but only for the RESULT (Profile View)
-        // This is where they can see details and click "Follow"
+    private void showUserActionDialog(User user) {
+        if (user.getUid().equals(currentUserId)) return;
+
         BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
         DialogSearchFriendBinding dialogBinding = DialogSearchFriendBinding.inflate(getLayoutInflater());
         dialog.setContentView(dialogBinding.getRoot());
 
-        // Hide the internal search box in the dialog since we searched from the main screen
         dialogBinding.layoutSearch.setVisibility(View.GONE);
         dialogBinding.btnSearch.setVisibility(View.GONE);
 
-        // Fill data
         dialogBinding.itemSearchResult.getRoot().setVisibility(View.VISIBLE);
         dialogBinding.itemSearchResult.textRank.setVisibility(View.GONE);
         dialogBinding.itemSearchResult.textName.setText(user.getName() != null ? user.getName() : "Unknown");
         dialogBinding.itemSearchResult.textXp.setText(user.getXp() + " XP");
         dialogBinding.itemSearchResult.textStatus.setText(user.getCurrentUnitTitle());
 
-        boolean isFollowing = followingIds.contains(user.getUid());
-        boolean isMe = user.getUid().equals(currentUserId);
+        updateDialogButtonState(user, dialogBinding);
 
-        if (isMe) {
-            dialogBinding.btnFollow.setVisibility(View.GONE);
-        } else {
-            dialogBinding.btnFollow.setVisibility(View.VISIBLE);
-            dialogBinding.btnFollow.setText(isFollowing ? "Unfollow" : "Follow");
-            dialogBinding.btnFollow.setOnClickListener(v -> toggleFollow(user, dialogBinding));
-        }
+        dialogBinding.btnFollow.setOnClickListener(v -> {
+            toggleFollow(user);
+            dialog.dismiss();
+        });
 
         dialog.show();
     }
 
-    private void loadFollowingList() {
+    private void updateDialogButtonState(User user, DialogSearchFriendBinding dialogBinding) {
+        boolean isFollowing = followingIds.contains(user.getUid());
+        boolean isFollower = followerIds.contains(user.getUid());
+        boolean isFriend = isFollowing && isFollower;
+
+        dialogBinding.btnFollow.setVisibility(View.VISIBLE);
+        if (isFriend) {
+            dialogBinding.btnFollow.setText("Hủy kết bạn");
+            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.error));
+        } else if (isFollowing) {
+            dialogBinding.btnFollow.setText("Bỏ theo dõi");
+            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.brand_primary));
+        } else if (isFollower) {
+            dialogBinding.btnFollow.setText("Theo dõi lại");
+            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.brand_primary));
+        } else {
+            dialogBinding.btnFollow.setText("Theo dõi");
+            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.brand_primary));
+        }
+    }
+
+    private void startFollowingFollowerListeners() {
         if (currentUserId == null) return;
-        db.collection("users").document(currentUserId).collection("following")
-                .get()
-                .addOnSuccessListener(qs -> {
+        
+        // Listen to who I am following
+        followingListener = db.collection("users").document(currentUserId).collection("following")
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) return;
                     followingIds.clear();
-                    qs.getDocuments().forEach(doc -> followingIds.add(doc.getId()));
+                    if (snapshot != null) {
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            followingIds.add(doc.getId());
+                        }
+                    }
+                    refreshCurrentTab();
                 });
+
+        // Listen to who is following me
+        followerListener = db.collection("users").document(currentUserId).collection("followers")
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) return;
+                    followerIds.clear();
+                    if (snapshot != null) {
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            followerIds.add(doc.getId());
+                        }
+                    }
+                    refreshCurrentTab();
+                });
+    }
+
+    private void refreshCurrentTab() {
+        if (binding == null) return;
+        if (binding.socialTabs.getSelectedTabPosition() == 0) {
+            loadLeaderboard();
+        } else {
+            loadFriends();
+        }
     }
 
     private void loadLeaderboard() {
@@ -167,6 +239,7 @@ public class SocialFragment extends Fragment {
                 .limit(20)
                 .get()
                 .addOnSuccessListener(qs -> {
+                    if (!isAdded()) return;
                     List<User> users = qs.toObjects(User.class);
                     for (int i = 0; i < users.size(); i++) {
                         if (users.get(i).getUid() == null) {
@@ -180,7 +253,7 @@ public class SocialFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     showLoading(false);
                     if (binding != null) {
-                        binding.textLeaderboardEmpty.setText("Failed to load leaderboard");
+                        binding.textLeaderboardEmpty.setText("Không thể tải bảng xếp hạng");
                     }
                 });
     }
@@ -189,62 +262,130 @@ public class SocialFragment extends Fragment {
         if (currentUserId == null) return;
         
         showLoading(true);
-        if (followingIds.isEmpty()) {
+        List<String> friendIds = new ArrayList<>();
+        for (String id : followingIds) {
+            if (followerIds.contains(id)) {
+                friendIds.add(id);
+            }
+        }
+
+        if (friendIds.isEmpty()) {
             adapter.submitList(new ArrayList<>());
             showLoading(false);
             if (binding != null) {
-                binding.textLeaderboardEmpty.setText("You are not following anyone yet.");
+                binding.textLeaderboardEmpty.setText("Bạn chưa có bạn bè.");
+            }
+            // Still show my own rank card
+            if (currentUserData != null) {
+                updateUserRankCard(Collections.singletonList(currentUserData));
             }
             return;
         }
 
+        // Include current user in fetch to calculate rank correctly
+        List<String> fetchIds = new ArrayList<>(friendIds);
+        if (!fetchIds.contains(currentUserId)) {
+            fetchIds.add(currentUserId);
+        }
+
         db.collection("users")
-                .whereIn("uid", followingIds)
+                .whereIn(FieldPath.documentId(), fetchIds)
                 .get()
                 .addOnSuccessListener(qs -> {
-                    List<User> users = qs.toObjects(User.class);
-                    for (int i = 0; i < users.size(); i++) {
-                        if (users.get(i).getUid() == null) {
-                            users.get(i).setUid(qs.getDocuments().get(i).getId());
+                    if (!isAdded()) return;
+                    List<User> allUsers = qs.toObjects(User.class);
+                    for (int i = 0; i < allUsers.size(); i++) {
+                        if (allUsers.get(i).getUid() == null) {
+                            allUsers.get(i).setUid(qs.getDocuments().get(i).getId());
                         }
                     }
-                    Collections.sort(users, (u1, u2) -> Long.compare(u2.getXp(), u1.getXp()));
-                    adapter.submitList(users);
+                    allUsers.sort((u1, u2) -> Long.compare(u2.getXp(), u1.getXp()));
+                    
+                    // Update my sticky rank card using the list including me
+                    updateUserRankCard(allUsers);
+                    
+                    // Filter out current user from the list that goes into the RecyclerView
+                    List<User> onlyFriends = allUsers.stream()
+                            .filter(u -> !u.getUid().equals(currentUserId))
+                            .collect(Collectors.toList());
+                    
+                    adapter.submitList(onlyFriends);
                     showLoading(false);
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
                     if (binding != null) {
-                        binding.textLeaderboardEmpty.setText("Error loading friends");
+                        binding.textLeaderboardEmpty.setText("Lỗi tải danh sách bạn bè");
                     }
                 });
     }
 
-    private void toggleFollow(User user, DialogSearchFriendBinding dialogBinding) {
-        if (currentUserId == null || user.getUid() == null) return;
+    private void toggleFollow(User targetUser) {
+        if (currentUserId == null || targetUser.getUid() == null) return;
         
-        boolean currentlyFollowing = followingIds.contains(user.getUid());
-        
+        boolean currentlyFollowing = followingIds.contains(targetUser.getUid());
+        boolean isFollowerOfMe = followerIds.contains(targetUser.getUid());
+        String targetUid = targetUser.getUid();
+
+        WriteBatch batch = db.batch();
+
         if (currentlyFollowing) {
-            db.collection("users").document(currentUserId)
-                    .collection("following").document(user.getUid()).delete()
-                    .addOnSuccessListener(aVoid -> {
-                        followingIds.remove(user.getUid());
-                        dialogBinding.btnFollow.setText("Follow");
-                        Toast.makeText(getContext(), "Unfollowed " + user.getName(), Toast.LENGTH_SHORT).show();
-                        if (binding != null && binding.socialTabs.getSelectedTabPosition() == 1) loadFriends();
-                    });
+            // Unfollow
+            batch.delete(db.collection("users").document(currentUserId).collection("following").document(targetUid));
+            batch.delete(db.collection("users").document(targetUid).collection("followers").document(currentUserId));
+            
+            // If they were friends, decrement friendsCount
+            if (isFollowerOfMe) {
+                batch.update(db.collection("users").document(currentUserId), "friendsCount", FieldValue.increment(-1));
+                batch.update(db.collection("users").document(targetUid), "friendsCount", FieldValue.increment(-1));
+            }
+
+            batch.commit().addOnSuccessListener(aVoid -> {
+                Toast.makeText(getContext(), "Đã bỏ theo dõi " + targetUser.getName(), Toast.LENGTH_SHORT).show();
+            });
         } else {
-            db.collection("users").document(currentUserId)
-                    .collection("following").document(user.getUid())
-                    .set(new User()) 
-                    .addOnSuccessListener(aVoid -> {
-                        followingIds.add(user.getUid());
-                        dialogBinding.btnFollow.setText("Unfollow");
-                        Toast.makeText(getContext(), "Following " + user.getName(), Toast.LENGTH_SHORT).show();
-                        if (binding != null && binding.socialTabs.getSelectedTabPosition() == 1) loadFriends();
-                    });
+            // Follow
+            Map<String, Object> data = new HashMap<>();
+            data.put("timestamp", FieldValue.serverTimestamp());
+
+            batch.set(db.collection("users").document(currentUserId).collection("following").document(targetUid), data);
+            batch.set(db.collection("users").document(targetUid).collection("followers").document(currentUserId), data);
+            
+            boolean becomingFriends = isFollowerOfMe;
+            if (becomingFriends) {
+                batch.update(db.collection("users").document(currentUserId), "friendsCount", FieldValue.increment(1));
+                batch.update(db.collection("users").document(targetUid), "friendsCount", FieldValue.increment(1));
+            }
+
+            batch.commit().addOnSuccessListener(aVoid -> {
+                Toast.makeText(getContext(), becomingFriends ? "Hai bạn đã trở thành bạn bè!" : "Đang theo dõi " + targetUser.getName(), Toast.LENGTH_SHORT).show();
+                sendFollowNotification(targetUser, becomingFriends);
+            });
         }
+    }
+
+    private void sendFollowNotification(User targetUser, boolean isFriendship) {
+        if (currentUserData == null) return;
+
+        String type = isFriendship ? "friend" : "follow";
+        String title = isFriendship ? "Bạn bè mới" : "Người theo dõi mới";
+        String message = isFriendship ? 
+                "Bạn và " + currentUserData.getName() + " đã trở thành bạn bè." : 
+                currentUserData.getName() + " đã bắt đầu theo dõi bạn.";
+
+        Notification notification = new Notification(
+                type,
+                title,
+                message,
+                currentUserId,
+                currentUserData.getName()
+        );
+        notification.setFromUserAvatar(currentUserData.getAvatar());
+
+        db.collection("users").document(targetUser.getUid())
+                .collection("notifications")
+                .add(notification)
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to send notification", e));
     }
 
     private void updateUserRankCard(List<User> users) {
@@ -261,12 +402,26 @@ public class SocialFragment extends Fragment {
             }
         }
 
-        if (rank != -1 && currentUser != null) {
+        if (rank != -1) {
             binding.cardMyRank.setVisibility(View.VISIBLE);
             binding.itemUserRank.textRank.setText(String.valueOf(rank));
-            binding.itemUserRank.textName.setText((currentUser.getName() != null ? currentUser.getName() : "You") + " (You)");
+            binding.itemUserRank.textName.setText((currentUser.getName() != null ? currentUser.getName() : "Bạn") + " (Bạn)");
             binding.itemUserRank.textXp.setText(currentUser.getXp() + " XP");
             binding.itemUserRank.textStatus.setText(currentUser.getCurrentUnitTitle());
+            
+            int resId = R.drawable.bear;
+            String avatar = currentUser.getAvatar();
+            if (avatar != null) {
+                String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
+                int[] avatarResIds = {R.drawable.bear, R.drawable.cat, R.drawable.dog, R.drawable.bird, R.drawable.snake, R.drawable.tiger, R.drawable.rabbit};
+                for (int i = 0; i < avatarValues.length; i++) {
+                    if (avatarValues[i].equals(avatar)) {
+                        resId = avatarResIds[i];
+                        break;
+                    }
+                }
+            }
+            binding.itemUserRank.imageAvatar.setImageResource(resId);
         } else {
             binding.cardMyRank.setVisibility(View.GONE);
         }
@@ -277,15 +432,15 @@ public class SocialFragment extends Fragment {
         binding.emptyState.setVisibility(loading ? View.VISIBLE : View.GONE);
         binding.progressLeaderboard.setVisibility(loading ? View.VISIBLE : View.GONE);
         if (loading) {
-            binding.textLeaderboardEmpty.setText("Loading leaderboard...");
+            binding.textLeaderboardEmpty.setText("Đang tải dữ liệu...");
         } else {
             boolean isEmpty = adapter.getItemCount() == 0;
             binding.emptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
             if (isEmpty) {
                 if (binding.socialTabs.getSelectedTabPosition() == 1) {
-                    binding.textLeaderboardEmpty.setText("You are not following anyone yet");
+                    binding.textLeaderboardEmpty.setText("Bạn chưa có bạn bè nào");
                 } else {
-                    binding.textLeaderboardEmpty.setText("No data yet");
+                    binding.textLeaderboardEmpty.setText("Chưa có dữ liệu");
                 }
             }
         }
@@ -294,6 +449,8 @@ public class SocialFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (followingListener != null) followingListener.remove();
+        if (followerListener != null) followerListener.remove();
         binding = null;
     }
 }

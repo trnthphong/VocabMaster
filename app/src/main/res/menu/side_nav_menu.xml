@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+
+
+    <!-- Nhóm 1: Các chức năng chính -->
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/navigation_library"
+            android:icon="@drawable/open_book"
+            android:title="Thư viện" />
+        <item
+            android:id="@+id/navigation_social"
+            android:icon="@drawable/friends"
+            android:title="Bạn bè" />
+        <item
+            android:id="@+id/navigation_ranking"
+            android:icon="@drawable/ranking"
+            android:title="Xếp hạng" />
+        <item
+            android:id="@+id/navigation_manage_plans"
+            android:icon="@drawable/cart"
+            android:title="Quản lý gói cước" />
+    </group>
+
+    <!-- Nhóm 2: Cài đặt và Tài khoản -->
+    <item android:title="Tài khoản">
+        <menu>
+            <item
+                android:id="@+id/navigation_settings"
+                android:icon="@drawable/setting"
+                android:title="Cài đặt" />
+
+            <item
+                android:id="@+id/nav_logout"
+                android:title=""
+                app:actionLayout="@layout/menu_item_logout"
+                app:showAsAction="always" />
+        </menu>
+    </item>
+
+</menu>

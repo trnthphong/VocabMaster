@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light">
+    android:background="#4046d8"
+    tools:context=".ui.course.CreateCourseFlowActivity">
 
     <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -23,22 +24,48 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/surface_dark" />
+            app:tint="@color/white" />
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/progress_flow"
-            android:layout_width="0dp"
+        <!-- Dot Progress Indicator Container -->
+        <LinearLayout
+            android:id="@+id/layout_dots"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_16"
-            android:layout_marginEnd="@dimen/spacing_16"
-            app:indicatorColor="@color/brand_primary"
+            android:orientation="horizontal"
+            android:gravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/btn_back_flow"
-            app:layout_constraintTop_toTopOf="parent"
-            app:trackColor="@color/gray_light"
-            app:trackCornerRadius="4dp"
-            app:trackThickness="8dp" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/dot_1"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginHorizontal="6dp"
+                android:src="@drawable/ic_dot_active" />
+
+            <ImageView
+                android:id="@+id/dot_2"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginHorizontal="6dp"
+                android:src="@drawable/ic_dot_inactive" />
+
+            <ImageView
+                android:id="@+id/dot_3"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginHorizontal="6dp"
+                android:src="@drawable/ic_dot_inactive" />
+
+            <ImageView
+                android:id="@+id/dot_4"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginHorizontal="6dp"
+                android:src="@drawable/ic_dot_inactive" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -66,7 +93,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Bạn muốn học ngôn ngữ nào?"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:textColor="@color/white"
+                    android:textSize="28sp"
+                    android:fontFamily="@font/adlam_display"
+                    android:textStyle="bold"
                     android:layout_marginBottom="@dimen/spacing_24"/>
 
                 <RadioGroup
@@ -79,7 +109,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/eng"
                         android:drawablePadding="16dp"
@@ -87,14 +117,15 @@
                         android:paddingEnd="20dp"
                         android:text="Tiếng Anh"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <RadioButton
                         android:id="@+id/radio_ja"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/japan"
                         android:drawablePadding="16dp"
@@ -102,14 +133,15 @@
                         android:paddingEnd="20dp"
                         android:text="Tiếng Nhật"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <RadioButton
                         android:id="@+id/radio_rus"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/russia"
                         android:drawablePadding="16dp"
@@ -117,14 +149,15 @@
                         android:paddingEnd="20dp"
                         android:text="Tiếng Nga"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <RadioButton
                         android:id="@+id/radio_zh"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/china"
                         android:drawablePadding="16dp"
@@ -132,7 +165,8 @@
                         android:paddingEnd="20dp"
                         android:text="Tiếng Trung"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
                 </RadioGroup>
             </LinearLayout>
 
@@ -148,7 +182,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Trình độ của bạn?"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:textColor="@color/white"
+                    android:textSize="28sp"
+                    android:fontFamily="@font/adlam_display"
+                    android:textStyle="bold"
                     android:layout_marginBottom="@dimen/spacing_24"/>
 
                 <RadioGroup
@@ -160,49 +197,57 @@
                         android:id="@+id/level_beginner"
                         android:layout_width="match_parent"
                         android:layout_height="64dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:paddingStart="20dp"
                         android:text="Mới bắt đầu (Beginner)"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <RadioButton
                         android:id="@+id/level_elementary"
                         android:layout_width="match_parent"
                         android:layout_height="64dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:paddingStart="20dp"
                         android:text="Cơ bản (Elementary)"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <RadioButton
                         android:id="@+id/level_intermediate"
                         android:layout_width="match_parent"
                         android:layout_height="64dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:paddingStart="20dp"
                         android:text="Trung cấp (Intermediate)"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <RadioButton
                         android:id="@+id/level_advanced"
                         android:layout_width="match_parent"
                         android:layout_height="64dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:paddingStart="20dp"
                         android:text="Nâng cao (Advanced)"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
                 </RadioGroup>
             </LinearLayout>
 
-            <!-- Step 3: Favorite Topics (Linear list with images) -->
+            <!-- Step 3: Favorite Topics -->
             <LinearLayout
                 android:id="@+id/layout_step_3"
                 android:layout_width="match_parent"
@@ -214,15 +259,18 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Chọn các chủ đề yêu thích"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:textColor="@color/white"
+                    android:textSize="28sp"
+                    android:fontFamily="@font/adlam_display"
+                    android:textStyle="bold"
                     android:layout_marginBottom="@dimen/spacing_8"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Bạn có thể chọn nhiều chủ đề"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                    android:textColor="@color/gray_dark"
+                    android:textColor="#B0B4FF"
+                    android:textSize="16sp"
                     android:layout_marginBottom="@dimen/spacing_24"/>
 
                 <LinearLayout
@@ -236,7 +284,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/career"
                         android:drawablePadding="16dp"
@@ -244,14 +292,15 @@
                         android:paddingEnd="20dp"
                         android:text="Nghề nghiệp"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <CheckBox
                         android:id="@+id/cb_school"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/school"
                         android:drawablePadding="16dp"
@@ -259,14 +308,15 @@
                         android:paddingEnd="20dp"
                         android:text="Trường học"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <CheckBox
                         android:id="@+id/cb_culture"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/culture"
                         android:drawablePadding="16dp"
@@ -274,14 +324,15 @@
                         android:paddingEnd="20dp"
                         android:text="Văn hóa"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <CheckBox
                         android:id="@+id/cb_travel"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/travel"
                         android:drawablePadding="16dp"
@@ -289,14 +340,15 @@
                         android:paddingEnd="20dp"
                         android:text="Du lịch"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <CheckBox
                         android:id="@+id/cb_food"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/food"
                         android:drawablePadding="16dp"
@@ -304,14 +356,15 @@
                         android:paddingEnd="20dp"
                         android:text="Thức ăn"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
 
                     <CheckBox
                         android:id="@+id/cb_tech"
                         android:layout_width="match_parent"
                         android:layout_height="72dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/bg_selectable_card"
+                        android:background="@drawable/bg_selectable_item_3d"
                         android:button="@null"
                         android:drawableStart="@drawable/brainskill"
                         android:drawablePadding="16dp"
@@ -319,7 +372,8 @@
                         android:paddingEnd="20dp"
                         android:text="Công nghệ"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="#4046d8"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -335,16 +389,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Mục tiêu hàng ngày?"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                    android:textColor="@color/white"
+                    android:textSize="28sp"
+                    android:fontFamily="@font/adlam_display"
+                    android:textStyle="bold"
                     android:layout_marginBottom="@dimen/spacing_24"/>
 
                 <RadioGroup
                     android:id="@+id/radio_group_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
-                    <RadioButton android:id="@+id/radio_5min" android:layout_width="match_parent" android:layout_height="64dp" android:text="5 phút / ngày" android:paddingStart="16dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_card" android:button="@null" />
-                    <RadioButton android:id="@+id/radio_10min" android:layout_width="match_parent" android:layout_height="64dp" android:text="10 phút / ngày" android:checked="true" android:paddingStart="16dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_card" android:button="@null" />
-                    <RadioButton android:id="@+id/radio_15min" android:layout_width="match_parent" android:layout_height="64dp" android:text="15 phút / ngày" android:paddingStart="16dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_selectable_card" android:button="@null" />
+                    <RadioButton android:id="@+id/radio_5min" android:layout_width="match_parent" android:layout_height="64dp" android:text="5 phút / ngày" android:paddingStart="20dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_selectable_item_3d" android:button="@null" android:textColor="#4046d8" android:textStyle="bold" />
+                    <RadioButton android:id="@+id/radio_10min" android:layout_width="match_parent" android:layout_height="64dp" android:text="10 phút / ngày" android:checked="true" android:paddingStart="20dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_selectable_item_3d" android:button="@null" android:textColor="#4046d8" android:textStyle="bold" />
+                    <RadioButton android:id="@+id/radio_15min" android:layout_width="match_parent" android:layout_height="64dp" android:text="15 phút / ngày" android:paddingStart="20dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_selectable_item_3d" android:button="@null" android:textColor="#4046d8" android:textStyle="bold" />
                 </RadioGroup>
             </LinearLayout>
 
@@ -361,10 +418,15 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_next_flow"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="72dp"
             android:text="Tiếp tục"
-            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-            app:cornerRadius="@dimen/radius_large"
+            android:textColor="@color/bg_grey"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:background="@drawable/button_login_neumorph"
+            app:backgroundTint="@null"
+            app:cornerRadius="16dp"
+            app:elevation="0dp"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

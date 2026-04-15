@@ -5,12 +5,11 @@
         <item name="colorPrimary">@color/brand_primary</item>
         <item name="colorSecondary">@color/brand_secondary</item>
         <item name="colorTertiary">@color/brand_accent</item>
-        <item name="android:windowBackground">@color/surface_light</item>
-        <item name="android:statusBarColor">@color/surface_light</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- Typography -->
-        <item name="textAppearanceDisplayLarge">@style/TextAppearance.VocabMaster.Display</item>
         <item name="textAppearanceHeadlineLarge">@style/TextAppearance.VocabMaster.H1</item>
         <item name="textAppearanceHeadlineMedium">@style/TextAppearance.VocabMaster.H2</item>
         <item name="textAppearanceTitleLarge">@style/TextAppearance.VocabMaster.H3</item>
@@ -25,6 +24,8 @@
     </style>
 
     <style name="Theme.VocabMaster" parent="Base.Theme.VocabMaster" />
+
+    <style name="Theme.App.Intro" parent="Theme.VocabMaster" />
 
     <!-- Typography Styles -->
     <style name="TextAppearance.VocabMaster.Display" parent="TextAppearance.Material3.DisplayLarge">
@@ -62,7 +63,7 @@
     </style>
 
     <style name="TextAppearance.VocabMaster.BodySmall" parent="TextAppearance.Material3.BodySmall">
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">@dimen/text_body_small</item>
         <item name="android:textColor">@color/gray_text</item>
     </style>
 
@@ -90,20 +91,14 @@
         <item name="cornerSize">@dimen/radius_large</item>
     </style>
 
-
-    <style name="Theme.App.Intro" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowBackground">@color/white</item>
-        <item name="android:statusBarColor">@color/brand_primary</item>
-    </style>
-
-    <!-- Transparent Dialog Theme -->
-    <style name="Theme_VocabMaster_Dialog_Transparent" parent="Theme.Material3.DayNight.Dialog">
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowFrame">@null</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:backgroundDimEnabled">true</item>
+    <!-- HIỆU ỨNG SÓNG CỰC MỀM CHO LOGIN CARD -->
+    <style name="ShapeAppearance.VocabMaster.OrganicWave" parent="">
+        <item name="cornerFamily">rounded</item>
+        <!-- Tạo đường lượn sóng bất đối xứng cực lớn -->
+        <item name="cornerSizeTopLeft">140dp</item>
+        <item name="cornerSizeTopRight">20dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
 </resources>
