@@ -85,21 +85,41 @@
                     android:orientation="vertical"
                     android:padding="@dimen/spacing_16">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Gói Student"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="@color/text_primary" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Chỉ từ 15.000 ₫"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="#4046d8"
-                        android:textStyle="bold" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Gói Student"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Chỉ từ 15.000 ₫"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                android:textColor="#4046d8"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:src="@drawable/mortarboard"
+                            android:contentDescription="Student Plan Icon" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -117,7 +137,6 @@
                         android:layout_marginTop="16dp"
                         android:text="Đăng ký gói Student"
                         android:textColor="@color/bg_grey"
-
                         app:cornerRadius="@dimen/radius_medium"
                         android:backgroundTint="@color/light_green" />
                 </LinearLayout>
@@ -153,22 +172,42 @@
                         android:textSize="10sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Gói VIP"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="@color/text_primary" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Chỉ từ 25.000 ₫"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="#4046d8"
-                        android:textStyle="bold" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Gói VIP"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Chỉ từ 25.000 ₫"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                android:textColor="#4046d8"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:src="@drawable/vip"
+                            android:contentDescription="VIP Plan Icon" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -208,21 +247,41 @@
                     android:orientation="vertical"
                     android:padding="@dimen/spacing_16">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Gói VVIP"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                        android:textColor="@color/text_primary" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Chỉ từ 35.000 ₫"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="#4046d8"
-                        android:textStyle="bold" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Gói VVIP"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Chỉ từ 35.000 ₫"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                                android:textColor="#4046d8"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:src="@drawable/party"
+                            android:contentDescription="VVIP Plan Icon" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
