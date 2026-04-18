@@ -19,6 +19,7 @@ import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentSettingsBinding;
 import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.util.ThemeUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -53,7 +54,10 @@ public class SettingsFragment extends Fragment {
         binding.layoutChangePassword.setOnClickListener(v -> resetPassword());
 
         // --- App Preferences ---
-        binding.switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("darkMode", isChecked));
+        binding.switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            ThemeUtils.applyTheme(isChecked);
+            saveSetting("darkMode", isChecked);
+        });
         binding.switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("notificationsEnabled", isChecked));
 
         // --- Subscription Section ---

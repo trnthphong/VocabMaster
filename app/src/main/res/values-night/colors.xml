@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode Overrides - Đảm bảo các biến màu này khớp với file gốc và ghi đè đúng giá trị -->
+
+    <!-- White thường được dùng làm nền cho Card/Item, đổi thành xám xanh đậm -->
+    <color name="white">#1E293B</color>
+
+    <!-- Surface Light là nền chính, đổi thành xanh đen sâu -->
+    <color name="surface_light">#0F172A</color>
+
+    <!-- Màu chữ chính -->
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#CBD5E1</color>
+    <color name="gray_text">#CBD5E1</color>
+
+    <!-- Màu đường viền -->
+    <color name="card_border">#334155</color>
+
+    <!-- Màu thương hiệu (sáng hơn một chút để nổi bật trên nền tối) -->
+    <color name="brand_primary">#818CF8</color>
+    <color name="brand_primary_light">#1E293B</color>
+
+    <!-- Thành phần UI khác -->
+    <color name="light_purple">#1E293B</color> <!-- Thanh Bottom Nav -->
+    <color name="light_blue">#1E293B</color> <!-- Sidebar -->
+    <color name="nav_item_color">#CBD5E1</color> <!-- Icon Nav -->
+
+    <!-- Các màu nền thẻ bài học/thành tích khác -->
+    <color name="light_green">#1E293B</color>
+    <color name="light_orange">#1E293B</color>
+    <color name="light_yellow">#1E293B</color>
+    <color name="light_red">#1E293B</color>
+    <color name="light_pink">#1E293B</color>
+
+    <!-- Sửa lỗi góc Navbar trắng (MaterialCardView background) -->
+    <color name="card_background">#1E293B</color>
+</resources>
