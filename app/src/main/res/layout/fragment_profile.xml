@@ -117,18 +117,18 @@
                         app:layout_constraintTop_toTopOf="parent"
                         app:tint="@color/white" />
 
-                    <!-- Top-Right Edit Profile Button -->
+                    <!-- Top-Right Settings Button (Replaces Edit Profile icon) -->
                     <ImageButton
-                        android:id="@+id/btn_edit_profile"
+                        android:id="@+id/btn_settings"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:layout_marginEnd="16dp"
                         android:layout_marginTop="16dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Edit Profile"
+                        android:contentDescription="Settings"
                         android:padding="12dp"
                         android:scaleType="fitCenter"
-                        android:src="@drawable/draw"
+                        android:src="@drawable/setting"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:tint="@color/white" />
