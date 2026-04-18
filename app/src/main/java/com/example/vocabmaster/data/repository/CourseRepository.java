@@ -149,6 +149,16 @@ public class CourseRepository {
                         Flashcard existing = flashcardDao.getFlashcardByFirestoreId(firestoreFlashcard.getFirestoreId());
                         if (existing != null) {
                             firestoreFlashcard.setId(existing.getId());
+                            
+                            // Bảo toàn trạng thái học tập cục bộ nếu Firestore chưa cập nhật
+                            if (!firestoreFlashcard.isMastered() && existing.isMastered()) {
+                                firestoreFlashcard.setMastered(true);
+                            }
+                            if (firestoreFlashcard.getLastReviewTime() == 0 && existing.getLastReviewTime() > 0) {
+                                firestoreFlashcard.setLastReviewTime(existing.getLastReviewTime());
+                                firestoreFlashcard.setNextReviewAt(existing.getNextReviewAt());
+                                firestoreFlashcard.setInterval(existing.getInterval());
+                            }
                         }
                         flashcardDao.insert(firestoreFlashcard); 
                     }
@@ -200,6 +210,13 @@ public class CourseRepository {
 
     public LiveData<List<Flashcard>> getPersonalFlashcards() {
         return flashcardDao.getPersonalFlashcards();
+    }
+
+    public void updateFlashcard(Flashcard flashcard) {
+        executorService.execute(() -> flashcardDao.update(flashcard));
+        if (personalFlashcardsRef != null && flashcard.getFirestoreId() != null) {
+            personalFlashcardsRef.document(flashcard.getFirestoreId()).set(flashcard);
+        }
     }
 
     public void deleteFlashcard(Flashcard flashcard) {
