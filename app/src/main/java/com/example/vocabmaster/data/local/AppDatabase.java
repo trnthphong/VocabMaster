@@ -10,7 +10,7 @@ import androidx.room.TypeConverters;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
 
-@Database(entities = {Course.class, Flashcard.class}, version = 6, exportSchema = false)
+@Database(entities = {Course.class, Flashcard.class}, version = 7, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;

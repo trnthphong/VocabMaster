@@ -11,6 +11,7 @@ import com.example.vocabmaster.databinding.ActivityRegisterBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -78,7 +79,7 @@ public class RegisterActivity extends AppCompatActivity {
                             user.put("role", "user");
                             user.put("darkMode", false);
                             user.put("dailyGoal", 20);
-                            user.put("createdAt", System.currentTimeMillis());
+                            user.put("createdAt", FieldValue.serverTimestamp());
 
                             db.collection("users").document(userId)
                                     .set(user)

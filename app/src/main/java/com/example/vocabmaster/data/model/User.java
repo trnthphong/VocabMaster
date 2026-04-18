@@ -2,6 +2,7 @@ package com.example.vocabmaster.data.model;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.PropertyName;
+import java.util.Date;
 import java.util.List;
 
 public class User {
@@ -84,21 +85,46 @@ public class User {
     public void setPremiumUntil(Timestamp premiumUntil) { this.premiumUntil = premiumUntil; }
     public List<String> getSavedSets() { return savedSets; }
     public void setSavedSets(List<String> savedSets) { this.savedSets = savedSets; }
+    
     public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    
+    // Xử lý cả trường hợp database trả về Long hoặc Timestamp
+    public void setCreatedAt(Object createdAt) {
+        if (createdAt instanceof Timestamp) {
+            this.createdAt = (Timestamp) createdAt;
+        } else if (createdAt instanceof Long) {
+            this.createdAt = new Timestamp(new Date((Long) createdAt));
+        }
+    }
 
     public long getXp() { return xp; }
     public void setXp(long xp) { this.xp = xp; }
     public int getHearts() { return hearts; }
     public void setHearts(int hearts) { this.hearts = hearts; }
+    
     public Timestamp getLastHeartRegen() { return lastHeartRegen; }
-    public void setLastHeartRegen(Timestamp lastHeartRegen) { this.lastHeartRegen = lastHeartRegen; }
+    public void setLastHeartRegen(Object lastHeartRegen) {
+        if (lastHeartRegen instanceof Timestamp) {
+            this.lastHeartRegen = (Timestamp) lastHeartRegen;
+        } else if (lastHeartRegen instanceof Long) {
+            this.lastHeartRegen = new Timestamp(new Date((Long) lastHeartRegen));
+        }
+    }
+
     public int getStreak() { return streak; }
     public void setStreak(int streak) { this.streak = streak; }
     public int getLongestStreak() { return longestStreak; }
     public void setLongestStreak(int longestStreak) { this.longestStreak = longestStreak; }
+    
     public Timestamp getLastActive() { return lastActive; }
-    public void setLastActive(Timestamp lastActive) { this.lastActive = lastActive; }
+    public void setLastActive(Object lastActive) {
+        if (lastActive instanceof Timestamp) {
+            this.lastActive = (Timestamp) lastActive;
+        } else if (lastActive instanceof Long) {
+            this.lastActive = new Timestamp(new Date((Long) lastActive));
+        }
+    }
+
     public String getTimezone() { return timezone; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
     public int getDailyGoal() { return dailyGoal; }
