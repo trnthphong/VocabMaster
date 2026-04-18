@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityMiniGameBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.android.material.button.MaterialButton;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MiniGameActivity extends AppCompatActivity {
 
@@ -50,6 +53,8 @@ public class MiniGameActivity extends AppCompatActivity {
     private TextToSpeech tts;
     private boolean isTtsReady = false;
     private MediaPlayer mediaPlayer;
+    private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
+    private CourseRepository repository;
 
     // For Match Game (Click logic)
     private MaterialCardView selectedTermCard = null;
@@ -81,6 +86,7 @@ public class MiniGameActivity extends AppCompatActivity {
         binding = ActivityMiniGameBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        repository = new CourseRepository(getApplication());
         initTTS();
         initMediaPlayer();
         initData();
@@ -129,8 +135,24 @@ public class MiniGameActivity extends AppCompatActivity {
                 for (Flashcard f : flashcards) {
                     if (f.isMastered()) masteredWordIds.add(f.getFirestoreId());
                 }
+                
+                // Nếu đang ở màn hình Dashboard thì cập nhật lại UI
+                updateDashboardUIIfVisible();
             }
         });
+    }
+
+    private void updateDashboardUIIfVisible() {
+        View dashboard = binding.gameContainer.findViewById(R.id.layout_game_dashboard_root);
+        if (dashboard != null && dashboard.getVisibility() == View.VISIBLE) {
+            TextView textCount = dashboard.findViewById(R.id.text_mastered_count);
+            ProgressBar progress = dashboard.findViewById(R.id.progress_mastery);
+            
+            int total = myFlashcards.size();
+            int mastered = masteredWordIds.size();
+            textCount.setText(mastered + "/" + total);
+            if (total > 0) progress.setProgress((mastered * 100) / total);
+        }
     }
 
     private void setupClickListeners() {
@@ -147,6 +169,9 @@ public class MiniGameActivity extends AppCompatActivity {
 
     private void showDashboard() {
         View dashboard = getLayoutInflater().inflate(R.layout.layout_game_dashboard, binding.gameContainer, false);
+        // Gán ID cho root của layout mới inflate để dễ kiểm tra ở updateDashboardUIIfVisible
+        dashboard.setId(R.id.layout_game_dashboard_root);
+        
         binding.gameContainer.removeAllViews();
         binding.gameContainer.setVisibility(View.VISIBLE);
         binding.gameContainer.addView(dashboard);
@@ -281,34 +306,35 @@ public class MiniGameActivity extends AppCompatActivity {
 
         ((TextView)view.findViewById(R.id.text_match_title)).setText("CHỌN CẶP TỪ VÀ NGHĨA");
 
-        LinearLayout colTerms = view.findViewById(R.id.column_terms);
-        LinearLayout colDefinitions = view.findViewById(R.id.column_definitions);
+        LinearLayout termContainer = view.findViewById(R.id.column_terms);
+        LinearLayout defContainer = view.findViewById(R.id.column_definitions);
 
-        List<Flashcard> termsList = new ArrayList<>(words);
-        List<Flashcard> defsList = new ArrayList<>(words);
-        Collections.shuffle(termsList);
-        Collections.shuffle(defsList);
+        List<Flashcard> shuffledTerms = new ArrayList<>(words);
+        List<Flashcard> shuffledDefs = new ArrayList<>(words);
+        Collections.shuffle(shuffledTerms);
+        Collections.shuffle(shuffledDefs);
 
         selectedTermCard = null;
         selectedTermId = null;
         selectedDefCard = null;
         selectedDefId = null;
 
-        for (Flashcard f : termsList) {
-            colTerms.addView(createMatchClickCard(f.getTerm(), f.getFirestoreId(), true));
+        for (Flashcard f : shuffledTerms) {
+            MaterialCardView card = createMatchCard(f.getTerm(), f.getFirestoreId(), true);
+            termContainer.addView(card);
         }
-
-        for (Flashcard f : defsList) {
-            colDefinitions.addView(createMatchClickCard(f.getDefinition(), f.getFirestoreId(), false));
+        for (Flashcard f : shuffledDefs) {
+            MaterialCardView card = createMatchCard(f.getDefinition(), f.getFirestoreId(), false);
+            defContainer.addView(card);
         }
     }
 
-    private MaterialCardView createMatchClickCard(String text, String id, boolean isTerm) {
+    private MaterialCardView createMatchCard(String text, String id, boolean isTerm) {
         MaterialCardView card = (MaterialCardView) getLayoutInflater().inflate(R.layout.item_match_card, null);
         TextView tv = card.findViewById(R.id.text_card);
         tv.setText(text);
-        
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
         lp.setMargins(0, 12, 0, 12);
         card.setLayoutParams(lp);
 
@@ -316,49 +342,37 @@ public class MiniGameActivity extends AppCompatActivity {
             if (!card.isEnabled()) return;
 
             if (isTerm) {
-                // Deselect previous if any
                 if (selectedTermCard != null) {
                     selectedTermCard.setStrokeColor(ContextCompat.getColor(this, R.color.card_border));
                     selectedTermCard.setStrokeWidth(2);
                 }
-                // Select new
                 selectedTermCard = card;
                 selectedTermId = id;
                 card.setStrokeColor(ContextCompat.getColor(this, R.color.brand_primary));
                 card.setStrokeWidth(6);
             } else {
-                // Deselect previous if any
                 if (selectedDefCard != null) {
                     selectedDefCard.setStrokeColor(ContextCompat.getColor(this, R.color.card_border));
                     selectedDefCard.setStrokeWidth(2);
                 }
-                // Select new
                 selectedDefCard = card;
                 selectedDefId = id;
                 card.setStrokeColor(ContextCompat.getColor(this, R.color.brand_primary));
                 card.setStrokeWidth(6);
             }
-
-            // Check for match
+            
             if (selectedTermCard != null && selectedDefCard != null) {
-                if (selectedTermId.equals(selectedDefId)) {
-                    // MATCH SUCCESS
-                    handleMatchResult(true);
-                } else {
-                    // MATCH FAIL
-                    handleMatchResult(false);
-                }
+                checkMatchResult();
             }
         });
-
         return card;
     }
 
-    private void handleMatchResult(boolean isCorrect) {
+    private void checkMatchResult() {
         final MaterialCardView termCard = selectedTermCard;
         final MaterialCardView defCard = selectedDefCard;
 
-        if (isCorrect) {
+        if (selectedTermId.equals(selectedDefId)) {
             playSoundEffect(true);
             termCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.success));
             termCard.setStrokeColor(ContextCompat.getColor(this, R.color.success));
@@ -371,14 +385,29 @@ public class MiniGameActivity extends AppCompatActivity {
             defCard.setEnabled(false);
 
             UiFeedback.showSnack(binding.getRoot(), "Chính xác!");
-            
+            score += 5;
+            updateScoreUI();
+
             // Check if all matched
-            checkMatchComplete((ViewGroup)termCard.getParent());
+            boolean allDisabled = true;
+            LinearLayout container = binding.gameContainer.findViewById(R.id.column_terms);
+            for (int i = 0; i < container.getChildCount(); i++) {
+                if (container.getChildAt(i).isEnabled()) {
+                    allDisabled = false;
+                    break;
+                }
+            }
+            if (allDisabled) {
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    currentTaskIndex++;
+                    showNextTask();
+                }, 1000);
+            }
         } else {
             playSoundEffect(false);
             termCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.error));
             defCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.error));
-
+            
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 termCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.white));
                 termCard.setStrokeColor(ContextCompat.getColor(this, R.color.card_border));
@@ -390,64 +419,59 @@ public class MiniGameActivity extends AppCompatActivity {
             }, 600);
         }
 
-        selectedTermCard = null;
-        selectedTermId = null;
-        selectedDefCard = null;
-        selectedDefId = null;
+        selectedTermCard = null; selectedTermId = null;
+        selectedDefCard = null; selectedDefId = null;
     }
 
-    private void checkMatchComplete(ViewGroup container) {
-        int disabledCount = 0;
-        for (int i = 0; i < container.getChildCount(); i++) {
-            if (!container.getChildAt(i).isEnabled()) disabledCount++;
-        }
-        if (disabledCount == container.getChildCount()) {
-            score += 20;
-            updateScoreUI();
-            currentTaskIndex++;
-            new Handler(Looper.getMainLooper()).postDelayed(this::showNextTask, 1200);
-        }
-    }
-
-    private void checkResult(Flashcard word, String input, String correct, View feedbackView) {
-        boolean isCorrect = input.equalsIgnoreCase(correct);
+    private void checkResult(Flashcard word, String answer, String correct, View view) {
+        boolean isCorrect = answer.equalsIgnoreCase(correct);
+        playSoundEffect(isCorrect);
+        
         if (isCorrect) {
             score += 10;
-            updateScoreUI();
-            playSoundEffect(true);
-            
-            if (feedbackView instanceof MaterialButton) {
-                ((MaterialButton)feedbackView).setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.success)));
-                ((MaterialButton)feedbackView).setTextColor(ContextCompat.getColor(this, R.color.white));
-            } else if (feedbackView instanceof TextView) {
-                feedbackView.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.success)));
-                ((TextView)feedbackView).setTextColor(ContextCompat.getColor(this, R.color.white));
+            if (view instanceof MaterialButton) {
+                ((MaterialButton) view).setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.success)));
+                ((MaterialButton) view).setTextColor(ContextCompat.getColor(this, R.color.white));
+            } else if (view instanceof TextView) {
+                view.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.success)));
+                ((TextView) view).setTextColor(ContextCompat.getColor(this, R.color.white));
             }
             UiFeedback.showSnack(binding.getRoot(), "Chính xác!");
         } else {
-            playSoundEffect(false);
             wordErrorCount.put(word.getFirestoreId(), wordErrorCount.getOrDefault(word.getFirestoreId(), 0) + 1);
-            if (feedbackView instanceof MaterialButton) {
-                ((MaterialButton)feedbackView).setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.error)));
-                ((MaterialButton)feedbackView).setTextColor(ContextCompat.getColor(this, R.color.white));
+            if (view instanceof MaterialButton) {
+                ((MaterialButton) view).setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.error)));
+                ((MaterialButton) view).setTextColor(ContextCompat.getColor(this, R.color.white));
             }
             Toast.makeText(this, "Sai rồi! Đáp án: " + correct, Toast.LENGTH_SHORT).show();
         }
-        
-        currentTaskIndex++;
-        new Handler(Looper.getMainLooper()).postDelayed(this::showNextTask, 1200);
+
+        updateScoreUI();
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            currentTaskIndex++;
+            showNextTask();
+        }, 1200);
     }
 
     private void finishVocabChallenge() {
-        for (Flashcard f : gamePool) {
-            if (!wordErrorCount.containsKey(f.getFirestoreId())) {
-                f.setMastered(true);
-                new Thread(() -> AppDatabase.getDatabase(this).flashcardDao().update(f)).start();
+        databaseExecutor.execute(() -> {
+            for (Flashcard f : gamePool) {
+                if (!wordErrorCount.containsKey(f.getFirestoreId())) {
+                    f.setMastered(true);
+                    repository.updateFlashcard(f);
+                }
             }
-        }
-        binding.gameContainer.setVisibility(View.GONE);
-        binding.layoutAiModes.setVisibility(View.VISIBLE);
-        UiFeedback.showErrorDialog(this, "Hoàn thành", "Tuyệt vời! Bạn nhận được " + score + " XP");
+            
+            // Sau khi update xong database, quay về UI thread để hiển thị thông báo
+            runOnUiThread(() -> {
+                binding.gameContainer.setVisibility(View.GONE);
+                binding.layoutAiModes.setVisibility(View.VISIBLE);
+                UiFeedback.showErrorDialog(this, "Hoàn thành", "Tuyệt vời! Bạn nhận được " + score + " XP");
+                
+                // Cập nhật lại danh sách local để UI Dashboard đồng bộ
+                initData();
+            });
+        });
     }
 
     private void playVocabSound(Flashcard word) {
@@ -512,6 +536,7 @@ public class MiniGameActivity extends AppCompatActivity {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        databaseExecutor.shutdown();
         super.onDestroy();
     }
 }
