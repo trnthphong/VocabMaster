@@ -2,6 +2,7 @@ package com.example.vocabmaster.data.model;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.PropertyName;
+import java.util.Date;
 import java.util.List;
 
 public class User {
@@ -13,12 +14,11 @@ public class User {
     private String role;
     private String shortId;
     
-    // Đổi tên biến để khớp hoàn toàn với Firestore field name
     private boolean premium; 
     
-    private Timestamp premiumUntil;
+    private Object premiumUntil; // Dùng Object để nhận cả Long và Timestamp
     private List<String> savedSets;
-    private Timestamp createdAt;
+    private Object createdAt; // Dùng Object để nhận cả Long và Timestamp
 
     // Gamification
     private long xp;
@@ -49,8 +49,21 @@ public class User {
 
     public boolean isActivePremium() {
         if (premium) return true;
-        if (premiumUntil == null) return false;
-        return premiumUntil.toDate().getTime() > System.currentTimeMillis();
+        Timestamp until = getPremiumUntilTimestamp();
+        if (until == null) return false;
+        return until.toDate().getTime() > System.currentTimeMillis();
+    }
+
+    // Helper to handle both Long and Timestamp from Firestore
+    private Timestamp convertToTimestamp(Object value) {
+        if (value instanceof Timestamp) {
+            return (Timestamp) value;
+        } else if (value instanceof Long) {
+            return new Timestamp(new Date((Long) value));
+        } else if (value instanceof com.google.firebase.firestore.FieldValue) {
+            return Timestamp.now();
+        }
+        return null;
     }
 
     // Getters and Setters
@@ -69,7 +82,6 @@ public class User {
     public String getShortId() { return shortId; }
     public void setShortId(String shortId) { this.shortId = shortId; }
 
-    // Sử dụng cả isPremium và premium để Firestore chắc chắn map được
     @PropertyName("isPremium")
     public boolean isPremium() { return premium; }
     @PropertyName("isPremium")
@@ -80,12 +92,22 @@ public class User {
     @PropertyName("premium")
     public void setPremiumActual(boolean premium) { this.premium = premium; }
 
-    public Timestamp getPremiumUntil() { return premiumUntil; }
-    public void setPremiumUntil(Timestamp premiumUntil) { this.premiumUntil = premiumUntil; }
+    public Object getPremiumUntil() { return premiumUntil; }
+    public void setPremiumUntil(Object premiumUntil) { this.premiumUntil = premiumUntil; }
+    
+    public Timestamp getPremiumUntilTimestamp() {
+        return convertToTimestamp(premiumUntil);
+    }
+
     public List<String> getSavedSets() { return savedSets; }
     public void setSavedSets(List<String> savedSets) { this.savedSets = savedSets; }
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public Object getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Object createdAt) { this.createdAt = createdAt; }
+    
+    public Timestamp getCreatedAtTimestamp() {
+        return convertToTimestamp(createdAt);
+    }
 
     public long getXp() { return xp; }
     public void setXp(long xp) { this.xp = xp; }

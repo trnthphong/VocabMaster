@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="horizontal">
+
+    <!-- Thứ 2 -->
+    <LinearLayout
+        android:id="@+id/layout_mon"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_mon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T2"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_mon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+    <!-- Thứ 3 -->
+    <LinearLayout
+        android:id="@+id/layout_tue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_tue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T3"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_tue"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+    <!-- Thứ 4 -->
+    <LinearLayout
+        android:id="@+id/layout_wed"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_wed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T4"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_wed"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+    <!-- Thứ 5 -->
+    <LinearLayout
+        android:id="@+id/layout_thu"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_thu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T5"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_thu"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+    <!-- Thứ 6 -->
+    <LinearLayout
+        android:id="@+id/layout_fri"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_fri"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T6"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_fri"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+    <!-- Thứ 7 -->
+    <LinearLayout
+        android:id="@+id/layout_sat"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_sat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T7"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_sat"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+    <!-- Chủ Nhật -->
+    <LinearLayout
+        android:id="@+id/layout_sun"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="4dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/text_sun"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CN"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+        <ImageView
+            android:id="@+id/check_sun"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="4dp"
+            android:visibility="invisible"
+            android:src="@drawable/trophy" />
+    </LinearLayout>
+
+</LinearLayout>

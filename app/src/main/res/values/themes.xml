@@ -91,6 +91,14 @@
         <item name="cornerSize">@dimen/radius_large</item>
     </style>
 
+    <style name="ShapeAppearanceOverlay.VocabMaster.Card.TopRounded" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
     <!-- HIỆU ỨNG SÓNG CỰC MỀM CHO LOGIN CARD -->
     <style name="ShapeAppearance.VocabMaster.OrganicWave" parent="">
         <item name="cornerFamily">rounded</item>

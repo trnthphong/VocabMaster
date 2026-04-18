@@ -47,7 +47,7 @@ public class CreateFlashcardActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
-        aiService = new AIService("AIzaSyDEw4mFQqqOzwXDlYoMDwecIURPNkdO4Ko");
+        aiService = new AIService(getString(R.string.gemini_api_key));
 
         setupListeners();
     }
@@ -77,7 +77,7 @@ public class CreateFlashcardActivity extends AppCompatActivity {
         binding.progressImage.setVisibility(View.VISIBLE);
         binding.btnAiGenerateImage.setEnabled(false);
 
-        aiService.generateImageFromText(term, definition, new AIService.ImageGenerationCallback() {
+        aiService.generateImageFromText(term, definition, new AIService.AICallback<String>() {
             @Override
             public void onSuccess(String imageUrl) {
                 runOnUiThread(() -> {
