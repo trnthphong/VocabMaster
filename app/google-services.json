@@ -1,10 +1,30 @@
 {
   "project_info": {
     "project_number": "628468605810",
+    "firebase_url": "https://vocabmaster-66946-default-rtdb.firebaseio.com",
     "project_id": "vocabmaster-66946",
     "storage_bucket": "vocabmaster-66946.firebasestorage.app"
   },
   "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628468605810:android:92f189d2c69257c2f9b3eb",
+        "android_client_info": {
+          "package_name": "com.example.vocabapiexercise"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6okOsvtlxaape4kBtHc0XykDMgMigJyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
     {
       "client_info": {
         "mobilesdk_app_id": "1:628468605810:android:d22d578d0609820ef9b3eb",

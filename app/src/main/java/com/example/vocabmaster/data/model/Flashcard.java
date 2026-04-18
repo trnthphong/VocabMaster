@@ -24,6 +24,9 @@ public class Flashcard {
     private long lastReviewTime;
     private long nextReviewAt;
     private int interval;
+    
+    // Thêm trường để đánh dấu đã hoàn thành thử thách minigame
+    private boolean isMastered;
 
     public Flashcard() {}
 
@@ -80,4 +83,7 @@ public class Flashcard {
 
     public int getInterval() { return interval; }
     public void setInterval(int interval) { this.interval = interval; }
+
+    public boolean isMastered() { return isMastered; }
+    public void setMastered(boolean mastered) { isMastered = mastered; }
 }
