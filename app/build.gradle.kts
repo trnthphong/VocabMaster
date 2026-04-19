@@ -85,6 +85,9 @@ dependencies {
 
     // QR Code
     implementation(libs.zxing)
+    
+    // WorkManager
+    implementation(libs.work.runtime)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

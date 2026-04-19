@@ -7,10 +7,16 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "@google/genai": "^1.50.1",
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.15.0",
+    "cors": "^2.8.6",
     "crypto": "^1.0.1",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
-    "firebase-admin": "^11.11.1"
+    "firebase-admin": "^11.11.1",
+    "microsoft-cognitiveservices-speech-sdk": "^1.49.0",
+    "openai": "^6.34.0"
   }
 }

@@ -7,7 +7,7 @@
     app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="20dp"
     app:cardElevation="0dp"
-    app:strokeColor="#F2F2F7"
+    app:strokeColor="@color/card_border"
     app:strokeWidth="1.2dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -37,7 +37,7 @@
             android:maxLines="3"
             android:text="Definition goes here..."
             android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-            android:textColor="#48484A"
+            android:textColor="@color/text_secondary"
             app:layout_constraintEnd_toEndOf="@id/text_word"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_word" />

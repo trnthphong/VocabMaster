@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class Converters {
     private static final Gson gson = new Gson();
@@ -46,5 +47,18 @@ public class Converters {
         if (value == null) return null;
         Type listType = new TypeToken<List<String>>() {}.getType();
         return gson.fromJson(value, listType);
+    }
+
+    @TypeConverter
+    public static String fromSkillScoresMap(Map<String, Double> map) {
+        if (map == null) return null;
+        return gson.toJson(map);
+    }
+
+    @TypeConverter
+    public static Map<String, Double> toSkillScoresMap(String value) {
+        if (value == null) return null;
+        Type mapType = new TypeToken<Map<String, Double>>() {}.getType();
+        return gson.fromJson(value, mapType);
     }
 }

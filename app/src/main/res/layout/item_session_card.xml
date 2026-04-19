@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/card_border"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/text_session_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Buổi 1: Làm quen"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            android:textColor="@color/brand_primary" />
+
+        <TextView
+            android:id="@+id/text_session_lessons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Bài học: Greetings, Numbers, Family"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_start_session"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="8dp"
+            android:text="Bắt đầu"
+            app:backgroundTint="@color/brand_primary_light"
+            android:textColor="@color/brand_primary" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

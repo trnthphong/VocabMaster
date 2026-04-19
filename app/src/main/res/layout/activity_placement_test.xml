@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#4046d8"
+    android:padding="24dp">
+
+    <!-- Header with Progress -->
+    <ImageButton
+        android:id="@+id/btn_close_test"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/test_progress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:progress="10"
+        app:indicatorColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="@id/btn_close_test"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btn_close_test"
+        app:layout_constraintTop_toTopOf="@id/btn_close_test"
+        app:trackColor="#66FFFFFF"
+        app:trackCornerRadius="4dp"
+        app:trackThickness="8dp" />
+
+    <!-- Question Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_question"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toBottomOf="@id/btn_close_test">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:id="@+id/text_skill_tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#E8EAF6"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:text="READING"
+                android:textColor="#4046d8"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_question_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Chọn từ đúng để điền vào chỗ trống: 'She ___ to the market yesterday.'"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:fontFamily="@font/adlam_display" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Options List -->
+    <LinearLayout
+        android:id="@+id/layout_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/card_question">
+        <!-- Options will be added programmatically -->
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_submit_answer"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="Kiểm tra"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:enabled="false"
+        app:cornerRadius="16dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

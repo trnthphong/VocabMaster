@@ -14,12 +14,11 @@ public class User {
     private String role;
     private String shortId;
     
-    // Đổi tên biến để khớp hoàn toàn với Firestore field name
     private boolean premium; 
     
-    private Timestamp premiumUntil;
+    private Object premiumUntil; // Dùng Object để nhận cả Long và Timestamp
     private List<String> savedSets;
-    private Timestamp createdAt;
+    private Object createdAt; // Dùng Object để nhận cả Long và Timestamp
 
     // Gamification
     private long xp;
@@ -50,8 +49,21 @@ public class User {
 
     public boolean isActivePremium() {
         if (premium) return true;
-        if (premiumUntil == null) return false;
-        return premiumUntil.toDate().getTime() > System.currentTimeMillis();
+        Timestamp until = getPremiumUntilTimestamp();
+        if (until == null) return false;
+        return until.toDate().getTime() > System.currentTimeMillis();
+    }
+
+    // Helper to handle both Long and Timestamp from Firestore
+    private Timestamp convertToTimestamp(Object value) {
+        if (value instanceof Timestamp) {
+            return (Timestamp) value;
+        } else if (value instanceof Long) {
+            return new Timestamp(new Date((Long) value));
+        } else if (value instanceof com.google.firebase.firestore.FieldValue) {
+            return Timestamp.now();
+        }
+        return null;
     }
 
     // Getters and Setters
@@ -70,7 +82,6 @@ public class User {
     public String getShortId() { return shortId; }
     public void setShortId(String shortId) { this.shortId = shortId; }
 
-    // Sử dụng cả isPremium và premium để Firestore chắc chắn map được
     @PropertyName("isPremium")
     public boolean isPremium() { return premium; }
     @PropertyName("isPremium")
@@ -81,50 +92,35 @@ public class User {
     @PropertyName("premium")
     public void setPremiumActual(boolean premium) { this.premium = premium; }
 
-    public Timestamp getPremiumUntil() { return premiumUntil; }
-    public void setPremiumUntil(Timestamp premiumUntil) { this.premiumUntil = premiumUntil; }
+    public Object getPremiumUntil() { return premiumUntil; }
+    public void setPremiumUntil(Object premiumUntil) { this.premiumUntil = premiumUntil; }
+    
+    public Timestamp getPremiumUntilTimestamp() {
+        return convertToTimestamp(premiumUntil);
+    }
+
     public List<String> getSavedSets() { return savedSets; }
     public void setSavedSets(List<String> savedSets) { this.savedSets = savedSets; }
+
+    public Object getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Object createdAt) { this.createdAt = createdAt; }
     
-    public Timestamp getCreatedAt() { return createdAt; }
-    
-    // Xử lý cả trường hợp database trả về Long hoặc Timestamp
-    public void setCreatedAt(Object createdAt) {
-        if (createdAt instanceof Timestamp) {
-            this.createdAt = (Timestamp) createdAt;
-        } else if (createdAt instanceof Long) {
-            this.createdAt = new Timestamp(new Date((Long) createdAt));
-        }
+    public Timestamp getCreatedAtTimestamp() {
+        return convertToTimestamp(createdAt);
     }
 
     public long getXp() { return xp; }
     public void setXp(long xp) { this.xp = xp; }
     public int getHearts() { return hearts; }
     public void setHearts(int hearts) { this.hearts = hearts; }
-    
     public Timestamp getLastHeartRegen() { return lastHeartRegen; }
-    public void setLastHeartRegen(Object lastHeartRegen) {
-        if (lastHeartRegen instanceof Timestamp) {
-            this.lastHeartRegen = (Timestamp) lastHeartRegen;
-        } else if (lastHeartRegen instanceof Long) {
-            this.lastHeartRegen = new Timestamp(new Date((Long) lastHeartRegen));
-        }
-    }
-
+    public void setLastHeartRegen(Timestamp lastHeartRegen) { this.lastHeartRegen = lastHeartRegen; }
     public int getStreak() { return streak; }
     public void setStreak(int streak) { this.streak = streak; }
     public int getLongestStreak() { return longestStreak; }
     public void setLongestStreak(int longestStreak) { this.longestStreak = longestStreak; }
-    
     public Timestamp getLastActive() { return lastActive; }
-    public void setLastActive(Object lastActive) {
-        if (lastActive instanceof Timestamp) {
-            this.lastActive = (Timestamp) lastActive;
-        } else if (lastActive instanceof Long) {
-            this.lastActive = new Timestamp(new Date((Long) lastActive));
-        }
-    }
-
+    public void setLastActive(Timestamp lastActive) { this.lastActive = lastActive; }
     public String getTimezone() { return timezone; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
     public int getDailyGoal() { return dailyGoal; }

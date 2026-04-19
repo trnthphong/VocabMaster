@@ -42,6 +42,7 @@
             android:layout_height="wrap_content"
             android:text="Resilience"
             android:textAppearance="@style/TextAppearance.VocabMaster.Display"
+            android:textColor="@color/text_primary"
             android:textAlignment="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -53,6 +54,7 @@
             android:layout_height="wrap_content"
             android:text="Tap to reveal definition"
             android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+            android:textColor="@color/text_secondary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
@@ -72,6 +74,7 @@
             android:layout_height="wrap_content"
             android:text="The capacity to recover quickly from difficulties; toughness."
             android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+            android:textColor="@color/text_primary"
             android:textAlignment="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
