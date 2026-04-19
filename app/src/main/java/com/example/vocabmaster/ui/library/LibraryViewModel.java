@@ -20,6 +20,7 @@ public class LibraryViewModel extends AndroidViewModel {
     private final CourseRepository repository;
     private final LiveData<List<Course>> allCoursesLocal;
     private final MutableLiveData<Boolean> courseDeletedEvent = new MutableLiveData<>(false);
+    private final MutableLiveData<List<Course>> globalSearchResults = new MutableLiveData<>();
 
     public LibraryViewModel(@NonNull Application application) {
         super(application);
@@ -93,5 +94,29 @@ public class LibraryViewModel extends AndroidViewModel {
 
     public void resetCourseDeletedEvent() {
         courseDeletedEvent.setValue(false);
+    }
+
+    public LiveData<List<Course>> getGlobalSearchResults() {
+        return globalSearchResults;
+    }
+
+    public void searchGlobal(String query) {
+        if (query == null || query.isEmpty()) {
+            globalSearchResults.setValue(new ArrayList<>());
+            return;
+        }
+        repository.searchGlobalCourses(query).addOnSuccessListener(globalSearchResults::setValue);
+    }
+
+    public Task<Void> sharePublic(Course course) {
+        return repository.shareCoursePublicly(course);
+    }
+
+    public Task<Void> copyToLibrary(Course course) {
+        return repository.copyCourseToLibrary(course);
+    }
+
+    public Task<Void> shareToFeed(Course course, String content, String userName, String userAvatar) {
+        return repository.shareCourseToFeed(course, content, userName, userAvatar);
     }
 }

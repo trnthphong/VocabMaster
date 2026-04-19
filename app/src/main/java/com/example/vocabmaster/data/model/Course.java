@@ -1,7 +1,6 @@
 package com.example.vocabmaster.data.model;
 
 import androidx.room.Entity;
-import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
@@ -51,6 +50,7 @@ public class Course {
         this.progressPercentage = 0.0;
         this.status = "active";
         this.sourceLanguageId = 1;
+        this.isPublic = false;
     }
 
     public String getLanguage() { return language; }
@@ -74,12 +74,6 @@ public class Course {
     
     @PropertyName("isPublic")
     public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
-
-    @PropertyName("public")
-    public boolean isPublicLegacy() { return isPublic; }
-    
-    @PropertyName("public")
-    public void setPublicLegacy(boolean isPublic) { this.isPublic = isPublic; }
 
     public int getFlashcardCount() { return flashcardCount; }
     public void setFlashcardCount(int flashcardCount) { this.flashcardCount = flashcardCount; }
