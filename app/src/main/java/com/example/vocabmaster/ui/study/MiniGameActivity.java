@@ -1,30 +1,40 @@
 package com.example.vocabmaster.ui.study;
 
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.ActivityMiniGameBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,6 +65,14 @@ public class MiniGameActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
     private CourseRepository repository;
+
+    // AI Quiz variables
+    private List<Vocabulary> oxfordVocab = new ArrayList<>();
+    private Vocabulary currentQuizVocab;
+    private CountDownTimer quizTimer;
+    private int quizHighScore = 0;
+    private List<String> quizHistory = new ArrayList<>();
+    private SharedPreferences prefs;
 
     // For Match Game (Click logic)
     private MaterialCardView selectedTermCard = null;
@@ -87,10 +105,20 @@ public class MiniGameActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         repository = new CourseRepository(getApplication());
+        prefs = getSharedPreferences("MiniGamePrefs", MODE_PRIVATE);
+        quizHighScore = prefs.getInt("ai_quiz_high_score", 0);
+        String historyStr = prefs.getString("ai_quiz_history", "");
+        if (!historyStr.isEmpty()) {
+            Collections.addAll(quizHistory, historyStr.split("\\|"));
+        }
+
         initTTS();
         initMediaPlayer();
         initData();
         setupClickListeners();
+        loadOxfordVocab();
+        
+        binding.textScore.setVisibility(View.GONE);
     }
 
     private void initTTS() {
@@ -136,10 +164,26 @@ public class MiniGameActivity extends AppCompatActivity {
                     if (f.isMastered()) masteredWordIds.add(f.getFirestoreId());
                 }
                 
-                // Nếu đang ở màn hình Dashboard thì cập nhật lại UI
                 updateDashboardUIIfVisible();
             }
         });
+    }
+
+    private void loadOxfordVocab() {
+        FirebaseFirestore.getInstance().collection("vocabularies")
+                .limit(200)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    oxfordVocab.clear();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Vocabulary v = doc.toObject(Vocabulary.class);
+                        if (v != null) {
+                            v.setVocabularyId(doc.getId());
+                            oxfordVocab.add(v);
+                        }
+                    }
+                    Log.d(TAG, "Loaded " + oxfordVocab.size() + " oxford vocabularies");
+                });
     }
 
     private void updateDashboardUIIfVisible() {
@@ -159,23 +203,154 @@ public class MiniGameActivity extends AppCompatActivity {
         binding.btnClose.setOnClickListener(v -> handleBack());
         binding.cardPlayAi.setOnClickListener(v -> showAiModes());
         binding.cardVocabularyChallenge.setOnClickListener(v -> showDashboard());
+        binding.cardAiQuiz.setOnClickListener(v -> showAiQuizLobby());
     }
 
     private void showAiModes() {
         binding.layoutModeSelection.setVisibility(View.GONE);
         binding.layoutAiModes.setVisibility(View.VISIBLE);
         binding.textTitle.setText("Chơi với máy");
+        binding.textScore.setVisibility(View.GONE);
+    }
+
+    private void showAiQuizLobby() {
+        View lobby = getLayoutInflater().inflate(R.layout.layout_game_ai_quiz_lobby, binding.gameContainer, false);
+        binding.gameContainer.removeAllViews();
+        binding.gameContainer.setVisibility(View.VISIBLE);
+        binding.gameContainer.addView(lobby);
+        binding.layoutAiModes.setVisibility(View.GONE);
+        binding.textTitle.setText("Đố vui cùng AI");
+        binding.textScore.setVisibility(View.GONE);
+
+        TextView textHighScore = lobby.findViewById(R.id.text_high_score);
+        textHighScore.setText(String.valueOf(quizHighScore));
+
+        RecyclerView recyclerHistory = lobby.findViewById(R.id.recycler_history);
+        recyclerHistory.setLayoutManager(new LinearLayoutManager(this));
+        recyclerHistory.setAdapter(new QuizHistoryAdapter(quizHistory));
+
+        lobby.findViewById(R.id.btn_start_quiz).setOnClickListener(v -> {
+            if (oxfordVocab.isEmpty()) {
+                Toast.makeText(this, "Đang tải dữ liệu từ vựng...", Toast.LENGTH_SHORT).show();
+                loadOxfordVocab();
+                return;
+            }
+            startAiQuiz();
+        });
+    }
+
+    private void startAiQuiz() {
+        score = 0;
+        binding.textScore.setVisibility(View.VISIBLE);
+        updateScoreUI();
+        showNextQuizQuestion();
+    }
+
+    private void showNextQuizQuestion() {
+        if (oxfordVocab.isEmpty()) return;
+        
+        currentQuizVocab = oxfordVocab.get((int) (Math.random() * oxfordVocab.size()));
+        
+        View view = getLayoutInflater().inflate(R.layout.layout_game_ai_quiz, binding.gameContainer, false);
+        binding.gameContainer.removeAllViews();
+        binding.gameContainer.addView(view);
+
+        TextView textHint = view.findViewById(R.id.text_hint);
+        TextView textWordTemplate = view.findViewById(R.id.text_word_template);
+        TextView textWordLength = view.findViewById(R.id.text_word_length);
+        TextView textCurrentScore = view.findViewById(R.id.text_current_score);
+        com.google.android.material.textfield.TextInputEditText editAnswer = view.findViewById(R.id.edit_quiz_answer);
+        ProgressBar progressTimer = view.findViewById(R.id.progress_timer);
+        TextView textTimer = view.findViewById(R.id.text_timer);
+
+        textCurrentScore.setText("Score: " + score);
+        textHint.setText(currentQuizVocab.getDefinition());
+        
+        String word = currentQuizVocab.getWord();
+        StringBuilder template = new StringBuilder();
+        for (int i = 0; i < word.length(); i++) {
+            if (word.charAt(i) == ' ') template.append("  ");
+            else template.append("_ ");
+        }
+        textWordTemplate.setText(template.toString().trim());
+        textWordLength.setText("(" + word.length() + " letters)");
+
+        if (quizTimer != null) quizTimer.cancel();
+        quizTimer = new CountDownTimer(30000, 100) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int progress = (int) (millisUntilFinished / 100);
+                progressTimer.setProgress(progress);
+                textTimer.setText((millisUntilFinished / 1000 + 1) + "s");
+            }
+
+            @Override
+            public void onFinish() {
+                progressTimer.setProgress(0);
+                textTimer.setText("0s");
+                finishAiQuiz();
+            }
+        }.start();
+
+        view.findViewById(R.id.btn_submit_quiz).setOnClickListener(v -> {
+            checkQuizAnswer(editAnswer.getText().toString().trim());
+        });
+
+        editAnswer.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                checkQuizAnswer(editAnswer.getText().toString().trim());
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void checkQuizAnswer(String answer) {
+        if (answer.equalsIgnoreCase(currentQuizVocab.getWord())) {
+            if (quizTimer != null) quizTimer.cancel();
+            score++;
+            playSoundEffect(true);
+            updateScoreUI();
+            UiFeedback.showSnack(binding.getRoot(), "Chính xác! +1 điểm");
+            new Handler(Looper.getMainLooper()).postDelayed(this::showNextQuizQuestion, 1000);
+        } else {
+            playSoundEffect(false);
+            Toast.makeText(this, "Chưa đúng rồi, thử lại nhé!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void finishAiQuiz() {
+        if (quizTimer != null) quizTimer.cancel();
+        
+        String resultMsg = "Hết giờ! Bạn đạt được " + score + " điểm.";
+        boolean isNewRecord = false;
+        if (score > quizHighScore && score > 0) {
+            isNewRecord = true;
+            quizHighScore = score;
+            resultMsg = "CHÚC MỪNG! Bạn đã phá kỷ lục mới: " + score + " điểm!";
+            prefs.edit().putInt("ai_quiz_high_score", quizHighScore).apply();
+        }
+
+        String timeStr = new java.text.SimpleDateFormat("HH:mm dd/MM", Locale.getDefault()).format(new java.util.Date());
+        quizHistory.add(0, "Điểm: " + score + " - " + timeStr);
+        if (quizHistory.size() > 10) quizHistory.remove(quizHistory.size() - 1);
+        StringBuilder sb = new StringBuilder();
+        for (String s : quizHistory) sb.append(s).append("|");
+        prefs.edit().putString("ai_quiz_history", sb.toString()).apply();
+
+        UiFeedback.showErrorDialog(this, isNewRecord ? "Kỷ lục mới!" : "Kết thúc", resultMsg);
+        showAiQuizLobby();
     }
 
     private void showDashboard() {
         View dashboard = getLayoutInflater().inflate(R.layout.layout_game_dashboard, binding.gameContainer, false);
-        // Gán ID cho root của layout mới inflate để dễ kiểm tra ở updateDashboardUIIfVisible
         dashboard.setId(R.id.layout_game_dashboard_root);
         
         binding.gameContainer.removeAllViews();
         binding.gameContainer.setVisibility(View.VISIBLE);
         binding.gameContainer.addView(dashboard);
         binding.layoutAiModes.setVisibility(View.GONE);
+        binding.textScore.setVisibility(View.GONE);
 
         TextView textCount = dashboard.findViewById(R.id.text_mastered_count);
         ProgressBar progress = dashboard.findViewById(R.id.progress_mastery);
@@ -199,6 +374,7 @@ public class MiniGameActivity extends AppCompatActivity {
             return;
         }
 
+        binding.textScore.setVisibility(View.GONE);
         Collections.shuffle(unmasteredPool);
         gamePool = new ArrayList<>(unmasteredPool.size() > 10 ? unmasteredPool.subList(0, 10) : unmasteredPool);
         
@@ -218,8 +394,6 @@ public class MiniGameActivity extends AppCompatActivity {
 
         Collections.shuffle(challengeTasks);
         currentTaskIndex = 0;
-        score = 0;
-        updateScoreUI();
         showNextTask();
     }
 
@@ -253,7 +427,6 @@ public class MiniGameActivity extends AppCompatActivity {
             contentText.setText("???");
             btnPlay.setVisibility(View.VISIBLE);
             btnPlay.setOnClickListener(v -> playVocabSound(word));
-            // Auto speak after a short delay
             new Handler(Looper.getMainLooper()).postDelayed(() -> playVocabSound(word), 1000);
         } else {
             typeText.setText("CHỌN NGHĨA ĐÚNG");
@@ -385,10 +558,7 @@ public class MiniGameActivity extends AppCompatActivity {
             defCard.setEnabled(false);
 
             UiFeedback.showSnack(binding.getRoot(), "Chính xác!");
-            score += 5;
-            updateScoreUI();
 
-            // Check if all matched
             boolean allDisabled = true;
             LinearLayout container = binding.gameContainer.findViewById(R.id.column_terms);
             for (int i = 0; i < container.getChildCount(); i++) {
@@ -428,7 +598,6 @@ public class MiniGameActivity extends AppCompatActivity {
         playSoundEffect(isCorrect);
         
         if (isCorrect) {
-            score += 10;
             if (view instanceof MaterialButton) {
                 ((MaterialButton) view).setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.success)));
                 ((MaterialButton) view).setTextColor(ContextCompat.getColor(this, R.color.white));
@@ -446,7 +615,6 @@ public class MiniGameActivity extends AppCompatActivity {
             Toast.makeText(this, "Sai rồi! Đáp án: " + correct, Toast.LENGTH_SHORT).show();
         }
 
-        updateScoreUI();
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             currentTaskIndex++;
             showNextTask();
@@ -462,13 +630,10 @@ public class MiniGameActivity extends AppCompatActivity {
                 }
             }
             
-            // Sau khi update xong database, quay về UI thread để hiển thị thông báo
             runOnUiThread(() -> {
                 binding.gameContainer.setVisibility(View.GONE);
                 binding.layoutAiModes.setVisibility(View.VISIBLE);
-                UiFeedback.showErrorDialog(this, "Hoàn thành", "Tuyệt vời! Bạn nhận được " + score + " XP");
-                
-                // Cập nhật lại danh sách local để UI Dashboard đồng bộ
+                UiFeedback.showErrorDialog(this, "Hoàn thành", "Tuyệt vời! Bạn đã hoàn thành các thử thách.");
                 initData();
             });
         });
@@ -497,32 +662,26 @@ public class MiniGameActivity extends AppCompatActivity {
 
     private void speak(String text) {
         if (isTtsReady && tts != null) {
-            Log.d(TAG, "Speaking: " + text);
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "vocab_speak_" + System.currentTimeMillis());
-        } else {
-            Log.w(TAG, "TTS not ready. Initializing...");
-            // Don't re-init here if already initializing, but we'll try to use TTS if available
-            if (tts == null) initTTS();
-            
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (isTtsReady && tts != null) {
-                    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "vocab_speak_retry");
-                }
-            }, 1000);
         }
     }
 
     private void updateScoreUI() {
-        binding.textScore.setText("XP: " + score);
+        binding.textScore.setText("Điểm: " + score);
     }
 
     private void handleBack() {
+        if (quizTimer != null) quizTimer.cancel();
+        binding.textScore.setVisibility(View.GONE);
+        
         if (binding.gameContainer.getVisibility() == View.VISIBLE) {
             binding.gameContainer.setVisibility(View.GONE);
             binding.layoutAiModes.setVisibility(View.VISIBLE);
+            binding.textTitle.setText("Chơi với máy");
         } else if (binding.layoutAiModes.getVisibility() == View.VISIBLE) {
             binding.layoutAiModes.setVisibility(View.GONE);
             binding.layoutModeSelection.setVisibility(View.VISIBLE);
+            binding.textTitle.setText("Minigames");
         } else finish();
     }
 
@@ -536,7 +695,43 @@ public class MiniGameActivity extends AppCompatActivity {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        if (quizTimer != null) quizTimer.cancel();
         databaseExecutor.shutdown();
         super.onDestroy();
+    }
+
+    private static class QuizHistoryAdapter extends RecyclerView.Adapter<QuizHistoryAdapter.ViewHolder> {
+        private final List<String> history;
+
+        public QuizHistoryAdapter(List<String> history) {
+            this.history = history;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            TextView tv = new TextView(parent.getContext());
+            tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            tv.setPadding(32, 16, 32, 16);
+            tv.setTextSize(16);
+            tv.setTextColor(ContextCompat.getColor(parent.getContext(), R.color.text_secondary));
+            return new ViewHolder(tv);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            holder.textView.setText(history.get(position));
+        }
+
+        @Override
+        public int getItemCount() { return history.size(); }
+
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            TextView textView;
+            ViewHolder(View itemView) {
+                super(itemView);
+                textView = (TextView) itemView;
+            }
+        }
     }
 }
