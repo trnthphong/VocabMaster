@@ -53,6 +53,7 @@
     <color name="shimmer_base">#E2E8F0</color>
     <color name="shimmer_highlight">#F1F5F9</color>
     <color name="card_border">#E2E8F0</color>
+    <color name="divider">#E2E8F0</color>
 
     <!-- Bottom Nav -->
     <color name="nav_indicator_glow">#265F33E1</color> <!-- 15% opacity of btn_purple -->

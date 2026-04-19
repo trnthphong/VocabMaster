@@ -1,8 +1,10 @@
 package com.example.vocabmaster.ui.study;
 
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.speech.tts.TextToSpeech;
@@ -14,16 +16,19 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.ActivityMiniGameBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,6 +55,13 @@ public class MiniGameActivity extends AppCompatActivity {
     private TextToSpeech tts;
     private boolean isTtsReady = false;
     private MediaPlayer mediaPlayer;
+
+    // AI Riddle Mode variables
+    private boolean isAiRiddleMode = false;
+    private int aiRiddleScore = 0;
+    private Vocabulary currentRiddleWord;
+    private CountDownTimer riddleTimer;
+    private static final int RIDDLE_TIME_LIMIT = 15000; // 15 seconds
 
     // For Match Game (Click logic)
     private MaterialCardView selectedTermCard = null;
@@ -137,6 +149,7 @@ public class MiniGameActivity extends AppCompatActivity {
         binding.btnClose.setOnClickListener(v -> handleBack());
         binding.cardPlayAi.setOnClickListener(v -> showAiModes());
         binding.cardVocabularyChallenge.setOnClickListener(v -> showDashboard());
+        binding.cardAiRiddle.setOnClickListener(v -> showAiRiddleLobby());
     }
 
     private void showAiModes() {
@@ -164,6 +177,7 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void startVocabChallenge() {
+        isAiRiddleMode = false;
         List<Flashcard> unmasteredPool = new ArrayList<>();
         for (Flashcard f : myFlashcards) {
             if (!f.isMastered()) unmasteredPool.add(f);
@@ -198,6 +212,150 @@ public class MiniGameActivity extends AppCompatActivity {
         showNextTask();
     }
 
+    // --- AI RIDDLE MODE ---
+    private void showAiRiddleLobby() {
+        isAiRiddleMode = true;
+        binding.layoutAiModes.setVisibility(View.GONE);
+        View lobby = getLayoutInflater().inflate(R.layout.layout_game_ai_riddle_lobby, binding.gameContainer, false);
+        binding.gameContainer.removeAllViews();
+        binding.gameContainer.setVisibility(View.VISIBLE);
+        binding.gameContainer.addView(lobby);
+
+        SharedPreferences prefs = getSharedPreferences("game_prefs", MODE_PRIVATE);
+        int highScore = prefs.getInt("ai_riddle_high_score", 0);
+        String history = prefs.getString("ai_riddle_history", "Chưa có dữ liệu");
+
+        ((TextView)lobby.findViewById(R.id.text_high_score)).setText("Kỉ lục: " + highScore + " điểm");
+        ((TextView)lobby.findViewById(R.id.text_history)).setText(history);
+
+        lobby.findViewById(R.id.btn_start_riddle).setOnClickListener(v -> startAiRiddleGame());
+    }
+
+    private void startAiRiddleGame() {
+        aiRiddleScore = 0;
+        updateScoreUI();
+        fetchAndShowNextRiddle();
+    }
+
+    private void fetchAndShowNextRiddle() {
+        new Thread(() -> {
+            List<Vocabulary> randomVocabs = AppDatabase.getDatabase(this).vocabularyDao().getRandomVocabularies(1);
+            if (!randomVocabs.isEmpty()) {
+                currentRiddleWord = randomVocabs.get(0);
+                runOnUiThread(this::displayRiddleQuestion);
+            } else {
+                runOnUiThread(() -> Toast.makeText(this, "Không tìm thấy dữ liệu từ vựng!", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void displayRiddleQuestion() {
+        View view = getLayoutInflater().inflate(R.layout.layout_game_ai_riddle, binding.gameContainer, false);
+        binding.gameContainer.removeAllViews();
+        binding.gameContainer.addView(view);
+
+        TextView textHint = view.findViewById(R.id.text_riddle_hint);
+        TextView textPlaceholders = view.findViewById(R.id.text_answer_placeholders);
+        TextView textLetterCount = view.findViewById(R.id.text_letter_count);
+        TextInputEditText editAnswer = view.findViewById(R.id.edit_answer);
+        MaterialButton btnSubmit = view.findViewById(R.id.btn_submit_answer);
+        TextView textTimer = view.findViewById(R.id.text_timer);
+        ProgressBar progressTimer = view.findViewById(R.id.progress_timer);
+
+        // Hint: Use example sentence or definition
+        String hint = currentRiddleWord.getExample_sentence();
+        if (hint == null || hint.isEmpty()) hint = currentRiddleWord.getDefinition();
+        
+        // Hide the word in the hint if it exists
+        String word = currentRiddleWord.getWord().toLowerCase();
+        hint = hint.replaceAll("(?i)" + word, "_______");
+        textHint.setText(hint);
+
+        // Placeholders
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < word.length(); i++) {
+            if (Character.isLetter(word.charAt(i))) sb.append("_ ");
+            else sb.append(word.charAt(i)).append(" ");
+        }
+        textPlaceholders.setText(sb.toString().trim());
+        textLetterCount.setText("(" + word.length() + " letters)");
+
+        btnSubmit.setOnClickListener(v -> {
+            String ans = editAnswer.getText().toString().trim();
+            if (ans.equalsIgnoreCase(word)) {
+                if (riddleTimer != null) riddleTimer.cancel();
+                aiRiddleScore++;
+                updateScoreUI();
+                playSoundEffect(true);
+                UiFeedback.showSnack(binding.getRoot(), "Chính xác! +1 điểm");
+                new Handler(Looper.getMainLooper()).postDelayed(this::fetchAndShowNextRiddle, 1000);
+            } else {
+                playSoundEffect(false);
+                Toast.makeText(this, "Chưa đúng rồi, thử lại nhé!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        startRiddleTimer(textTimer, progressTimer);
+    }
+
+    private void startRiddleTimer(TextView textTimer, ProgressBar progressTimer) {
+        if (riddleTimer != null) riddleTimer.cancel();
+        
+        riddleTimer = new CountDownTimer(RIDDLE_TIME_LIMIT, 100) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int seconds = (int) (millisUntilFinished / 1000);
+                textTimer.setText(String.valueOf(seconds));
+                progressTimer.setProgress((int) (millisUntilFinished / 100));
+            }
+
+            @Override
+            public void onFinish() {
+                textTimer.setText("0");
+                progressTimer.setProgress(0);
+                finishAiRiddleGame();
+            }
+        }.start();
+    }
+
+    private void finishAiRiddleGame() {
+        if (riddleTimer != null) riddleTimer.cancel();
+        
+        SharedPreferences prefs = getSharedPreferences("game_prefs", MODE_PRIVATE);
+        int oldHighScore = prefs.getInt("ai_riddle_high_score", 0);
+        boolean isNewRecord = aiRiddleScore > oldHighScore;
+        
+        if (isNewRecord) {
+            prefs.edit().putInt("ai_riddle_high_score", aiRiddleScore).apply();
+        }
+
+        // Update history (save last 5 games)
+        String history = prefs.getString("ai_riddle_history", "");
+        String newEntry = "Điểm: " + aiRiddleScore + " - " + new java.text.SimpleDateFormat("dd/MM HH:mm").format(new java.util.Date());
+        if (history.isEmpty() || history.equals("Chưa có dữ liệu")) history = newEntry;
+        else {
+            String[] lines = history.split("\n");
+            StringBuilder sb = new StringBuilder(newEntry);
+            for (int i = 0; i < Math.min(lines.length, 4); i++) {
+                sb.append("\n").append(lines[i]);
+            }
+            history = sb.toString();
+        }
+        prefs.edit().putString("ai_riddle_history", history).apply();
+
+        String msg = "Hết giờ! Bạn đạt được " + aiRiddleScore + " điểm.";
+        if (isNewRecord && aiRiddleScore > 0) msg += "\n\nCHÚC MỪNG! BẠN ĐÃ PHÁ KỈ LỤC!";
+
+        new AlertDialog.Builder(this)
+                .setTitle("Game Over")
+                .setMessage(msg)
+                .setPositiveButton("Về sảnh", (dialog, which) -> showAiRiddleLobby())
+                .setCancelable(false)
+                .show();
+    }
+
+    // --- END AI RIDDLE MODE ---
+
     private void showNextTask() {
         if (currentTaskIndex >= challengeTasks.size()) {
             finishVocabChallenge();
@@ -228,7 +386,6 @@ public class MiniGameActivity extends AppCompatActivity {
             contentText.setText("???");
             btnPlay.setVisibility(View.VISIBLE);
             btnPlay.setOnClickListener(v -> playVocabSound(word));
-            // Auto speak after a short delay
             new Handler(Looper.getMainLooper()).postDelayed(() -> playVocabSound(word), 1000);
         } else {
             typeText.setText("CHỌN NGHĨA ĐÚNG");
@@ -316,36 +473,29 @@ public class MiniGameActivity extends AppCompatActivity {
             if (!card.isEnabled()) return;
 
             if (isTerm) {
-                // Deselect previous if any
                 if (selectedTermCard != null) {
                     selectedTermCard.setStrokeColor(ContextCompat.getColor(this, R.color.card_border));
                     selectedTermCard.setStrokeWidth(2);
                 }
-                // Select new
                 selectedTermCard = card;
                 selectedTermId = id;
                 card.setStrokeColor(ContextCompat.getColor(this, R.color.brand_primary));
                 card.setStrokeWidth(6);
             } else {
-                // Deselect previous if any
                 if (selectedDefCard != null) {
                     selectedDefCard.setStrokeColor(ContextCompat.getColor(this, R.color.card_border));
                     selectedDefCard.setStrokeWidth(2);
                 }
-                // Select new
                 selectedDefCard = card;
                 selectedDefId = id;
                 card.setStrokeColor(ContextCompat.getColor(this, R.color.brand_primary));
                 card.setStrokeWidth(6);
             }
 
-            // Check for match
             if (selectedTermCard != null && selectedDefCard != null) {
                 if (selectedTermId.equals(selectedDefId)) {
-                    // MATCH SUCCESS
                     handleMatchResult(true);
                 } else {
-                    // MATCH FAIL
                     handleMatchResult(false);
                 }
             }
@@ -371,8 +521,6 @@ public class MiniGameActivity extends AppCompatActivity {
             defCard.setEnabled(false);
 
             UiFeedback.showSnack(binding.getRoot(), "Chính xác!");
-            
-            // Check if all matched
             checkMatchComplete((ViewGroup)termCard.getParent());
         } else {
             playSoundEffect(false);
@@ -402,8 +550,6 @@ public class MiniGameActivity extends AppCompatActivity {
             if (!container.getChildAt(i).isEnabled()) disabledCount++;
         }
         if (disabledCount == container.getChildCount()) {
-            score += 20;
-            updateScoreUI();
             currentTaskIndex++;
             new Handler(Looper.getMainLooper()).postDelayed(this::showNextTask, 1200);
         }
@@ -412,10 +558,7 @@ public class MiniGameActivity extends AppCompatActivity {
     private void checkResult(Flashcard word, String input, String correct, View feedbackView) {
         boolean isCorrect = input.equalsIgnoreCase(correct);
         if (isCorrect) {
-            score += 10;
-            updateScoreUI();
             playSoundEffect(true);
-            
             if (feedbackView instanceof MaterialButton) {
                 ((MaterialButton)feedbackView).setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.success)));
                 ((MaterialButton)feedbackView).setTextColor(ContextCompat.getColor(this, R.color.white));
@@ -447,7 +590,7 @@ public class MiniGameActivity extends AppCompatActivity {
         }
         binding.gameContainer.setVisibility(View.GONE);
         binding.layoutAiModes.setVisibility(View.VISIBLE);
-        UiFeedback.showErrorDialog(this, "Hoàn thành", "Tuyệt vời! Bạn nhận được " + score + " XP");
+        UiFeedback.showErrorDialog(this, "Hoàn thành", "Bạn đã hoàn thành thử thách ghi nhớ!");
     }
 
     private void playVocabSound(Flashcard word) {
@@ -473,13 +616,9 @@ public class MiniGameActivity extends AppCompatActivity {
 
     private void speak(String text) {
         if (isTtsReady && tts != null) {
-            Log.d(TAG, "Speaking: " + text);
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "vocab_speak_" + System.currentTimeMillis());
         } else {
-            Log.w(TAG, "TTS not ready. Initializing...");
-            // Don't re-init here if already initializing, but we'll try to use TTS if available
             if (tts == null) initTTS();
-            
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 if (isTtsReady && tts != null) {
                     tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "vocab_speak_retry");
@@ -489,16 +628,30 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void updateScoreUI() {
-        binding.textScore.setText("XP: " + score);
+        if (isAiRiddleMode) {
+            binding.textScore.setText("Điểm: " + aiRiddleScore);
+        } else {
+            binding.textScore.setText("Vocabulary Challenge");
+        }
     }
 
     private void handleBack() {
+        if (riddleTimer != null) riddleTimer.cancel();
+        
         if (binding.gameContainer.getVisibility() == View.VISIBLE) {
-            binding.gameContainer.setVisibility(View.GONE);
-            binding.layoutAiModes.setVisibility(View.VISIBLE);
+            if (isAiRiddleMode) {
+                showAiRiddleLobby(); // Go back to lobby first
+                isAiRiddleMode = false; // Reset temporary here, showAiRiddleLobby will set it
+                // Actually, if we are in riddle game, go to lobby. If in lobby, go to mode selection.
+                // Let's refine this.
+            } else {
+                binding.gameContainer.setVisibility(View.GONE);
+                binding.layoutAiModes.setVisibility(View.VISIBLE);
+            }
         } else if (binding.layoutAiModes.getVisibility() == View.VISIBLE) {
             binding.layoutAiModes.setVisibility(View.GONE);
             binding.layoutModeSelection.setVisibility(View.VISIBLE);
+            binding.textTitle.setText("Minigames");
         } else finish();
     }
 
@@ -512,6 +665,7 @@ public class MiniGameActivity extends AppCompatActivity {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        if (riddleTimer != null) riddleTimer.cancel();
         super.onDestroy();
     }
 }

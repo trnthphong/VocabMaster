@@ -22,4 +22,7 @@ public interface VocabularyDao {
 
     @Query("DELETE FROM vocabularies_local WHERE topic = :topic")
     void deleteByTopic(String topic);
+
+    @Query("SELECT * FROM vocabularies_local ORDER BY RANDOM() LIMIT :limit")
+    List<Vocabulary> getRandomVocabularies(int limit);
 }
