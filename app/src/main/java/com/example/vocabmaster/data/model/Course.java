@@ -1,6 +1,7 @@
 package com.example.vocabmaster.data.model;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
@@ -19,12 +20,16 @@ public class Course {
     private String firestoreId;
     private String title;
     private String description;
+    private String imageUrl;
     private String theme;
     private String creatorId;
     private boolean isPublic;
     private String language; 
     private int flashcardCount;
     private int level;
+    
+    @Ignore
+    private boolean isTopic; // To distinguish between Course and Topic in Library
 
     private int targetLanguageId;
     private int sourceLanguageId;
@@ -50,8 +55,11 @@ public class Course {
         this.progressPercentage = 0.0;
         this.status = "active";
         this.sourceLanguageId = 1;
-        this.isPublic = false;
+        this.isTopic = false;
     }
+
+    public boolean isTopic() { return isTopic; }
+    public void setTopic(boolean topic) { isTopic = topic; }
 
     public String getLanguage() { return language; }
     public void setLanguage(String language) { this.language = language; }
@@ -64,6 +72,8 @@ public class Course {
     public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public String getTheme() { return theme; }
     public void setTheme(String theme) { this.theme = theme; }
     public String getCreatorId() { return creatorId; }
@@ -74,6 +84,12 @@ public class Course {
     
     @PropertyName("isPublic")
     public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
+
+    @PropertyName("public")
+    public boolean isPublicLegacy() { return isPublic; }
+    
+    @PropertyName("public")
+    public void setPublicLegacy(boolean isPublic) { this.isPublic = isPublic; }
 
     public int getFlashcardCount() { return flashcardCount; }
     public void setFlashcardCount(int flashcardCount) { this.flashcardCount = flashcardCount; }

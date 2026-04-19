@@ -1,41 +1,39 @@
 package com.example.vocabmaster.ui.library;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.text.TextUtils;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.remote.AIService;
-import com.example.vocabmaster.databinding.ActivityCreateFlashcardBinding;
-import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.data.repository.CourseRepository;
 
 public class CreateFlashcardActivity extends AppCompatActivity {
-
-    private ActivityCreateFlashcardBinding binding;
-    private LibraryViewModel viewModel;
+    private EditText etTerm, etDefinition, etTag;
+    private ImageView imgPreview;
+    private View layoutAddImagePrompt;
+    private Button btnGenerateAI, btnSave;
+    private ProgressBar progressBar;
     private AIService aiService;
-    private Uri selectedImageUri;
+    private String generatedImageUrl = "";
 
-    private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                    selectedImageUri = result.getData().getData();
-                    binding.imagePreview.setImageURI(selectedImageUri);
-                    binding.imagePreview.setVisibility(View.VISIBLE);
-                    binding.layoutAddImagePrompt.setVisibility(View.GONE);
+    private final ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri != null) {
+                    generatedImageUrl = uri.toString();
+                    showPreview(uri.toString());
                 }
             }
     );
@@ -43,86 +41,98 @@ public class CreateFlashcardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityCreateFlashcardBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        setContentView(R.layout.activity_create_flashcard);
 
-        viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
-        aiService = new AIService("AIzaSyDEw4mFQqqOzwXDlYoMDwecIURPNkdO4Ko");
+        initViews();
+        aiService = new AIService();
 
-        setupListeners();
+        btnGenerateAI.setOnClickListener(v -> generateImageWithAI());
+        btnSave.setOnClickListener(v -> saveFlashcard());
+        findViewById(R.id.card_select_image).setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        
+        findViewById(R.id.toolbar).setOnClickListener(v -> finish());
     }
 
-    private void setupListeners() {
-        binding.toolbar.setNavigationOnClickListener(v -> finish());
-
-        binding.cardSelectImage.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            imagePickerLauncher.launch(intent);
-        });
-
-        binding.btnAiGenerateImage.setOnClickListener(v -> generateAiImage());
-
-        binding.btnSaveFlashcard.setOnClickListener(v -> saveFlashcard());
+    private void initViews() {
+        etTerm = findViewById(R.id.edit_term);
+        etDefinition = findViewById(R.id.edit_definition);
+        etTag = findViewById(R.id.edit_tag);
+        imgPreview = findViewById(R.id.image_preview);
+        layoutAddImagePrompt = findViewById(R.id.layout_add_image_prompt);
+        btnGenerateAI = findViewById(R.id.btn_ai_generate_image);
+        btnSave = findViewById(R.id.btn_save_flashcard);
+        progressBar = findViewById(R.id.progress_image);
     }
 
-    private void generateAiImage() {
-        String term = binding.editTerm.getText().toString().trim();
-        String definition = binding.editDefinition.getText().toString().trim();
+    private void showPreview(String url) {
+        layoutAddImagePrompt.setVisibility(View.GONE);
+        imgPreview.setVisibility(View.VISIBLE);
+        Glide.with(this)
+                .load(url)
+                .placeholder(R.drawable.macdinh)
+                .error(R.drawable.macdinh)
+                .into(imgPreview);
+    }
 
-        if (TextUtils.isEmpty(term)) {
-            Toast.makeText(this, "Vui lòng nhập từ vựng trước", Toast.LENGTH_SHORT).show();
+    private void generateImageWithAI() {
+        String term = etTerm.getText().toString().trim();
+        String definition = etDefinition.getText().toString().trim();
+
+        if (term.isEmpty()) {
+            Toast.makeText(this, "Vui lòng nhập từ vựng!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        binding.progressImage.setVisibility(View.VISIBLE);
-        binding.btnAiGenerateImage.setEnabled(false);
+        progressBar.setVisibility(View.VISIBLE);
+        btnGenerateAI.setEnabled(false);
 
-        aiService.generateImageFromText(term, definition, new AIService.ImageGenerationCallback() {
+        aiService.generateImageFromText(term, definition, new AIService.AICallback<String>() {
             @Override
             public void onSuccess(String imageUrl) {
+                generatedImageUrl = imageUrl;
                 runOnUiThread(() -> {
-                    binding.progressImage.setVisibility(View.GONE);
-                    binding.btnAiGenerateImage.setEnabled(true);
-                    selectedImageUri = Uri.parse(imageUrl);
-                    Glide.with(CreateFlashcardActivity.this)
-                            .load(imageUrl)
-                            .centerCrop()
-                            .placeholder(android.R.drawable.ic_menu_gallery)
-                            .into(binding.imagePreview);
-                    binding.imagePreview.setVisibility(View.VISIBLE);
-                    binding.layoutAddImagePrompt.setVisibility(View.GONE);
+                    progressBar.setVisibility(View.GONE);
+                    btnGenerateAI.setEnabled(true);
+                    showPreview(imageUrl);
                 });
             }
 
             @Override
             public void onError(Throwable t) {
                 runOnUiThread(() -> {
-                    binding.progressImage.setVisibility(View.GONE);
-                    binding.btnAiGenerateImage.setEnabled(true);
-                    Toast.makeText(CreateFlashcardActivity.this, "Lỗi AI: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
+                    btnGenerateAI.setEnabled(true);
+                    // Fallback to loremflickr if AI fails
+                    generatedImageUrl = "https://loremflickr.com/400/300/" + term;
+                    showPreview(generatedImageUrl);
+                    Toast.makeText(CreateFlashcardActivity.this, "Sử dụng ảnh minh họa mặc định", Toast.LENGTH_SHORT).show();
                 });
             }
         });
     }
 
     private void saveFlashcard() {
-        String term = binding.editTerm.getText().toString().trim();
-        String definition = binding.editDefinition.getText().toString().trim();
-        String tag = binding.editTag.getText().toString().trim();
+        String term = etTerm.getText().toString().trim();
+        String definition = etDefinition.getText().toString().trim();
+        String tag = etTag.getText().toString().trim();
 
-        if (TextUtils.isEmpty(term) || TextUtils.isEmpty(definition)) {
-            Toast.makeText(this, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
+        if (term.isEmpty() || definition.isEmpty()) {
+            Toast.makeText(this, "Vui lòng điền đủ thông tin!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Flashcard card = new Flashcard(term, definition);
-        card.setTag(tag);
-        if (selectedImageUri != null) {
-            card.setImageUrl(selectedImageUri.toString());
+        // Nếu chưa có ảnh, tự động tạo link ảnh từ keyword
+        if (generatedImageUrl.isEmpty()) {
+            generatedImageUrl = "https://loremflickr.com/400/300/" + term;
         }
 
-        viewModel.addPersonalFlashcard(card);
-        Toast.makeText(this, "Đã lưu Flashcard mới", Toast.LENGTH_SHORT).show();
+        Flashcard flashcard = new Flashcard(term, definition);
+        flashcard.setImageUrl(generatedImageUrl);
+        flashcard.setTag(tag);
+
+        new CourseRepository(getApplication()).addPersonalFlashcard(flashcard);
+        
+        Toast.makeText(this, "Đã lưu flashcard!", Toast.LENGTH_SHORT).show();
         finish();
     }
 }

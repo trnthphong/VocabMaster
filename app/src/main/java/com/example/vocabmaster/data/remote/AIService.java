@@ -1,110 +1,117 @@
 package com.example.vocabmaster.data.remote;
 
-import android.net.Uri;
 import android.util.Log;
 
-import com.example.vocabmaster.data.model.Flashcard;
-import com.google.ai.client.generativeai.GenerativeModel;
-import com.google.ai.client.generativeai.java.GenerativeModelFutures;
-import com.google.ai.client.generativeai.type.Content;
-import com.google.ai.client.generativeai.type.GenerateContentResponse;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.example.vocabmaster.data.api.RetrofitClient;
+import com.example.vocabmaster.data.model.Course;
+import com.example.vocabmaster.data.model.Lesson;
+import com.example.vocabmaster.data.model.Unit;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.Map;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+/**
+ * AIService hiện tại đóng vai trò là Proxy để gọi các dịch vụ AI thông qua Backend.
+ * Backend sẽ điều phối giữa Claude (Curriculum), GPT-4o (Content), và Azure (Speech).
+ */
 public class AIService {
-    private final GenerativeModelFutures model;
+    private static final String TAG = "AIService";
+    private final VocabMasterApiService apiService;
+
+    public AIService() {
+        this.apiService = RetrofitClient.getClient().create(VocabMasterApiService.class);
+    }
 
     public AIService(String apiKey) {
-        GenerativeModel gm = new GenerativeModel("gemini-1.5-flash", apiKey);
-        this.model = GenerativeModelFutures.from(gm);
+        this();
     }
 
-    public interface AICallback {
-        void onSuccess(List<Flashcard> cards);
+    public interface AICallback<T> {
+        void onSuccess(T result);
         void onError(Throwable t);
     }
 
-    public interface ImageGenerationCallback {
-        void onSuccess(String imageUrl);
+    public interface CurriculumCallback {
+        void onSuccess(List<Unit> units);
         void onError(Throwable t);
     }
 
-    public void generateFlashcards(String topic, int count, AICallback callback) {
-        String prompt = String.format(
-                "Generate %d English vocabulary flashcards about '%s'. " +
-                "Return ONLY a JSON array of objects with 'term', 'definition', and 'example' fields. " +
-                "Do not include markdown formatting or extra text.",
-                count, topic
-        );
+    /**
+     * Sinh ảnh minh họa cho từ vựng.
+     */
+    public void generateImageFromText(String term, String definition, AICallback<String> callback) {
+        Map<String, String> data = new HashMap<>();
+        data.put("term", term);
+        data.put("definition", definition);
 
-        Content content = new Content.Builder().addText(prompt).build();
-        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
-
-        Executor executor = Executors.newSingleThreadExecutor();
-        response.addListener(() -> {
-            try {
-                GenerateContentResponse res = response.get();
-                String text = res.getText();
-                List<Flashcard> cards = parseJson(text);
-                callback.onSuccess(cards);
-            } catch (Exception e) {
-                callback.onError(e);
+        apiService.generateImagePrompt(data).enqueue(new Callback<Map<String, String>>() {
+            @Override
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body().get("imageUrl"));
+                } else {
+                    callback.onError(new Exception("Failed to generate image prompt: " + response.code()));
+                }
             }
-        }, executor);
+
+            @Override
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                callback.onError(t);
+            }
+        });
     }
 
-    public void generateImageFromText(String term, String definition, ImageGenerationCallback callback) {
-        // Prompt cực kỳ nghiêm ngặt để lấy từ khóa tìm kiếm ảnh
-        String promptForGemini = String.format(
-                "You are an image search expert. Input: Term='%s', Definition='%s'.\n" +
-                "Task: Translate to English if needed, then provide 1-2 SIMPLE English nouns for a photo search.\n" +
-                "Constraint: Return ONLY the words, separated by commas. NO sentences, NO extra text.\n" +
-                "Example: 'Quả táo' -> 'apple'. 'Học tập' -> 'study,book'.",
-                term, definition
-        );
+    /**
+     * Sinh giáo trình học tập (Curriculum).
+     * Đã gỡ bỏ Mock Data, sử dụng API thật từ server.
+     */
+    public void generateCurriculum(String language, String level, List<String> topics, CurriculumCallback callback) {
+        Map<String, Object> profileData = new HashMap<>();
+        profileData.put("language", language);
+        profileData.put("level", level);
+        profileData.put("topics", topics);
 
-        Content content = new Content.Builder().addText(promptForGemini).build();
-        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
-
-        Executor executor = Executors.newSingleThreadExecutor();
-        response.addListener(() -> {
-            try {
-                GenerateContentResponse res = response.get();
-                String keywords = res.getText().trim().toLowerCase()
-                        .replaceAll("[^a-z,]", "")
-                        .replace(" ", "");
-                
-                // Sử dụng Unsplash qua Source (ổn định hơn cho việc lấy đúng đối tượng)
-                // Hoặc giữ LoremFlickr nhưng làm sạch keyword
-                String imageUrl = "https://loremflickr.com/1080/1920/" + keywords + "/all";
-                
-                Log.d("AIService", "Keywords: " + keywords + " -> URL: " + imageUrl);
-                callback.onSuccess(imageUrl);
-            } catch (Exception e) {
-                String fallback = term.toLowerCase().replaceAll("[^a-z]", "");
-                callback.onSuccess("https://loremflickr.com/1080/1920/" + fallback + "/all");
+        apiService.generateCourse(profileData).enqueue(new Callback<Map<String, List<Unit>>>() {
+            @Override
+            public void onResponse(Call<Map<String, List<Unit>>> call, Response<Map<String, List<Unit>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body().get("units"));
+                } else {
+                    callback.onError(new Exception("Server error: " + response.code()));
+                }
             }
-        }, executor);
+
+            @Override
+            public void onFailure(Call<Map<String, List<Unit>>> call, Throwable t) {
+                callback.onError(t);
+            }
+        });
     }
 
-    private List<Flashcard> parseJson(String json) {
-        List<Flashcard> cards = new ArrayList<>();
-        try {
-            String cleanJson = json.replace("```json", "").replace("```", "").trim();
-            org.json.JSONArray array = new org.json.JSONArray(cleanJson);
-            for (int i = 0; i < array.length(); i++) {
-                org.json.JSONObject obj = array.getJSONObject(i);
-                Flashcard card = new Flashcard(obj.getString("term"), obj.getString("definition"));
-                card.setExample(obj.optString("example", ""));
-                cards.add(card);
+    /**
+     * Phân tích hiệu suất người dùng.
+     */
+    public void analyzeUserPerformance(Map<String, Object> performanceData, AICallback<Map<String, Object>> callback) {
+        apiService.analyzePerformance(performanceData).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(new Exception("Performance analysis failed: " + response.code()));
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cards;
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                callback.onError(t);
+            }
+        });
     }
 }

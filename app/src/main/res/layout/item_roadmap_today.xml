@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/brand_primary_light"
+    app:strokeWidth="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="20dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            app:cardBackgroundColor="@color/brand_primary_light"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <ImageView
+                android:id="@+id/image_lesson_icon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp"
+                android:src="@drawable/start" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_unit_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Unit 1: Khởi đầu"
+                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                android:textColor="@color/brand_primary"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_lesson_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Chào hỏi cơ bản"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:id="@+id/text_lesson_stats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="3/5 Thử thách hoàn thành"
+                android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall"
+                android:textColor="@color/text_secondary" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/next"
+            app:tint="@color/brand_primary" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

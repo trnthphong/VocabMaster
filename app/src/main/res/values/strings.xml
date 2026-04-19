@@ -10,4 +10,6 @@
     <string name="please_select_answer">Please select an answer</string>
     <string name="wrong_answer">Wrong! Correct: %1$s</string>
     <string name="added_to_flashcards">Added to your flashcards!</string>
+    <string name="google_maps_key" translatable="false">AIzaSyBHRfZ9vNjGcqPy1-BxFVHTTTai2-epZFU</string>
+    <string name="gemini_api_key" translatable="false">AIzaSyBHRfZ9vNjGcqPy1-BxFVHTTTai2-epZFU</string>
 </resources>

@@ -6,64 +6,310 @@
     android:layout_height="match_parent"
     android:background="@color/surface_light">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        app:elevation="0dp">
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="100dp">
 
-        <com.google.android.material.appbar.CollapsingToolbarLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_16">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/spacing_8"
+                android:layout_marginBottom="@dimen/spacing_16"
+                android:text="My Library"
+                app:fontFamily="@font/adlam_display"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
+
+            <!-- Stats Overview Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_24"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="@dimen/radius_large"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    android:padding="@dimen/spacing_16"
+                    android:rowCount="2">
+
+                    <!-- Study Time -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_8">
+                        <TextView
+                            android:id="@+id/text_total_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0h"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                            android:textColor="@color/brand_primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Time Studied"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+                    </LinearLayout>
+
+                    <!-- Trophies -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_8">
+                        <TextView
+                            android:id="@+id/text_total_cups"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                            android:textColor="@color/brand_primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Trophies"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+                    </LinearLayout>
+
+                    <!-- Total Score -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_8">
+                        <TextView
+                            android:id="@+id/text_total_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                            android:textColor="@color/brand_primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Points"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+                    </LinearLayout>
+
+                    <!-- Total Sessions -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_8">
+                        <TextView
+                            android:id="@+id/text_total_sessions"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                            android:textColor="@color/brand_primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sessions"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+                    </LinearLayout>
+                </GridLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Roadmap Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_12"
+                android:text="Learning Roadmap"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_courses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_course" />
+
+            <!-- Topic Collection Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/spacing_16">
-
+                android:layout_marginTop="@dimen/spacing_24"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
                 <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Topic Collections"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_create_topic"
+                    style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="@dimen/spacing_8"
-                    android:text="My Library"
-                    app:fontFamily="@font/adlam_display"
-                    android:textColor="@color/text_primary"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
+                    android:text="New Topic"
+                    app:icon="@android:drawable/ic_input_add" />
+            </LinearLayout>
 
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:layout_marginTop="@dimen/spacing_8">
+
+                <!-- My Personal Topics -->
                 <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
+                    android:id="@+id/card_personal_topics"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_24"
-                    app:cardBackgroundColor="@color/white"
+                    android:layout_columnWeight="1"
+                    android:layout_marginEnd="@dimen/spacing_8"
                     app:cardCornerRadius="@dimen/radius_medium"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_border"
-                    app:strokeWidth="1dp">
-
-                    <androidx.appcompat.widget.SearchView
-                        android:id="@+id/search_view"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:iconifiedByDefault="false"
-                        app:queryHint="Search your study sets..."
-                        app:queryBackground="@android:color/transparent" />
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_16"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/vocab2" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_8"
+                            android:text="My Topics"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Personal Cards Entry -->
-                <include
-                    android:id="@+id/layout_personal_cards"
-                    layout="@layout/item_personal_cards"
+                <!-- Downloaded Topics -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_downloaded_topics"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_marginStart="@dimen/spacing_8"
+                    app:cardCornerRadius="@dimen/radius_medium"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_16"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@android:drawable/stat_sys_download_done"
+                            app:tint="@color/brand_primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_8"
+                            android:text="Downloaded"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </GridLayout>
+
+            <!-- Flashcards Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_24"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Flashcards"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_create_flashcard"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="New Card"
+                    app:icon="@android:drawable/ic_input_add" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/layout_personal_flashcards"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_8"
+                app:cardCornerRadius="@dimen/radius_medium"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_16"
-                    android:visibility="gone" />
+                    android:orientation="horizontal"
+                    android:padding="@dimen/spacing_16"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/image" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="@dimen/spacing_16"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Personal Flashcards"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/text_flashcard_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 cards"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/next" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            </LinearLayout>
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
-    </com.google.android.material.appbar.AppBarLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <ProgressBar
         android:id="@+id/progress_skeleton"
@@ -71,127 +317,5 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:visibility="gone" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_courses"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingHorizontal="@dimen/spacing_16"
-        android:paddingBottom="100dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:listitem="@layout/item_course" />
-
-    <LinearLayout
-        android:id="@+id/layout_empty_state"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/empty"
-            app:tint="@color/gray_light" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_16"
-            android:text="Empty Library"
-            android:textColor="@color/text_primary"
-            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
-
-        <TextView
-            android:id="@+id/text_empty_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Create your first set to start"
-            android:textColor="@color/text_secondary"
-            android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
-    </LinearLayout>
-
-    <!-- Selection Bar -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_selection_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_margin="@dimen/spacing_16"
-        android:visibility="gone"
-        app:cardBackgroundColor="@color/brand_primary"
-        app:cardCornerRadius="@dimen/radius_large"
-        app:cardElevation="@dimen/elevation_medium">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="@dimen/spacing_16">
-
-            <TextView
-                android:id="@+id/text_selection_count"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="1 selected"
-                android:textColor="@color/white"
-                android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
-
-            <ImageButton
-                android:id="@+id/btn_delete_selected"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_delete"
-                app:tint="@color/white" />
-
-            <ImageButton
-                android:id="@+id/btn_cancel_selection"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="@color/white" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Bottom Actions Container -->
-    <LinearLayout
-        android:id="@+id/layout_bottom_actions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:orientation="vertical"
-        android:padding="@dimen/spacing_16"
-        android:background="@android:color/transparent">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_ai_create_course"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:text="Generate with Magic AI"
-            android:textColor="@color/white"
-            app:cornerRadius="@dimen/radius_large"
-            app:icon="@drawable/star"
-            app:iconTint="@color/white"
-            android:layout_marginBottom="@dimen/spacing_8" />
-
-    </LinearLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_course"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/spacing_24"
-        android:layout_marginBottom="90dp"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/light_blue"
-        app:tint="@color/blue"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.VocabMaster.Circle" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

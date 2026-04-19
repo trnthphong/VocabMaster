@@ -1,5 +1,6 @@
 package com.example.vocabmaster.ui.social;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -75,6 +76,7 @@ public class SocialFragment extends Fragment {
     private void loadCurrentUserData() {
         if (currentUserId == null) return;
         db.collection("users").document(currentUserId).get().addOnSuccessListener(snapshot -> {
+            if (!isAdded() || snapshot == null) return;
             currentUserData = snapshot.toObject(User.class);
             if (currentUserData != null) currentUserData.setUid(currentUserId);
         });
@@ -91,6 +93,7 @@ public class SocialFragment extends Fragment {
         binding.socialTabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+                if (binding == null) return;
                 if (tab.getPosition() == 0) {
                     adapter.setShowRank(true);
                     loadLeaderboard();
@@ -132,22 +135,25 @@ public class SocialFragment extends Fragment {
         }
 
         query.get().addOnSuccessListener(qs -> {
+            if (!isAdded()) return;
             if (!qs.isEmpty()) {
-                User foundUser = qs.getDocuments().get(0).toObject(User.class);
+                DocumentSnapshot doc = qs.getDocuments().get(0);
+                User foundUser = doc.toObject(User.class);
                 if (foundUser != null) {
-                    if (foundUser.getUid() == null) {
-                        foundUser.setUid(qs.getDocuments().get(0).getId());
-                    }
+                    foundUser.setUid(doc.getId());
                     showUserActionDialog(foundUser);
                 }
             } else {
                 Toast.makeText(getContext(), "Không tìm thấy người dùng này", Toast.LENGTH_SHORT).show();
             }
-        }).addOnFailureListener(e -> Toast.makeText(getContext(), "Lỗi tìm kiếm", Toast.LENGTH_SHORT).show());
+        }).addOnFailureListener(e -> {
+            if (isAdded()) Toast.makeText(getContext(), "Lỗi tìm kiếm", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void showUserActionDialog(User user) {
-        if (user.getUid().equals(currentUserId)) return;
+        if (user == null || user.getUid() == null || user.getUid().equals(currentUserId)) return;
+        if (!isAdded()) return;
 
         BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
         DialogSearchFriendBinding dialogBinding = DialogSearchFriendBinding.inflate(getLayoutInflater());
@@ -173,24 +179,30 @@ public class SocialFragment extends Fragment {
     }
 
     private void updateDialogButtonState(User user, DialogSearchFriendBinding dialogBinding) {
+        if (getContext() == null) return;
+        
         boolean isFollowing = followingIds.contains(user.getUid());
         boolean isFollower = followerIds.contains(user.getUid());
         boolean isFriend = isFollowing && isFollower;
 
         dialogBinding.btnFollow.setVisibility(View.VISIBLE);
+        int colorRes;
+        
         if (isFriend) {
             dialogBinding.btnFollow.setText("Hủy kết bạn");
-            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.error));
+            colorRes = R.color.error;
         } else if (isFollowing) {
             dialogBinding.btnFollow.setText("Bỏ theo dõi");
-            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.brand_primary));
+            colorRes = R.color.brand_primary;
         } else if (isFollower) {
             dialogBinding.btnFollow.setText("Theo dõi lại");
-            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.brand_primary));
+            colorRes = R.color.brand_primary;
         } else {
             dialogBinding.btnFollow.setText("Theo dõi");
-            dialogBinding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.brand_primary));
+            colorRes = R.color.brand_primary;
         }
+        
+        dialogBinding.btnFollow.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), colorRes)));
     }
 
     private void startFollowingFollowerListeners() {
@@ -199,7 +211,7 @@ public class SocialFragment extends Fragment {
         // Listen to who I am following
         followingListener = db.collection("users").document(currentUserId).collection("following")
                 .addSnapshotListener((snapshot, e) -> {
-                    if (e != null) return;
+                    if (e != null || !isAdded()) return;
                     followingIds.clear();
                     if (snapshot != null) {
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
@@ -212,7 +224,7 @@ public class SocialFragment extends Fragment {
         // Listen to who is following me
         followerListener = db.collection("users").document(currentUserId).collection("followers")
                 .addSnapshotListener((snapshot, e) -> {
-                    if (e != null) return;
+                    if (e != null || !isAdded()) return;
                     followerIds.clear();
                     if (snapshot != null) {
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
@@ -240,10 +252,12 @@ public class SocialFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(qs -> {
                     if (!isAdded()) return;
-                    List<User> users = qs.toObjects(User.class);
-                    for (int i = 0; i < users.size(); i++) {
-                        if (users.get(i).getUid() == null) {
-                            users.get(i).setUid(qs.getDocuments().get(i).getId());
+                    List<User> users = new ArrayList<>();
+                    for (DocumentSnapshot doc : qs.getDocuments()) {
+                        User u = doc.toObject(User.class);
+                        if (u != null) {
+                            u.setUid(doc.getId());
+                            users.add(u);
                         }
                     }
                     adapter.submitList(users);
@@ -251,6 +265,7 @@ public class SocialFragment extends Fragment {
                     updateUserRankCard(users);
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
                     showLoading(false);
                     if (binding != null) {
                         binding.textLeaderboardEmpty.setText("Không thể tải bảng xếp hạng");
@@ -275,14 +290,12 @@ public class SocialFragment extends Fragment {
             if (binding != null) {
                 binding.textLeaderboardEmpty.setText("Bạn chưa có bạn bè.");
             }
-            // Still show my own rank card
             if (currentUserData != null) {
                 updateUserRankCard(Collections.singletonList(currentUserData));
             }
             return;
         }
 
-        // Include current user in fetch to calculate rank correctly
         List<String> fetchIds = new ArrayList<>(friendIds);
         if (!fetchIds.contains(currentUserId)) {
             fetchIds.add(currentUserId);
@@ -293,18 +306,18 @@ public class SocialFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(qs -> {
                     if (!isAdded()) return;
-                    List<User> allUsers = qs.toObjects(User.class);
-                    for (int i = 0; i < allUsers.size(); i++) {
-                        if (allUsers.get(i).getUid() == null) {
-                            allUsers.get(i).setUid(qs.getDocuments().get(i).getId());
+                    List<User> allUsers = new ArrayList<>();
+                    for (DocumentSnapshot doc : qs.getDocuments()) {
+                        User u = doc.toObject(User.class);
+                        if (u != null) {
+                            u.setUid(doc.getId());
+                            allUsers.add(u);
                         }
                     }
-                    allUsers.sort((u1, u2) -> Long.compare(u2.getXp(), u1.getXp()));
                     
-                    // Update my sticky rank card using the list including me
+                    allUsers.sort((u1, u2) -> Long.compare(u2.getXp(), u1.getXp()));
                     updateUserRankCard(allUsers);
                     
-                    // Filter out current user from the list that goes into the RecyclerView
                     List<User> onlyFriends = allUsers.stream()
                             .filter(u -> !u.getUid().equals(currentUserId))
                             .collect(Collectors.toList());
@@ -313,6 +326,7 @@ public class SocialFragment extends Fragment {
                     showLoading(false);
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
                     showLoading(false);
                     if (binding != null) {
                         binding.textLeaderboardEmpty.setText("Lỗi tải danh sách bạn bè");
@@ -330,21 +344,18 @@ public class SocialFragment extends Fragment {
         WriteBatch batch = db.batch();
 
         if (currentlyFollowing) {
-            // Unfollow
             batch.delete(db.collection("users").document(currentUserId).collection("following").document(targetUid));
             batch.delete(db.collection("users").document(targetUid).collection("followers").document(currentUserId));
             
-            // If they were friends, decrement friendsCount
             if (isFollowerOfMe) {
                 batch.update(db.collection("users").document(currentUserId), "friendsCount", FieldValue.increment(-1));
                 batch.update(db.collection("users").document(targetUid), "friendsCount", FieldValue.increment(-1));
             }
 
             batch.commit().addOnSuccessListener(aVoid -> {
-                Toast.makeText(getContext(), "Đã bỏ theo dõi " + targetUser.getName(), Toast.LENGTH_SHORT).show();
+                if (isAdded()) Toast.makeText(getContext(), "Đã bỏ theo dõi " + targetUser.getName(), Toast.LENGTH_SHORT).show();
             });
         } else {
-            // Follow
             Map<String, Object> data = new HashMap<>();
             data.put("timestamp", FieldValue.serverTimestamp());
 
@@ -358,6 +369,7 @@ public class SocialFragment extends Fragment {
             }
 
             batch.commit().addOnSuccessListener(aVoid -> {
+                if (!isAdded()) return;
                 Toast.makeText(getContext(), becomingFriends ? "Hai bạn đã trở thành bạn bè!" : "Đang theo dõi " + targetUser.getName(), Toast.LENGTH_SHORT).show();
                 sendFollowNotification(targetUser, becomingFriends);
             });
@@ -395,14 +407,14 @@ public class SocialFragment extends Fragment {
         User currentUser = null;
         for (int i = 0; i < users.size(); i++) {
             User u = users.get(i);
-            if (u.getUid() != null && u.getUid().equals(currentUserId)) {
+            if (u != null && u.getUid() != null && u.getUid().equals(currentUserId)) {
                 rank = i + 1;
                 currentUser = u;
                 break;
             }
         }
 
-        if (rank != -1) {
+        if (rank != -1 && currentUser != null) {
             binding.cardMyRank.setVisibility(View.VISIBLE);
             binding.itemUserRank.textRank.setText(String.valueOf(rank));
             binding.itemUserRank.textName.setText((currentUser.getName() != null ? currentUser.getName() : "Bạn") + " (Bạn)");

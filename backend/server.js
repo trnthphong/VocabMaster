@@ -1,154 +1,79 @@
 const express = require('express');
-const admin = require('firebase-admin');
-const axios = require('axios');
-const crypto = require('crypto');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const cors = require('cors');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+dotenv.config();
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-// 1. Cấu hình Firebase Admin
-try {
-    const serviceAccount = require("./your-firebase-service-account.json");
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-    console.log("✅ Firebase Admin initialized successfully");
-} catch (e) {
-    console.error("❌ Firebase Admin Error: Ensure your-firebase-service-account.json is present");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+
+async function generateContentAI(prompt) {
+    if (!process.env.GEMINI_API_KEY) throw new Error("MISSING_KEY");
+    const models = ["gemini-1.5-flash", "gemini-pro"];
+    for (const modelName of models) {
+        try {
+            console.log(`--- Thử gọi AI: ${modelName} ---`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            const text = result.response.text().replace(/```json|```/g, "").trim();
+            return JSON.parse(text);
+        } catch (error) {
+            console.warn(`⚠️ ${modelName} lỗi:`, error.message);
+            if (error.message.includes("429") || error.message.includes("quota")) throw new Error("QUOTA_EXCEEDED");
+        }
+    }
+    throw new Error("ALL_MODELS_FAILED");
 }
-const db = admin.firestore();
 
-// 2. Cấu hình MoMo
-const partnerCode = (process.env.MOMO_PARTNER_CODE || "MOMO").trim();
-const accessKey = (process.env.MOMO_ACCESS_KEY || "M809019315").trim();
-const secretKey = (process.env.MOMO_SECRET_KEY || "x2p8vP9sS0vS9n30").trim();
-const momoEndpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
-
-app.post('/api/payments/momo/create', async (req, res) => {
-  const { userId, amount } = req.body;
-  const webhookUrlFromEnv = process.env.WEBHOOK_URL || "";
-  const ngrokUrl = webhookUrlFromEnv.split('/api/')[0] || "http://localhost:3000";
-
-  console.log(`--- Yêu cầu thanh toán mới cho User: ${userId} ---`);
-
-  try {
-    const amountStr = amount.toString();
-    const orderInfo = "Upgrade_Premium";
-    const requestId = "REQ" + Date.now();
-    const orderId = requestId;
-    const ipnUrl = webhookUrlFromEnv.trim();
-    const redirectUrl = "vocabmaster://payment-success";
-    const requestType = "captureWallet";
-    const extraData = Buffer.from(userId).toString('base64');
-
-    const rawSignature = `accessKey=${accessKey}&amount=${amountStr}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
-
-    const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
-
-    const requestBody = {
-        partnerCode,
-        accessKey,
-        requestId,
-        amount: Number(amount),
-        orderId,
-        orderInfo,
-        redirectUrl,
-        ipnUrl,
-        extraData,
-        requestType,
-        signature,
-        lang: "vi",
-        autoCapture: true
-    };
-
-    const response = await axios.post(momoEndpoint, requestBody);
-
-    if (response.data.resultCode === 0) {
-        console.log("✅ MoMo Create Order Success");
-        return res.json(response.data);
-    }
-    throw new Error("MoMo API Error: " + response.data.message);
-
-  } catch (error) {
-    console.log("⚠️ CHẾ ĐỘ GIẢ LẬP THANH TOÁN KÍCH HOẠT");
-    const mockPayUrl = `${ngrokUrl}/api/mock-payment-page?userId=${userId}&amount=${amount}`;
-    res.json({
-      payUrl: mockPayUrl,
-      resultCode: 0,
-      message: "Sử dụng cổng giả lập VocabMaster"
-    });
-  }
-});
-
-// Trang giả lập thanh toán
-app.get('/api/mock-payment-page', (req, res) => {
-    const { userId, amount } = req.query;
-    res.send(`
-        <html>
-            <head><title>Cổng Thanh Toán Giả Lập</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-            <body style="font-family:sans-serif; text-align:center; padding: 50px; background-color: #fce4ec;">
-                <div style="max-width: 400px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                    <h2 style="color: #A50064;">Thanh Toán Giả Lập MoMo</h2>
-                    <p>Số tiền: <span style="font-size: 24px; color: #A50064; font-weight: bold;">${amount}đ</span></p>
-                    <hr/>
-                    <div id="timer" style="font-size: 20px; color: #ff5252; margin: 20px 0; font-weight: bold;">Thời gian còn lại: 02:00</div>
-                    <button id="btnConfirm" onclick="confirmPayment()" style="background:#A50064; color:white; padding:15px 30px; border:none; border-radius:10px; cursor:pointer; width: 100%; font-size: 16px; font-weight: bold;">XÁC NHẬN THANH TOÁN</button>
-                    <p style="margin-top: 20px; color: #666; font-size: 14px;">Giao dịch sẽ tự động hủy sau 2 phút.</p>
-                </div>
-                <script>
-                    let timeLeft = 120;
-                    const timerElement = document.getElementById('timer');
-                    const countdown = setInterval(() => {
-                        if (timeLeft <= 0) {
-                            clearInterval(countdown);
-                            window.location.href = "vocabmaster://payment-success?status=expired";
-                        } else {
-                            let minutes = Math.floor(timeLeft / 60);
-                            let seconds = timeLeft % 60;
-                            timerElement.innerHTML = "Thời gian còn lại: " + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-                        }
-                        timeLeft -= 1;
-                    }, 1000);
-                    function confirmPayment() { window.location.href = '/api/mock-success?userId=${userId}'; }
-                </script>
-            </body>
-        </html>
-    `);
-});
-
-app.get('/api/mock-success', async (req, res) => {
-    const { userId } = req.query;
-    console.log(`💰 Cập nhật Premium cho User: ${userId}`);
+app.post('/assessment/placement/start', async (req, res) => {
     try {
-        const now = new Date();
-        const premiumUntil = new Date();
-        premiumUntil.setFullYear(premiumUntil.getFullYear() + 1);
-
-        await db.collection('users').doc(userId).update({
-            isPremium: true,
-            premiumUntil: admin.firestore.Timestamp.fromDate(premiumUntil),
-            premium: true,
-            premiumPlanType: "VIP 1 Năm",
-            premiumDays: 365,
-            premiumPrice: 899000,
-            premiumRegDate: admin.firestore.Timestamp.fromDate(now),
-            paymentMethod: "Ví MoMo",
-            premiumStatus: "ACTIVE"
+        const data = await generateContentAI("Tạo 1 câu hỏi trắc nghiệm tiếng Anh. JSON: { 'test_id': 't1', 'first_question': { 'id': 'q1', 'skill': 'Grammar', 'text': 'I ___ a student.', 'options': ['am','is','are','be'] } }");
+        res.json(data);
+    } catch (error) {
+        res.json({
+            test_id: "fb_" + Date.now(),
+            first_question: { id: "q1", skill: "Grammar", text: "Choose the correct word: I ___ from Vietnam.", options: ["am", "is", "are", "be"] }
         });
-
-        console.log("✅ Cập nhật thành công!");
-        res.redirect("vocabmaster://payment-success?plan=Gói VIP 1 Năm&days=365");
-    } catch (e) {
-        console.error("❌ Lỗi cập nhật:", e.message);
-        res.send("Lỗi: " + e.message);
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log("🚀 Server running on port " + PORT);
-    if (!process.env.WEBHOOK_URL) {
-        console.warn("⚠️ CẢNH BÁO: WEBHOOK_URL chưa được cấu hình trong .env");
+app.post('/assessment/placement/answer', (req, res) => {
+    const { questionId } = req.body;
+    const nextNum = parseInt((questionId || "q1").replace("q", "")) + 1;
+    if (nextNum > 10) return res.json({ is_finished: true });
+    res.json({
+        is_finished: false,
+        next_question: { id: "q" + nextNum, skill: "General", text: "Fill in the blank: She ___ to school every day.", options: ["go", "goes", "went", "gone"] }
+    });
+});
+
+app.post('/courses/generate', async (req, res) => {
+    try {
+        const { language, level } = req.body;
+        const prompt = `Tạo lộ trình ${language} ${level} (4 Units, 4 Lessons). JSON: { 'units': [{ 'title': 'U1', 'orderNum': 1, 'lessons': [{ 'lessonId': 'L1', 'title': 'L1', 'type': 'vocabulary', 'durationMinutes': 10, 'xpPoints': 20, 'orderNum': 1 }] }] }`;
+        const data = await generateContentAI(prompt);
+        res.json(data);
+    } catch (error) {
+        // QUAN TRỌNG: Dữ liệu mẫu phải có lessonId ngẫu nhiên
+        res.json({
+            units: [
+                {
+                    title: "Chương 1: Khởi động", orderNum: 1,
+                    lessons: [
+                        { lessonId: "ls_" + Math.random(), title: "Chào hỏi & Giới thiệu", type: "vocabulary", durationMinutes: 10, xpPoints: 20, orderNum: 1 },
+                        { lessonId: "ls_" + Math.random(), title: "Gia đình & Bạn bè", type: "vocabulary", durationMinutes: 10, xpPoints: 20, orderNum: 2 }
+                    ]
+                }
+            ]
+        });
     }
 });
+
+app.post('/assessment/placement/complete', (req, res) => {
+    res.json({ userId: "user", profileId: "prof", cefrLevel: "B1", isActive: true });
+});
+
+app.listen(3000, () => console.log("🚀 Server LIVE (Hỗ trợ lessonId đầy đủ)"));

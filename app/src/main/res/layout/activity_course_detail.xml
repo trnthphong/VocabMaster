@@ -1,15 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light">
+    android:background="#4046d8"
+    android:clipChildren="false">
+
+    <!-- Header Background with random icons -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="180dp">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:alpha="0.1"
+            android:rotation="-15"
+            android:src="@drawable/open_book"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.2"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:alpha="0.1"
+            android:rotation="-15"
+            android:src="@drawable/ranking"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.8"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.4"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:alpha="0.1"
+            android:rotation="20"
+            android:src="@drawable/puzzle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.6"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.1"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:alpha="0.1"
+            android:rotation="10"
+            android:src="@drawable/speedup"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.05"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.7"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:alpha="0.1"
+            android:rotation="10"
+            android:src="@drawable/language"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.95"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.8"
+            app:tint="@color/white" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_light"
+        android:background="@android:color/transparent"
         app:elevation="0dp">
 
         <androidx.appcompat.widget.Toolbar
@@ -17,65 +95,238 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_back"
-            app:titleTextColor="@color/surface_dark" />
+            app:navigationIconTint="@color/white">
+
+            <TextView
+                android:id="@+id/text_course_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tên khóa học"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                android:textColor="@color/white" />
+
+        </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-            <TextView
-                android:id="@+id/text_course_description"
+            <!-- Progress Status Card with Mascot Overlay -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Lộ trình học tập cá nhân hóa dành riêng cho bạn."
-                android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
-            <TextView
-                android:id="@+id/text_course_theme"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:visibility="gone"
-                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                android:textColor="@color/brand_primary" />
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
 
-            <View
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:id="@+id/image_progress_status"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/pan" />
+
+                        <TextView
+                            android:id="@+id/text_progress_status"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="48dp"
+                            android:text="Bạn đang học đúng tiến độ!"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageView
+                    android:id="@+id/image_mascot"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginTop="0dp"
+                    android:elevation="4dp"
+                    android:src="@drawable/gau"
+                    android:translationY="-20dp" />
+            </FrameLayout>
+
+            <!-- Main Content Container -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="20dp"
-                android:background="@color/gray_light" />
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Lộ trình học tập"
-                android:textAppearance="@style/TextAppearance.VocabMaster.H2" />
+                <!-- Tab bar area: Grayish translucent background, flat edges -->
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_roadmap"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:nestedScrollingEnabled="false" />
+                <!-- Content area: Solid background -->
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/tab_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="#4DB4B4B4"
+                    app:tabBackground="@drawable/tab_chrome_selector"
+                    app:tabGravity="fill"
+                    app:tabIndicatorHeight="0dp"
+                    app:tabMode="fixed"
+                    app:tabRippleColor="@android:color/transparent"
+                    app:tabSelectedTextColor="@color/bg_grey"
+                    app:tabTextAppearance="@style/TextAppearance.VocabMaster.LabelMedium"
+                    app:tabTextColor="#CCFFFFFF">
 
+                    <com.google.android.material.tabs.TabItem
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Roadmap" />
+
+                    <com.google.android.material.tabs.TabItem
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tổng quan" />
+
+                    <com.google.android.material.tabs.TabItem
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Buổi học" />
+                </com.google.android.material.tabs.TabLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/white">
+
+                    <!-- Roadmap Tab Content -->
+                    <LinearLayout
+                        android:id="@+id/layout_roadmap_tab"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp"
+                        android:visibility="visible">
+
+                        <!-- Weekly Calendar -->
+                        <include
+                            android:id="@+id/calendar_include"
+                            layout="@layout/item_weekly_calendar" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:text="Bài học hôm nay"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recycler_roadmap"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:nestedScrollingEnabled="false" />
+
+                        <ProgressBar
+                            android:id="@+id/progress_roadmap"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+
+                    <!-- Overview Tab Content -->
+                    <LinearLayout
+                        android:id="@+id/layout_overview_tab"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Thông tin khóa học"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            app:cardBackgroundColor="@color/surface_light"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="0dp">
+
+                            <TextView
+                                android:id="@+id/text_course_description_tab"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="16dp"
+                                android:text="Mô tả khóa học sẽ hiển thị ở đây."
+                                android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium" />
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recycler_overview_units"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:nestedScrollingEnabled="false" />
+                    </LinearLayout>
+
+                    <!-- Sessions Tab Content -->
+                    <LinearLayout
+                        android:id="@+id/layout_sessions_tab"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Danh sách buổi học"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recycler_sessions"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:nestedScrollingEnabled="false" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <ProgressBar
-        android:id="@+id/progress_roadmap"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
