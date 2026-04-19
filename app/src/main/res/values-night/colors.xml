@@ -15,6 +15,7 @@
 
     <!-- Màu đường viền -->
     <color name="card_border">#334155</color>
+    <color name="divider">#334155</color>
 
     <!-- Màu thương hiệu (sáng hơn một chút để nổi bật trên nền tối) -->
     <color name="brand_primary">#818CF8</color>
