@@ -1,7 +1,9 @@
 package com.example.vocabmaster.data.model;
 
 import com.google.firebase.firestore.ServerTimestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class Post {
     private String id;
@@ -12,12 +14,17 @@ public class Post {
     private String courseId;
     private String courseTitle;
     private int flashcardCount;
+    private List<String> likes;
+    private int commentCount;
     @ServerTimestamp
     private Date createdAt;
 
-    public Post() {}
+    public Post() {
+        this.likes = new ArrayList<>();
+    }
 
     public Post(String userId, String userName, String userAvatar, String content, String courseId, String courseTitle, int flashcardCount) {
+        this();
         this.userId = userId;
         this.userName = userName;
         this.userAvatar = userAvatar;
@@ -44,6 +51,10 @@ public class Post {
     public void setCourseTitle(String courseTitle) { this.courseTitle = courseTitle; }
     public int getFlashcardCount() { return flashcardCount; }
     public void setFlashcardCount(int flashcardCount) { this.flashcardCount = flashcardCount; }
+    public List<String> getLikes() { return likes; }
+    public void setLikes(List<String> likes) { this.likes = likes; }
+    public int getCommentCount() { return commentCount; }
+    public void setCommentCount(int commentCount) { this.commentCount = commentCount; }
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 }
