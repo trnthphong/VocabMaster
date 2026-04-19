@@ -11,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -71,7 +70,10 @@ public class ProfileFragment extends Fragment {
             }
         });
         
-        binding.btnEditProfile.setOnClickListener(this::showEditProfilePopup);
+        // Navigation to Settings
+        binding.btnSettings.setOnClickListener(v -> 
+                NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_settings));
+        
         binding.cardAvatar.setOnClickListener(v -> showAvatarSelectionDialog());
 
         View.OnClickListener toSocial = v -> {
@@ -159,41 +161,6 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onTabReselected(TabLayout.Tab tab) {}
         });
-    }
-
-    private void showEditProfilePopup(View v) {
-        PopupMenu popup = new PopupMenu(requireContext(), v);
-        popup.getMenuInflater().inflate(R.menu.profile_right_menu, popup.getMenu());
-
-        popup.setOnMenuItemClickListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.menu_change_avatar) {
-                showAvatarSelectionDialog();
-                return true;
-            } else if (id == R.id.menu_change_name) {
-                showEditNameDialog();
-                return true;
-            }
-            return false;
-        });
-        popup.show();
-    }
-
-    private void showEditNameDialog() {
-        android.widget.EditText editText = new android.widget.EditText(requireContext());
-        editText.setText(binding.textDisplayName.getText());
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Đổi tên hiển thị")
-                .setView(editText)
-                .setPositiveButton("Lưu", (dialog, which) -> {
-                    String newName = editText.getText().toString().trim();
-                    if (!newName.isEmpty()) {
-                        saveSetting("name", newName);
-                        binding.textDisplayName.setText(newName);
-                    }
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
     }
 
     @Override

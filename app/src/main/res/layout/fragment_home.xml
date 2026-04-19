@@ -51,7 +51,7 @@
                         android:layout_height="wrap_content"
                         android:text="Good Morning,"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textColor="@color/gray_text" />
+                        android:textColor="@color/text_secondary" />
 
                     <TextView
                         android:id="@+id/text_user_name"
@@ -59,7 +59,7 @@
                         android:layout_height="wrap_content"
                         android:text="Student"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                        android:textColor="@color/surface_dark" />
+                        android:textColor="@color/text_primary" />
                 </LinearLayout>
 
                 <FrameLayout
@@ -311,7 +311,7 @@
                         android:layout_marginStart="@dimen/spacing_16"
                         android:text="Hồi phục tim tiếp theo"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                        android:textColor="@color/gray_text"
+                        android:textColor="@color/text_secondary"
                         app:layout_constraintStart_toEndOf="@id/icon_heart_regen"
                         app:layout_constraintTop_toTopOf="parent" />
 
@@ -351,7 +351,7 @@
                 android:layout_marginBottom="@dimen/spacing_16"
                 android:text="START A NEW JOURNEY"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                android:textColor="@color/gray_text" />
+                android:textColor="@color/text_secondary" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
@@ -391,12 +391,14 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="Career"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary"
                                 android:textAlignment="center" />
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Pro terms"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="@color/text_secondary"
                                 android:textAlignment="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -429,6 +431,7 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="Travel"
                                 android:textAlignment="center"
+                                android:textColor="@color/text_primary"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
                             <TextView
@@ -436,6 +439,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="World explorer"
                                 android:textAlignment="center"
+                                android:textColor="@color/text_secondary"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -466,12 +470,14 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="School"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary"
                                 android:textAlignment="center" />
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Exam prep"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="@color/text_secondary"
                                 android:textAlignment="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -500,12 +506,14 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="Food"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary"
                                 android:textAlignment="center" />
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Pro terms"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="@color/text_secondary"
                                 android:textAlignment="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -534,12 +542,14 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="Culture"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary"
                                 android:textAlignment="center" />
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Pro terms"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="@color/text_secondary"
                                 android:textAlignment="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -568,12 +578,14 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="Brain Skill"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary"
                                 android:textAlignment="center" />
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Pro terms"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="@color/text_secondary"
                                 android:textAlignment="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -602,12 +614,14 @@
                                 android:layout_marginTop="@dimen/spacing_12"
                                 android:text="Other"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                                android:textColor="@color/text_primary"
                                 android:textAlignment="center" />
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Pro terms"
                                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                                android:textColor="@color/text_secondary"
                                 android:textAlignment="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -623,7 +637,7 @@
                 android:layout_marginBottom="@dimen/spacing_16"
                 android:text="DAILY TASKS"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-                android:textColor="@color/gray_text" />
+                android:textColor="@color/text_secondary" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_start_flashcards"
@@ -658,6 +672,7 @@
                         android:layout_marginStart="@dimen/spacing_16"
                         android:text="Spaced Repetition"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary"
                         app:layout_constraintBottom_toTopOf="@id/sub_cards"
                         app:layout_constraintStart_toEndOf="@id/icon_cards"
                         app:layout_constraintTop_toTopOf="parent"
@@ -670,6 +685,7 @@
                         android:layout_marginStart="@dimen/spacing_16"
                         android:text="Master 15 new words today"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/text_secondary"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toEndOf="@id/icon_cards"
                         app:layout_constraintTop_toBottomOf="@id/text_cards_title" />
@@ -719,6 +735,7 @@
                         android:layout_marginStart="@dimen/spacing_16"
                         android:text="Quick Games"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary"
                         app:layout_constraintBottom_toTopOf="@id/sub_games"
                         app:layout_constraintStart_toEndOf="@id/icon_games"
                         app:layout_constraintTop_toTopOf="parent"
@@ -731,6 +748,7 @@
                         android:layout_marginStart="@dimen/spacing_16"
                         android:text="Fun way to memorize"
                         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/text_secondary"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toEndOf="@id/icon_games"
                         app:layout_constraintTop_toBottomOf="@id/text_games_title" />
