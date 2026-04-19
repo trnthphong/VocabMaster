@@ -191,7 +191,7 @@ public class CourseDetailActivity extends AppCompatActivity {
     private void findLatestCourse() {
         String uid = FirebaseAuth.getInstance().getUid();
         db.collection("users").document(uid).collection("personal_courses")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .orderBy("updatedAt", Query.Direction.DESCENDING)
                 .limit(1)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {

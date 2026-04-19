@@ -27,7 +27,14 @@ public class LearningProfile {
     private boolean isActive;
 
     public LearningProfile() {
+        this.userId = ""; // Initialize non-null field
         this.isActive = true;
+    }
+
+    public LearningProfile(String profileId, String cefrLevel) {
+        this();
+        this.profileId = profileId;
+        this.cefrLevel = cefrLevel;
     }
 
     @NonNull

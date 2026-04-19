@@ -24,28 +24,6 @@ public class AssessmentRepository {
         void onError(Throwable t);
     }
 
-    public void submitOnboarding(String userId, String language, String goal, int time, List<String> topics, ApiCallback<Map<String, Object>> callback) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("userId", userId);
-        data.put("language", language);
-        data.put("goal", goal);
-        data.put("dailyMinutes", time);
-        data.put("topics", topics);
-
-        apiService.submitOnboardingQuiz(data).enqueue(new Callback<Map<String, Object>>() {
-            @Override
-            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError(new Exception("Failed to submit onboarding"));
-            }
-
-            @Override
-            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                callback.onError(t);
-            }
-        });
-    }
-
     public void startPlacementTest(String userId, String language, ApiCallback<Map<String, Object>> callback) {
         Map<String, String> data = new HashMap<>();
         data.put("userId", userId);
@@ -54,8 +32,11 @@ public class AssessmentRepository {
         apiService.startPlacementTest(data).enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError(new Exception("Failed to start placement test"));
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(new Exception("Server error: " + response.code()));
+                }
             }
 
             @Override
@@ -74,8 +55,11 @@ public class AssessmentRepository {
         apiService.submitPlacementAnswer(data).enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError(new Exception("Failed to submit answer"));
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(new Exception("Server error: " + response.code()));
+                }
             }
 
             @Override
@@ -92,8 +76,11 @@ public class AssessmentRepository {
         apiService.completePlacementTest(data).enqueue(new Callback<LearningProfile>() {
             @Override
             public void onResponse(Call<LearningProfile> call, Response<LearningProfile> response) {
-                if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError(new Exception("Failed to complete test"));
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(new Exception("Server error: " + response.code()));
+                }
             }
 
             @Override
@@ -103,22 +90,23 @@ public class AssessmentRepository {
         });
     }
 
-    public void generateCourse(String profileId, ApiCallback<String> callback) {
+    public void submitOnboarding(String userId, String language, String goal, int time, List<String> topics, ApiCallback<Map<String, Object>> callback) {
         Map<String, Object> data = new HashMap<>();
-        data.put("profileId", profileId);
+        data.put("userId", userId);
+        data.put("language", language);
+        data.put("goal", goal);
+        data.put("dailyMinutes", time);
+        data.put("topics", topics);
 
-        apiService.generateCourse(data).enqueue(new Callback<Map<String, String>>() {
+        apiService.submitOnboardingQuiz(data).enqueue(new Callback<Map<String, Object>>() {
             @Override
-            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    callback.onSuccess(response.body().get("job_id"));
-                } else {
-                    callback.onError(new Exception("Failed to trigger course generation"));
-                }
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful()) callback.onSuccess(response.body());
+                else callback.onError(new Exception("Failed to submit onboarding: " + response.code()));
             }
 
             @Override
-            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                 callback.onError(t);
             }
         });
@@ -129,7 +117,7 @@ public class AssessmentRepository {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError(new Exception("Failed to check status"));
+                else callback.onError(new Exception("Failed to check status: " + response.code()));
             }
 
             @Override

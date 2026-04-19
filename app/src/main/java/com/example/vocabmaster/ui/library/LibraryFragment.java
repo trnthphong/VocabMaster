@@ -1,43 +1,50 @@
 package com.example.vocabmaster.ui.library;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.data.model.Course;
+import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.ui.home.AllTopicsActivity;
+import com.example.vocabmaster.ui.home.CreateTopicActivity;
+import com.example.vocabmaster.ui.home.TopicWordListActivity;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class LibraryFragment extends Fragment {
     private FragmentLibraryBinding binding;
     private LibraryViewModel viewModel;
-    private CourseAdapter adapter;
-    private final List<Course> allCourses = new ArrayList<>();
+    private CourseAdapter roadmapAdapter;
+    private final List<Course> roadmapItems = new ArrayList<>();
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentLibraryBinding.inflate(inflater, container, false);
         viewModel = new ViewModelProvider(this).get(LibraryViewModel.class);
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
         return binding.getRoot();
     }
 
@@ -45,174 +52,106 @@ public class LibraryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        setupRecyclerView();
-        setupSelectionBar();
+        setupRoadmapRecyclerView();
+        setupClickListeners();
+        loadStats();
+        loadLibraryData();
+    }
+
+    private void setupRoadmapRecyclerView() {
+        roadmapAdapter = new CourseAdapter(item -> {
+            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            intent.putExtra("course_id", item.getFirestoreId());
+            intent.putExtra("course_title", item.getTitle());
+            intent.putExtra("is_personal", true);
+            startActivity(intent);
+        }, item -> {}, count -> {});
         
-        binding.fabAddCourse.setOnClickListener(v -> {
+        binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        binding.recyclerCourses.setAdapter(roadmapAdapter);
+    }
+
+    private void setupClickListeners() {
+        // Nút New Topic (trên thanh tiêu đề Section)
+        binding.btnCreateTopic.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), CreateTopicActivity.class);
+            startActivity(intent);
+        });
+
+        // Nút New Card (trên thanh tiêu đề Section)
+        binding.btnCreateFlashcard.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), CreateFlashcardActivity.class);
             startActivity(intent);
         });
-        
-        binding.btnAiCreateCourse.setOnClickListener(v -> createCourseByAi());
-        
-        binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                filterCourses(query);
-                return true;
-            }
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                filterCourses(newText);
-                return true;
-            }
+
+        // Card "My Topics" (bên trái) - Hiển thị toàn bộ topic (Personal + Downloaded)
+        binding.cardPersonalTopics.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), AllTopicsActivity.class);
+            // Có thể thêm flag để AllTopicsActivity biết hiển thị những gì nếu cần
+            startActivity(intent);
         });
 
-        binding.layoutPersonalCards.getRoot().setOnClickListener(v -> {
+        // Card "New Topic" (bên phải - thay cho Downloaded cũ)
+        binding.cardDownloadedTopics.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), CreateTopicActivity.class);
+            startActivity(intent);
+        });
+
+        binding.layoutPersonalFlashcards.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), PersonalCardsActivity.class);
             startActivity(intent);
         });
-
-        observeViewModel();
     }
 
-    private void setupRecyclerView() {
-        adapter = new CourseAdapter(course -> {
-            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
-            intent.putExtra("course_id", course.getFirestoreId());
-            intent.putExtra("course_title", course.getTitle());
-            intent.putExtra("is_personal", true);
-            startActivity(intent);
-        }, this::showCourseActionMenu, count -> {
-            updateSelectionBar(count);
-        });
-        
-        binding.recyclerCourses.setLayoutManager(new LinearLayoutManager(getContext()));
-        binding.recyclerCourses.setAdapter(adapter);
-    }
+    private void loadStats() {
+        String uid = auth.getUid();
+        if (uid == null) return;
 
-    private void setupSelectionBar() {
-        binding.btnCancelSelection.setOnClickListener(v -> {
-            adapter.setSelectionMode(false);
-        });
-
-        binding.btnDeleteSelected.setOnClickListener(v -> {
-            List<Course> selected = adapter.getSelectedCourses();
-            if (!selected.isEmpty()) {
-                confirmDeleteMultiple(selected);
+        db.collection("users").document(uid).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                User user = doc.toObject(User.class);
+                if (user != null && binding != null) {
+                    binding.textTotalScore.setText(String.valueOf(user.getXp()));
+                    binding.textTotalSessions.setText(String.valueOf(user.getStreak())); 
+                }
             }
         });
+
+        binding.textTotalCups.setText("12");
+        binding.textTotalTime.setText("45h");
     }
 
-    private void updateSelectionBar(int count) {
-        if (count > 0) {
-            binding.cardSelectionBar.setVisibility(View.VISIBLE);
-            binding.layoutBottomActions.setVisibility(View.GONE);
-            binding.fabAddCourse.hide();
-            binding.textSelectionCount.setText(count + " selected");
-        } else {
-            binding.cardSelectionBar.setVisibility(View.GONE);
-            binding.layoutBottomActions.setVisibility(View.VISIBLE);
-            binding.fabAddCourse.show();
-            if (adapter.isSelectionMode()) {
-                adapter.setSelectionMode(false);
-            }
-        }
-    }
+    private void loadLibraryData() {
+        String uid = auth.getUid();
+        if (uid == null) return;
 
-    private void confirmDeleteMultiple(List<Course> courses) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Delete " + courses.size() + " courses?")
-                .setMessage("This action cannot be undone.")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    viewModel.deleteCoursesFromFirestore(courses).addOnSuccessListener(aVoid -> {
-                        UiFeedback.showSnack(binding.getRoot(), "Deleted " + courses.size() + " courses");
-                        adapter.setSelectionMode(false);
-                    });
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void observeViewModel() {
-        if (binding == null) return;
         binding.progressSkeleton.setVisibility(View.VISIBLE);
-        
-        // Quan sát personal_courses thay vì global courses
-        viewModel.getPersonalCoursesFromFirestore().observe(getViewLifecycleOwner(), courses -> {
-            allCourses.clear();
-            if (courses != null) {
-                allCourses.addAll(courses);
-            }
-            if (binding != null) {
-                binding.progressSkeleton.setVisibility(View.GONE);
-                filterCourses(binding.searchView.getQuery().toString());
-            }
-        });
+
+        db.collection("users").document(uid).collection("personal_courses")
+                .orderBy("updatedAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (binding == null) return;
+                    binding.progressSkeleton.setVisibility(View.GONE);
+                    roadmapItems.clear();
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Course c = new Course();
+                        c.setFirestoreId(doc.getId());
+                        c.setTitle(doc.getString("title"));
+                        c.setImageUrl(doc.getString("imageUrl"));
+                        c.setTopic(false);
+                        roadmapItems.add(c);
+                    }
+                    roadmapAdapter.submitList(new ArrayList<>(roadmapItems));
+                });
 
         viewModel.getPersonalFlashcards().observe(getViewLifecycleOwner(), flashcards -> {
-            if (flashcards != null && !flashcards.isEmpty()) {
-                binding.layoutPersonalCards.getRoot().setVisibility(View.VISIBLE);
-                TextView textCount = binding.layoutPersonalCards.getRoot().findViewById(com.example.vocabmaster.R.id.text_personal_count);
-                if (textCount != null) {
-                    textCount.setText(flashcards.size() + " cards");
-                }
-            } else {
-                binding.layoutPersonalCards.getRoot().setVisibility(View.GONE);
+            if (binding != null) {
+                binding.textFlashcardCount.setText(flashcards != null ? flashcards.size() + " cards" : "0 cards");
             }
         });
-    }
-
-    private void filterCourses(String query) {
-        if (binding == null) return;
-        String q = query.toLowerCase(Locale.ROOT).trim();
-        List<Course> result = new ArrayList<>();
-        for (Course c : allCourses) {
-            String t = c.getTitle() == null ? "" : c.getTitle().toLowerCase(Locale.ROOT);
-            if (q.isEmpty() || t.contains(q)) result.add(c);
-        }
-        adapter.submitList(new ArrayList<>(result));
-        
-        boolean noCourses = result.isEmpty();
-        boolean noPersonal = viewModel.getPersonalFlashcards().getValue() == null || viewModel.getPersonalFlashcards().getValue().isEmpty();
-        binding.layoutEmptyState.setVisibility(noCourses && noPersonal ? View.VISIBLE : View.GONE);
-        
-        if (!q.isEmpty()) {
-            binding.layoutPersonalCards.getRoot().setVisibility(View.GONE);
-        } else if (viewModel.getPersonalFlashcards().getValue() != null && !viewModel.getPersonalFlashcards().getValue().isEmpty()) {
-            binding.layoutPersonalCards.getRoot().setVisibility(View.VISIBLE);
-        }
-    }
-
-    private void showCourseActionMenu(Course course) {
-        String[] actions = {"Sửa", "Xóa", "Nhân bản"};
-        new AlertDialog.Builder(requireContext())
-                .setTitle(course.getTitle())
-                .setItems(actions, (dialog, which) -> {
-                    if (which == 1) confirmDeleteCourse(course);
-                })
-                .show();
-    }
-
-    private void confirmDeleteCourse(Course course) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Xóa khóa học")
-                .setPositiveButton("Xóa", (dialog, which) -> deleteCourse(course))
-                .setNegativeButton("Hủy", null)
-                .show();
-    }
-
-    private void deleteCourse(Course course) {
-        viewModel.deleteCourseFromFirestore(course.getFirestoreId());
-        UiFeedback.showSnack(binding.getRoot(), "Đã xóa");
-    }
-
-    private void createCourseByAi() {
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
+    public void onDestroyView() { super.onDestroyView(); binding = null; }
 }
