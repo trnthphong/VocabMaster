@@ -14,7 +14,7 @@ import com.example.vocabmaster.data.model.StudyPlan;
 import com.example.vocabmaster.data.model.CourseScheduleDay;
 import com.example.vocabmaster.data.model.Vocabulary;
 
-@Database(entities = {Course.class, Flashcard.class, LearningProfile.class, StudyPlan.class, CourseScheduleDay.class, Vocabulary.class}, version = 9, exportSchema = false)
+@Database(entities = {Course.class, Flashcard.class, LearningProfile.class, StudyPlan.class, CourseScheduleDay.class, Vocabulary.class}, version = 10, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;

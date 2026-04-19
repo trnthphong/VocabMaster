@@ -445,16 +445,28 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        observeUserData();
-        observeNotifications();
+        // Only re-attach listeners if they were removed (e.g. after onStop)
+        if (userListener == null) observeUserData();
+        if (notificationListener == null) observeNotifications();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (userListener != null) {
+            userListener.remove();
+            userListener = null;
+        }
+        if (notificationListener != null) {
+            notificationListener.remove();
+            notificationListener = null;
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         stopTimer();
-        if (userListener != null) userListener.remove();
-        if (notificationListener != null) notificationListener.remove();
         binding = null;
     }
 }
