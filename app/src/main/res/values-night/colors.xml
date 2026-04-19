@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark Mode Overrides - Đảm bảo các biến màu này khớp với file gốc và ghi đè đúng giá trị -->
+    <!-- Dark Mode Overrides -->
 
     <!-- White thường được dùng làm nền cho Card/Item, đổi thành xám xanh đậm -->
     <color name="white">#1E293B</color>
@@ -21,17 +21,20 @@
     <color name="brand_primary_light">#1E293B</color>
 
     <!-- Thành phần UI khác -->
-    <color name="light_purple">#1E293B</color> <!-- Thanh Bottom Nav -->
-    <color name="light_blue">#1E293B</color> <!-- Sidebar -->
+    <color name="light_purple">#2D3748</color> <!-- Thanh Bottom Nav -->
+    <color name="light_blue">#2D3748</color> <!-- Sidebar -->
     <color name="nav_item_color">#CBD5E1</color> <!-- Icon Nav -->
 
-    <!-- Các màu nền thẻ bài học/thành tích khác -->
-    <color name="light_green">#1E293B</color>
-    <color name="light_orange">#1E293B</color>
-    <color name="light_yellow">#1E293B</color>
-    <color name="light_red">#1E293B</color>
-    <color name="light_pink">#1E293B</color>
+    <!-- Các màu nền thẻ bài học/thành tích khác - Cho sáng hơn một chút để không bị chìm -->
+    <color name="light_green">#2D3748</color>
+    <color name="light_orange">#2D3748</color>
+    <color name="light_yellow">#2D3748</color>
+    <color name="light_red">#2D3748</color>
+    <color name="light_pink">#2D3748</color>
 
     <!-- Sửa lỗi góc Navbar trắng (MaterialCardView background) -->
     <color name="card_background">#1E293B</color>
+
+    <!-- Màu cho text trên các button nổi bật -->
+    <color name="button_text_on_accent">#FFFFFF</color>
 </resources>
