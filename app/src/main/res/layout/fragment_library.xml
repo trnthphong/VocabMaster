@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light">
+    android:background="#4046d8">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -25,6 +25,7 @@
                 android:layout_marginTop="@dimen/spacing_8"
                 android:layout_marginBottom="@dimen/spacing_16"
                 android:text="My Library"
+                android:textColor="@color/white"
                 app:fontFamily="@font/adlam_display"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H1" />
 
@@ -141,6 +142,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/spacing_12"
                 android:text="Learning Roadmap"
+                android:textColor="@color/white"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -163,15 +165,10 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@color/white"
                     android:text="Topic Collections"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_create_topic"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="New Topic"
-                    app:icon="@android:drawable/ic_input_add" />
+
             </LinearLayout>
 
             <GridLayout
@@ -194,23 +191,21 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
+                        android:background="@drawable/button_login_neumorph"
                         android:padding="@dimen/spacing_16"
                         android:gravity="center">
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/vocab2" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/spacing_8"
-                            android:text="My Topics"
+
+                            android:text="Bộ từ của tôi"
+                            android:textColor="@color/bg_grey"
                             android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Downloaded Topics -->
+                <!-- Create New Topic -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_downloaded_topics"
                     android:layout_width="0dp"
@@ -225,19 +220,16 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="@dimen/spacing_16"
+                        android:background="@drawable/button_login_neumorph"
                         android:gravity="center">
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@android:drawable/stat_sys_download_done"
-                            app:tint="@color/brand_primary" />
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/spacing_8"
-                            android:text="Downloaded"
+                            android:text="Tạo bộ từ mới"
                             android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:textColor="@color/bg_grey"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </GridLayout>
@@ -253,6 +245,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@color/white"
                     android:text="Flashcards"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
                 <com.google.android.material.button.MaterialButton
@@ -260,8 +253,10 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/white"
                     android:text="New Card"
-                    app:icon="@android:drawable/ic_input_add" />
+                    app:icon="@android:drawable/ic_input_add"
+                    app:iconTint="@color/white"/>
             </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
@@ -276,12 +271,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
+                    android:background="@drawable/bg_selectable_item_3d"
                     android:padding="@dimen/spacing_16"
                     android:gravity="center_vertical">
                     <ImageView
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:src="@drawable/image" />
+                        android:src="@drawable/flash_card" />
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"

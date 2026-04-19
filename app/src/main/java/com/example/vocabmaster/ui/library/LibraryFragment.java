@@ -17,11 +17,8 @@ import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
-import com.example.vocabmaster.ui.home.AllTopicsActivity;
 import com.example.vocabmaster.ui.home.CreateTopicActivity;
-import com.example.vocabmaster.ui.home.TopicWordListActivity;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+import com.example.vocabmaster.ui.library.MyTopicsActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -72,26 +69,19 @@ public class LibraryFragment extends Fragment {
     }
 
     private void setupClickListeners() {
-        // Nút New Topic (trên thanh tiêu đề Section)
-        binding.btnCreateTopic.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), CreateTopicActivity.class);
-            startActivity(intent);
-        });
-
-        // Nút New Card (trên thanh tiêu đề Section)
+        // Nút New Card
         binding.btnCreateFlashcard.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), CreateFlashcardActivity.class);
             startActivity(intent);
         });
 
-        // Card "My Topics" (bên trái) - Hiển thị toàn bộ topic (Personal + Downloaded)
+        // Card "My Topics" - Hiển thị personal + downloaded topics
         binding.cardPersonalTopics.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), AllTopicsActivity.class);
-            // Có thể thêm flag để AllTopicsActivity biết hiển thị những gì nếu cần
+            Intent intent = new Intent(requireContext(), MyTopicsActivity.class);
             startActivity(intent);
         });
 
-        // Card "New Topic" (bên phải - thay cho Downloaded cũ)
+        // Card "New Topic" - Tạo bộ từ mới
         binding.cardDownloadedTopics.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), CreateTopicActivity.class);
             startActivity(intent);

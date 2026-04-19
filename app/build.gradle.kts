@@ -61,6 +61,7 @@ dependencies {
     // UI Utilities
     implementation(libs.core.splashscreen)
     implementation("nl.dionsegijn:konfetti-xml:2.0.5")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     // Network & JSON
     implementation(libs.gson)

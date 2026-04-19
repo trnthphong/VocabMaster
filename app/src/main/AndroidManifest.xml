@@ -58,6 +58,10 @@
         <activity android:name=".ui.library.CourseDetailActivity" />
         <activity android:name=".ui.library.PersonalCardsActivity" />
         <activity android:name=".ui.library.CreateFlashcardActivity" />
+        <activity android:name=".ui.library.MyTopicsActivity" />
+        <activity android:name=".ui.topic.TopicDetailActivity" />
+        <activity android:name=".ui.topic.TopicLearnActivity" />
+        <activity android:name=".ui.topic.TopicWordPickActivity" />
         <activity android:name=".ui.home.CreateCourseFlowActivity" />
         <activity android:name=".ui.home.JourneySetupActivity" />
         <activity android:name=".ui.home.TopicWordListActivity" />
