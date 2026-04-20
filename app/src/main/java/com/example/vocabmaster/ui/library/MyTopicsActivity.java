@@ -112,7 +112,7 @@ public class MyTopicsActivity extends AppCompatActivity {
                         t.setName(doc.getString("name"));
                         t.setImageUrl(doc.getString("imageUrl"));
                         Long wc = doc.getLong("word_count");
-                        t.setOrder(wc != null ? wc.intValue() : 0);
+                        t.setWordCount(wc != null ? wc.intValue() : 0);
                         t.setDownloaded(true);
                         topics.add(t);
                     }
@@ -140,7 +140,7 @@ public class MyTopicsActivity extends AppCompatActivity {
                     int count = vocabularyDao.getCountByTopic(t.getId().toLowerCase());
                     if (count > 0) {
                         t.setDownloaded(true);
-                        t.setOrder(count);
+                        t.setWordCount(count);
                         downloaded.add(t);
                     }
                 }

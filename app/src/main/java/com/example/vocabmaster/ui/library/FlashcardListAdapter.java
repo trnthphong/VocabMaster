@@ -27,11 +27,16 @@ import java.io.IOException;
 public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAdapter.ViewHolder> {
 
     private final OnFlashcardDeleteListener deleteListener;
+    private OnFlashcardEditListener editListener;
     private static MediaPlayer mediaPlayer;
     private boolean isViewPagerMode = false;
 
     public interface OnFlashcardDeleteListener {
         void onDelete(Flashcard flashcard);
+    }
+
+    public interface OnFlashcardEditListener {
+        void onEdit(Flashcard flashcard);
     }
 
     public FlashcardListAdapter(OnFlashcardDeleteListener deleteListener) {
@@ -51,6 +56,10 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
         if (mediaPlayer == null) mediaPlayer = new MediaPlayer();
     }
 
+    public void setEditListener(OnFlashcardEditListener listener) {
+        this.editListener = listener;
+    }
+
     public void setViewPagerMode(boolean viewPagerMode) {
         this.isViewPagerMode = viewPagerMode;
     }
@@ -68,7 +77,7 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
             binding.getRoot().setLayoutParams(lp);
         }
         
-        return new ViewHolder(binding, deleteListener);
+        return new ViewHolder(binding, deleteListener, editListener);
     }
 
     @Override
@@ -94,11 +103,15 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final LayoutFlashcardTopicBinding binding;
         private final OnFlashcardDeleteListener deleteListener;
+        private final OnFlashcardEditListener editListener;
 
-        public ViewHolder(LayoutFlashcardTopicBinding binding, OnFlashcardDeleteListener deleteListener) {
+        public ViewHolder(LayoutFlashcardTopicBinding binding,
+                          OnFlashcardDeleteListener deleteListener,
+                          OnFlashcardEditListener editListener) {
             super(binding.getRoot());
             this.binding = binding;
             this.deleteListener = deleteListener;
+            this.editListener = editListener;
         }
 
         public void bind(Flashcard card) {
@@ -121,7 +134,6 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
                 binding.btnAudio.setVisibility(View.GONE);
             }
 
-            // Ảnh: Nếu không có URL thì hiển thị macdinh.png
             binding.imageVocab.setVisibility(View.VISIBLE);
             if (card.getImageUrl() != null && !card.getImageUrl().trim().isEmpty()) {
                 Glide.with(binding.imageVocab.getContext())
@@ -141,6 +153,12 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
                     binding.cardFront.setVisibility(View.VISIBLE);
                     binding.cardBack.setVisibility(View.GONE);
                 }
+            });
+
+            // Long press → edit
+            binding.cardFlashcard.setOnLongClickListener(v -> {
+                if (editListener != null) editListener.onEdit(card);
+                return true;
             });
 
             binding.btnDelete.setOnClickListener(v -> {

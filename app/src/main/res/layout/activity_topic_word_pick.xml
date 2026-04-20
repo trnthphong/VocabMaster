@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/back" />
+        app:navigationIcon="@drawable/left_arrow" />
 
     <!-- Header info -->
     <LinearLayout
@@ -24,7 +24,7 @@
             android:id="@+id/text_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Chọn 5–10 từ bạn muốn học lần này"
+            android:text="Chọn từ bạn muốn học"
             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
 
         <LinearLayout
@@ -50,9 +50,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <View android:layout_width="match_parent" android:layout_height="1dp"
-        android:background="#E0E0E0" />
-
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
@@ -70,22 +67,40 @@
         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
         android:visibility="gone" />
 
+    <!-- Horizontal RecyclerView for flashcards -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_words"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingBottom="8dp" />
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:orientation="horizontal" />
 
-    <!-- Bottom button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_start_learn"
+    <!-- Selected count and Start button -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_margin="16dp"
-        android:text="Bắt đầu học"
-        android:textSize="16sp"
-        app:cornerRadius="12dp" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/text_selected_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="8dp"
+            android:text="Đã chọn: 0 từ"
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_start_learn"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Bắt đầu học"
+            android:textSize="16sp"
+            app:cornerRadius="12dp" />
+    </LinearLayout>
 
 </LinearLayout>

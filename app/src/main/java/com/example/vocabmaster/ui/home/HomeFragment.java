@@ -92,7 +92,13 @@ public class HomeFragment extends Fragment {
             @Override
             public void onTopicClick(Topic topic) {
                 if (topic.isDownloaded()) {
-                    startJourneyFlow(topic);
+                    // Đã tải → mở TopicDetailActivity thẳng
+                    Intent intent = new Intent(requireContext(),
+                            com.example.vocabmaster.ui.topic.TopicDetailActivity.class);
+                    intent.putExtra("topic_id", topic.getId());
+                    intent.putExtra("topic_title", topic.getName());
+                    intent.putExtra("is_personal_topic", false);
+                    startActivity(intent);
                 } else {
                     UiFeedback.performHaptic(requireContext(), 50);
                     showDownloadRequiredDialog(topic);

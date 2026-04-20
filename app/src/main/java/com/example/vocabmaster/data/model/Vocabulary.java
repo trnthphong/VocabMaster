@@ -31,6 +31,7 @@ public class Vocabulary {
     // For simplicity in offline mode, we might just store the main strings.
     // If these are needed, you'll need TypeConverters for List/Object.
     private String turkish_translation;
+    private String vietnamese_translation;
     // Learning status: 0=new, 1=learning, 2=learned
     private int learnStatus = 0;
     private long learnedAt = 0;
@@ -113,6 +114,13 @@ public class Vocabulary {
     public String getTurkishTranslation() { return turkish_translation; }
     @Ignore
     public void setTurkishTranslation(String turkish_translation) { this.turkish_translation = turkish_translation; }
+
+    @PropertyName("vietnamese_translation")
+    public String getVietnamese_translation() { return vietnamese_translation; }
+    @PropertyName("vietnamese_translation")
+    public void setVietnamese_translation(String vietnamese_translation) { this.vietnamese_translation = vietnamese_translation; }
+
+    public String getVietnameseTranslation() { return vietnamese_translation; }
 
     public int getLearnStatus() { return learnStatus; }
     public void setLearnStatus(int learnStatus) { this.learnStatus = learnStatus; }

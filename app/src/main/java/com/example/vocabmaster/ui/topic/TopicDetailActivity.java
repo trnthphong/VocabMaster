@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
@@ -22,6 +23,7 @@ import com.bumptech.glide.Glide;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.remote.GeminiTranslator;
 import com.example.vocabmaster.databinding.ActivityTopicDetailBinding;
 import com.example.vocabmaster.databinding.ItemFlashcardHorizontalBinding;
 import com.github.mikephil.charting.data.PieData;
@@ -48,6 +50,7 @@ public class TopicDetailActivity extends AppCompatActivity {
     private boolean isPersonal;
     private MediaPlayer mediaPlayer;
     private List<Vocabulary> allWords = new ArrayList<>();
+    private boolean hasChanges = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +62,6 @@ public class TopicDetailActivity extends AppCompatActivity {
         topicTitle = getIntent().getStringExtra("topic_title");
         isPersonal = getIntent().getBooleanExtra("is_personal_topic", false);
 
-        binding.toolbar.setTitle(topicTitle != null ? topicTitle : "Topic");
         binding.toolbar.setNavigationOnClickListener(v -> finish());
         binding.toolbar.inflateMenu(R.menu.menu_topic_detail);
         binding.toolbar.setOnMenuItemClickListener(item -> {
@@ -70,11 +72,24 @@ public class TopicDetailActivity extends AppCompatActivity {
             return false;
         });
 
+        // Set title viết hoa
+        String title = topicTitle != null ? topicTitle : "Topic";
+        binding.toolbarTitle.setText(title.toUpperCase());
+
         vocabularyDao = AppDatabase.getDatabase(this).vocabularyDao();
         db = FirebaseFirestore.getInstance();
         mediaPlayer = new MediaPlayer();
 
         binding.btnLearnNew.setOnClickListener(v -> startLearning());
+        binding.btnFlashcard.setOnClickListener(v -> openFlashcard());
+
+        // Show edit button only for personal topics
+        if (isPersonal) {
+            binding.btnEditTopic.setVisibility(View.VISIBLE);
+            binding.btnEditTopic.setOnClickListener(v -> openEditTopic());
+        } else {
+            binding.btnEditTopic.setVisibility(View.GONE);
+        }
 
         // Ẩn nội dung, hiện loading khi vào
         binding.contentLayout.setVisibility(View.GONE);
@@ -88,20 +103,10 @@ public class TopicDetailActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh stats sau khi học xong
-        String key = isPersonal ? topicId : topicId.toLowerCase();
-        executor.execute(() -> {
-            if (allWords.isEmpty()) return;
-            int total = allWords.size();
-            int learned = vocabularyDao.getLearnedCountByTopic(key);
-            int learning = vocabularyDao.getLearningCountByTopic(key);
-            int newCount = total - learned - learning;
-            mainHandler.post(() -> {
-                updateStats(total, learned, learning, newCount);
-                setupPieChart(learned, learning, newCount);
-                updateLearnButton(newCount, learning);
-            });
-        });
+        // Refresh data when returning from edit or learn
+        if (binding.contentLayout.getVisibility() == View.VISIBLE) {
+            loadData();
+        }
     }
 
     /**
@@ -112,16 +117,21 @@ public class TopicDetailActivity extends AppCompatActivity {
         String key = isPersonal ? topicId : topicId.toLowerCase();
         executor.execute(() -> {
             int count = vocabularyDao.getCountByTopic(key);
+            // Personal topic: không cần dịch, load thẳng hoặc download nếu chưa có
+            // Public topic: cần kiểm tra có tiếng Việt chưa
+            boolean needTranslate = !isPersonal && count > 0 && !vocabularyDao.hasVietnamese(key);
+            android.util.Log.d("TopicDetail", "count=" + count + " isPersonal=" + isPersonal + " needTranslate=" + needTranslate);
             mainHandler.post(() -> {
-                if (count > 0) {
-                    // Đã có dữ liệu → load thẳng
-                    loadData();
-                } else if (isPersonal) {
-                    // Personal topic → load từ personal_topics collection
-                    downloadPersonalTopic();
-                } else {
-                    // Public topic → tải từ Firestore topics collection
+                if (count == 0) {
+                    // Chưa có dữ liệu → tải về
+                    if (isPersonal) downloadPersonalTopic();
+                    else downloadPublicTopic();
+                } else if (needTranslate) {
+                    // Public topic chưa có tiếng Việt → tải lại + dịch
                     downloadPublicTopic();
+                } else {
+                    // Đã có đủ dữ liệu → load thẳng
+                    loadData();
                 }
             });
         });
@@ -139,6 +149,7 @@ public class TopicDetailActivity extends AppCompatActivity {
                         if (v != null) {
                             v.setVocabularyId(doc.getId());
                             v.setTopic(topicId.toLowerCase());
+                            v.setVietnamese_translation(getVietnameseFromDoc(doc));
                             vocabs.add(v);
                         }
                     }
@@ -147,9 +158,13 @@ public class TopicDetailActivity extends AppCompatActivity {
                         binding.textDownloadStatus.setText("Bộ từ này chưa có dữ liệu.");
                         return;
                     }
+                    // Lưu vào Room trước, rồi dịch tiếng Việt sau
                     executor.execute(() -> {
                         vocabularyDao.insertAll(vocabs);
-                        mainHandler.post(this::loadData);
+                        mainHandler.post(() -> {
+                            binding.textDownloadStatus.setText("Đang dịch nghĩa tiếng Việt...");
+                            translateAndUpdate(vocabs);
+                        });
                     });
                 })
                 .addOnFailureListener(e -> {
@@ -173,15 +188,110 @@ public class TopicDetailActivity extends AppCompatActivity {
                         if (v != null) {
                             v.setVocabularyId(doc.getId());
                             v.setTopic(topicId);
+                            // Personal topic đã có vietnamese_translation từ lúc tạo
+                            v.setVietnamese_translation(getVietnameseFromDoc(doc));
                             vocabs.add(v);
                         }
                     }
                     executor.execute(() -> {
                         if (!vocabs.isEmpty()) vocabularyDao.insertAll(vocabs);
-                        mainHandler.post(this::loadData);
+                        mainHandler.post(this::loadData); // Không cần dịch
                     });
                 })
                 .addOnFailureListener(e -> loadData());
+    }
+
+    private void translateAndUpdate(List<Vocabulary> vocabs) {
+        List<Vocabulary> needTranslation = new ArrayList<>();
+        List<String> words = new ArrayList<>();
+        List<String> defs = new ArrayList<>();
+        for (Vocabulary v : vocabs) {
+            String vi = v.getVietnamese_translation();
+            if (vi == null || vi.isEmpty()) {
+                needTranslation.add(v);
+                words.add(v.getWord() != null ? v.getWord() : "");
+                defs.add(v.getDefinition() != null ? v.getDefinition() : "");
+            }
+        }
+
+        android.util.Log.d("TopicDetail", "translateAndUpdate: need=" + needTranslation.size() + "/" + vocabs.size());
+
+        if (needTranslation.isEmpty()) {
+            loadData();
+            return;
+        }
+
+        // Chia thành batch nhỏ 10 từ để tránh timeout
+        translateBatchChunked(needTranslation, words, defs, 0);
+    }
+
+    private void translateBatchChunked(List<Vocabulary> vocabs, List<String> words,
+                                        List<String> defs, int offset) {
+        int chunkSize = 10;
+        int end = Math.min(offset + chunkSize, words.size());
+        List<String> chunkWords = new ArrayList<>(words.subList(offset, end));
+        List<String> chunkDefs = new ArrayList<>(defs.subList(offset, end));
+        List<Vocabulary> chunkVocabs = new ArrayList<>(vocabs.subList(offset, end));
+
+        binding.textDownloadStatus.setVisibility(View.VISIBLE);
+        binding.downloadProgress.setVisibility(View.VISIBLE);
+        mainHandler.post(() -> binding.textDownloadStatus.setText("Đang dịch tiếng Việt... (" + end + "/" + words.size() + ")"));
+
+        GeminiTranslator translator = new GeminiTranslator();
+        translator.translateBatch(chunkWords, chunkDefs, new GeminiTranslator.BatchCallback() {
+            @Override
+            public void onSuccess(List<String> translations) {
+                android.util.Log.d("TopicDetail", "Chunk success: " + translations.size());
+                executor.execute(() -> {
+                    for (int i = 0; i < chunkVocabs.size() && i < translations.size(); i++) {
+                        chunkVocabs.get(i).setVietnamese_translation(translations.get(i));
+                        vocabularyDao.update(chunkVocabs.get(i));
+                    }
+                    mainHandler.postDelayed(() -> {
+                        if (end < words.size()) {
+                            // Delay 2s giữa các chunk để tránh rate limit
+                            translateBatchChunked(vocabs, words, defs, end);
+                        } else {
+                            loadData();
+                        }
+                    }, 2000);
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                android.util.Log.e("TopicDetail", "Chunk error: " + error);
+                if (error != null && (error.contains("QuotaExceeded") || error.contains("quota"))) {
+                    mainHandler.post(() -> binding.textDownloadStatus.setText("Đang chờ quota... thử lại sau 20s"));
+                    mainHandler.postDelayed(() ->
+                        translateBatchChunked(vocabs, words, defs, offset), 20000);
+                } else if (error != null && (error.contains("403") || error.contains("Forbidden") || error.contains("API_KEY"))) {
+                    android.util.Log.e("TopicDetail", "API key restricted, skipping translation");
+                    mainHandler.post(TopicDetailActivity.this::loadData);
+                } else {
+                    mainHandler.postDelayed(() -> {
+                        if (end < words.size()) {
+                            translateBatchChunked(vocabs, words, defs, end);
+                        } else {
+                            loadData();
+                        }
+                    }, 3000);
+                }
+            }
+        });
+    }
+
+    /** Thử nhiều tên field khác nhau để lấy nghĩa tiếng Việt */
+    private String getVietnameseFromDoc(DocumentSnapshot doc) {
+        String[] candidates = {
+            "vietnamese_translation", "vietnamese", "meaning_vi",
+            "translation", "vi", "nghia"
+        };
+        for (String key : candidates) {
+            String val = doc.getString(key);
+            if (val != null && !val.isEmpty()) return val;
+        }
+        return null;
     }
 
     private void loadData() {
@@ -214,7 +324,10 @@ public class TopicDetailActivity extends AppCompatActivity {
     }
 
     private void setupPieChart(int learned, int learning, int newCount) {
-        if (learned == 0 && learning == 0 && newCount == 0) {
+        int notLearned = learning + newCount; // Gộp đang học + chưa học = chưa học
+        int total = learned + notLearned;
+        
+        if (total == 0) {
             binding.pieChart.setVisibility(View.GONE);
             return;
         }
@@ -222,14 +335,13 @@ public class TopicDetailActivity extends AppCompatActivity {
 
         List<PieEntry> entries = new ArrayList<>();
         if (learned > 0) entries.add(new PieEntry(learned, "Đã học"));
-        if (learning > 0) entries.add(new PieEntry(learning, "Đang học"));
-        if (newCount > 0) entries.add(new PieEntry(newCount, "Chưa học"));
+        if (notLearned > 0) entries.add(new PieEntry(notLearned, "Chưa học"));
 
         PieDataSet dataSet = new PieDataSet(entries, "");
+        // Xanh cho đã học, vàng cho chưa học
         dataSet.setColors(
-                Color.parseColor("#4CAF50"),
-                Color.parseColor("#FF9800"),
-                Color.parseColor("#E0E0E0")
+                Color.parseColor("#4CAF50"), // Xanh - đã học
+                Color.parseColor("#FFC107")  // Vàng - chưa học
         );
         dataSet.setValueTextSize(12f);
         dataSet.setValueTextColor(Color.WHITE);
@@ -242,7 +354,7 @@ public class TopicDetailActivity extends AppCompatActivity {
         binding.pieChart.setDrawHoleEnabled(true);
         binding.pieChart.setHoleColor(Color.WHITE);
         binding.pieChart.getDescription().setEnabled(false);
-        binding.pieChart.getLegend().setEnabled(true);
+        binding.pieChart.getLegend().setEnabled(false); // Tắt legend mặc định, dùng legend tùy chỉnh
         binding.pieChart.setCenterText("Tiến độ");
         binding.pieChart.setCenterTextSize(14f);
         binding.pieChart.animateY(800);
@@ -250,9 +362,9 @@ public class TopicDetailActivity extends AppCompatActivity {
     }
 
     private void setupFlashcardRecycler(List<Vocabulary> words) {
-        FlashcardHorizontalAdapter adapter = new FlashcardHorizontalAdapter(words, mediaPlayer);
+        VocabCardAdapter adapter = new VocabCardAdapter(words, mediaPlayer);
         binding.recyclerFlashcards.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+                new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         binding.recyclerFlashcards.setAdapter(adapter);
     }
 
@@ -314,18 +426,54 @@ public class TopicDetailActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    private void openFlashcard() {
+        Intent intent = new Intent(this, TopicFlashcardActivity.class);
+        intent.putExtra("topic_id", topicId);
+        intent.putExtra("topic_title", topicTitle);
+        intent.putExtra("is_personal_topic", isPersonal);
+        startActivity(intent);
+    }
+
+    private void openEditTopic() {
+        Intent intent = new Intent(this, TopicEditActivity.class);
+        intent.putExtra("topic_id", topicId);
+        intent.putExtra("topic_title", topicTitle);
+        intent.putExtra("is_personal_topic", isPersonal);
+        startActivityForResult(intent, REQUEST_EDIT_TOPIC);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_EDIT_TOPIC && resultCode == RESULT_OK) {
+            // Reload data after editing
+            hasChanges = true;
+            loadData();
+        }
+    }
+
+    private static final int REQUEST_EDIT_TOPIC = 1001;
+
+    @Override
+    public void finish() {
+        if (hasChanges) {
+            setResult(RESULT_OK);
+        }
+        super.finish();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
     }
 
-    // --- Inner Adapter ---
-    static class FlashcardHorizontalAdapter extends RecyclerView.Adapter<FlashcardHorizontalAdapter.VH> {
+    // --- VocabCard Adapter (thay thế FlashcardHorizontalAdapter) ---
+    static class VocabCardAdapter extends RecyclerView.Adapter<VocabCardAdapter.VH> {
         private final List<Vocabulary> words;
         private final MediaPlayer player;
 
-        FlashcardHorizontalAdapter(List<Vocabulary> words, MediaPlayer player) {
+        VocabCardAdapter(List<Vocabulary> words, MediaPlayer player) {
             this.words = words;
             this.player = player;
         }
@@ -333,73 +481,83 @@ public class TopicDetailActivity extends AppCompatActivity {
         @NonNull
         @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            ItemFlashcardHorizontalBinding b = ItemFlashcardHorizontalBinding.inflate(
-                    LayoutInflater.from(parent.getContext()), parent, false);
+            com.example.vocabmaster.databinding.ItemVocabCardBinding b =
+                    com.example.vocabmaster.databinding.ItemVocabCardBinding.inflate(
+                            LayoutInflater.from(parent.getContext()), parent, false);
             return new VH(b);
         }
 
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
-            Vocabulary v = words.get(position);
-            holder.bind(v, player);
+            holder.bind(words.get(position), player);
         }
 
         @Override
         public int getItemCount() { return words.size(); }
 
         static class VH extends RecyclerView.ViewHolder {
-            final ItemFlashcardHorizontalBinding b;
-            boolean isFlipped = false;
+            final com.example.vocabmaster.databinding.ItemVocabCardBinding b;
 
-            VH(ItemFlashcardHorizontalBinding b) {
+            VH(com.example.vocabmaster.databinding.ItemVocabCardBinding b) {
                 super(b.getRoot());
                 this.b = b;
             }
 
             void bind(Vocabulary v, MediaPlayer player) {
-                isFlipped = false;
-                b.textWord.setText(v.getWord());
+                b.textWord.setText(v.getWord() != null ? v.getWord() : "");
                 b.textPhonetic.setText(v.getPhonetic() != null ? v.getPhonetic() : "");
                 b.textDefinition.setText(v.getDefinition() != null ? v.getDefinition() : "");
-                b.textExample.setText(v.getExample_sentence() != null ? v.getExample_sentence() : "");
 
-                // Status badge
+                // Tiếng Việt
+                String vi = v.getVietnamese_translation();
+                if (vi != null && !vi.isEmpty()) {
+                    b.textVietnamese.setVisibility(View.VISIBLE);
+                    b.textVietnamese.setText("🇻🇳 " + vi);
+                } else {
+                    b.textVietnamese.setVisibility(View.GONE);
+                }
+
+                // Ví dụ
+                String ex = v.getExample_sentence();
+                if (ex != null && !ex.isEmpty()) {
+                    b.textExample.setVisibility(View.VISIBLE);
+                    b.textExample.setText("\"" + ex + "\"");
+                } else {
+                    b.textExample.setVisibility(View.GONE);
+                }
+
+                // Status
                 switch (v.getLearnStatus()) {
                     case 2: b.textStatus.setText("✓ Đã học"); b.textStatus.setTextColor(Color.parseColor("#4CAF50")); break;
                     case 1: b.textStatus.setText("⟳ Đang học"); b.textStatus.setTextColor(Color.parseColor("#FF9800")); break;
                     default: b.textStatus.setText("● Mới"); b.textStatus.setTextColor(Color.parseColor("#9E9E9E")); break;
                 }
 
-                // Show front by default
-                b.cardFront.setVisibility(View.VISIBLE);
-                b.cardBack.setVisibility(View.GONE);
-
-                // Flip on click
-                b.getRoot().setOnClickListener(vw -> {
-                    isFlipped = !isFlipped;
-                    b.cardFront.setVisibility(isFlipped ? View.GONE : View.VISIBLE);
-                    b.cardBack.setVisibility(isFlipped ? View.VISIBLE : View.GONE);
-                });
+                // Ảnh
+                String imgUrl = v.getImage_url();
+                if (imgUrl != null && !imgUrl.isEmpty() && !imgUrl.contains("defaultImage")) {
+                    b.imgVocab.setVisibility(View.VISIBLE);
+                    Glide.with(b.getRoot()).load(imgUrl)
+                            .placeholder(R.drawable.macdinh).error(R.drawable.macdinh)
+                            .centerCrop().into(b.imgVocab);
+                } else {
+                    b.imgVocab.setVisibility(View.GONE);
+                }
 
                 // Audio
                 String audioUrl = v.getAnyAudioUrl();
-                b.btnAudio.setVisibility(audioUrl != null && !audioUrl.isEmpty() ? View.VISIBLE : View.GONE);
-                b.btnAudio.setOnClickListener(vw -> {
-                    if (audioUrl == null || audioUrl.isEmpty()) return;
-                    try {
-                        player.reset();
-                        player.setDataSource(audioUrl);
-                        player.prepareAsync();
-                        player.setOnPreparedListener(MediaPlayer::start);
-                    } catch (IOException e) { e.printStackTrace(); }
-                });
-
-                // Image
-                if (v.getImage_url() != null && !v.getImage_url().isEmpty()) {
-                    b.imgWord.setVisibility(View.VISIBLE);
-                    Glide.with(b.getRoot()).load(v.getImage_url()).into(b.imgWord);
+                if (audioUrl != null && !audioUrl.isEmpty()) {
+                    b.btnAudio.setVisibility(View.VISIBLE);
+                    b.btnAudio.setOnClickListener(vw -> {
+                        try {
+                            player.reset();
+                            player.setDataSource(audioUrl);
+                            player.prepareAsync();
+                            player.setOnPreparedListener(MediaPlayer::start);
+                        } catch (IOException e) { e.printStackTrace(); }
+                    });
                 } else {
-                    b.imgWord.setVisibility(View.GONE);
+                    b.btnAudio.setVisibility(View.GONE);
                 }
             }
         }

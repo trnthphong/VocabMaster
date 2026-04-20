@@ -84,6 +84,10 @@ public class LibraryViewModel extends AndroidViewModel {
         repository.deleteFlashcard(flashcard);
     }
 
+    public void updateFlashcard(Flashcard flashcard) {
+        repository.updateFlashcard(flashcard);
+    }
+
     public LiveData<Boolean> getCourseDeletedEvent() {
         return courseDeletedEvent;
     }

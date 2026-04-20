@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="My Topics"
-            app:navigationIcon="@drawable/back" />
+            app:navigationIcon="@drawable/left_arrow" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView

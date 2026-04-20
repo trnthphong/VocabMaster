@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.vocabmaster.data.local.AppDatabase;
+import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentLibraryBinding;
@@ -26,6 +28,8 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LibraryFragment extends Fragment {
     private FragmentLibraryBinding binding;
@@ -34,6 +38,8 @@ public class LibraryFragment extends Fragment {
     private final List<Course> roadmapItems = new ArrayList<>();
     private FirebaseFirestore db;
     private FirebaseAuth auth;
+    private VocabularyDao vocabularyDao;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Nullable
     @Override
@@ -107,7 +113,20 @@ public class LibraryFragment extends Fragment {
             }
         });
 
-        binding.textTotalCups.setText("12");
+        // Load số từ đã học từ local database
+        if (vocabularyDao == null) {
+            vocabularyDao = AppDatabase.getDatabase(requireContext()).vocabularyDao();
+        }
+        executor.execute(() -> {
+            int learnedCount = vocabularyDao.getLearnedWordsCount();
+            android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+            mainHandler.post(() -> {
+                if (binding != null) {
+                    binding.textTotalCups.setText(String.valueOf(learnedCount));
+                }
+            });
+        });
+
         binding.textTotalTime.setText("45h");
     }
 

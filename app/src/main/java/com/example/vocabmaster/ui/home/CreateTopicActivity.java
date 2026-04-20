@@ -16,6 +16,7 @@ import com.bumptech.glide.Glide;
 import com.example.vocabmaster.data.api.DictionaryClient;
 import com.example.vocabmaster.data.remote.DictionaryResponse;
 import com.example.vocabmaster.data.remote.FreeDictionaryApiService;
+import com.example.vocabmaster.data.remote.UnsplashHelper;
 import com.example.vocabmaster.databinding.ActivityCreateTopicBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
@@ -197,6 +198,7 @@ public class CreateTopicActivity extends AppCompatActivity {
     private void fetchAndSaveWords(String topicId, List<String> words) {
         String userId = auth.getUid();
         final int[] count = {0};
+        UnsplashHelper unsplash = new UnsplashHelper();
 
         for (String wordStr : words) {
             dictionaryService.getDefinition(wordStr).enqueue(new Callback<List<DictionaryResponse>>() {
@@ -204,14 +206,11 @@ public class CreateTopicActivity extends AppCompatActivity {
                 public void onResponse(Call<List<DictionaryResponse>> call, Response<List<DictionaryResponse>> response) {
                     Map<String, Object> wordData = new HashMap<>();
                     wordData.put("word", wordStr);
-                    // Thay đổi source.unsplash.com sang loremflickr.com
-                    wordData.put("image_url", "https://loremflickr.com/400/300/" + wordStr);
 
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         DictionaryResponse dr = response.body().get(0);
                         wordData.put("phonetic", dr.phonetic != null ? dr.phonetic : "");
-                        
-                        // Lấy link audio từ phonetics nếu có
+
                         if (dr.phonetics != null && !dr.phonetics.isEmpty()) {
                             for (DictionaryResponse.Phonetic p : dr.phonetics) {
                                 if (p.audio != null && !p.audio.isEmpty()) {
@@ -233,15 +232,21 @@ public class CreateTopicActivity extends AppCompatActivity {
                         wordData.put("definition", "Click để nhập nghĩa...");
                     }
 
-                    db.collection("users").document(userId)
-                            .collection("personal_topics").document(topicId)
-                            .collection("vocabularies").add(wordData)
-                            .addOnCompleteListener(t -> {
-                                if (++count[0] == words.size()) {
-                                    UiFeedback.performHaptic(CreateTopicActivity.this, 50);
-                                    finish();
-                                }
-                            });
+                    // Lấy ảnh từ Unsplash rồi mới lưu
+                    unsplash.searchImage(wordStr, new UnsplashHelper.ImageCallback() {
+                        @Override
+                        public void onSuccess(String imageUrl) {
+                            wordData.put("image_url", imageUrl);
+                            saveWordToFirestore(userId, topicId, wordData, count, words.size());
+                        }
+
+                        @Override
+                        public void onError() {
+                            // Fallback nếu Unsplash fail
+                            wordData.put("image_url", "https://loremflickr.com/400/300/" + wordStr);
+                            saveWordToFirestore(userId, topicId, wordData, count, words.size());
+                        }
+                    });
                 }
 
                 @Override
@@ -251,6 +256,20 @@ public class CreateTopicActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private void saveWordToFirestore(String userId, String topicId,
+                                      Map<String, Object> wordData,
+                                      int[] count, int total) {
+        db.collection("users").document(userId)
+                .collection("personal_topics").document(topicId)
+                .collection("vocabularies").add(wordData)
+                .addOnCompleteListener(t -> {
+                    if (++count[0] == total) {
+                        UiFeedback.performHaptic(CreateTopicActivity.this, 50);
+                        finish();
+                    }
+                });
     }
 
     private void resetBtn() {

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 
@@ -29,6 +30,8 @@ public class AllTopicsActivity extends AppCompatActivity {
     private TopicAdapter adapter;
     private VocabularyDao vocabularyDao;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private List<Topic> topicList = new ArrayList<>();
+    private static final int REQUEST_TOPIC_DETAIL = 1002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,10 +85,11 @@ public class AllTopicsActivity extends AppCompatActivity {
     }
 
     private void navigateToTopic(Topic topic) {
-        Intent intent = new Intent(AllTopicsActivity.this, TopicWordListActivity.class);
-        intent.putExtra("selected_topic", topic.getId());
-        intent.putExtra("display_title", topic.getName());
-        startActivity(intent);
+        Intent intent = new Intent(AllTopicsActivity.this, com.example.vocabmaster.ui.topic.TopicDetailActivity.class);
+        intent.putExtra("topic_id", topic.getId());
+        intent.putExtra("topic_title", topic.getName());
+        intent.putExtra("is_personal_topic", false);
+        startActivityForResult(intent, REQUEST_TOPIC_DETAIL);
     }
 
     private void loadAllTopics() {
@@ -98,19 +102,41 @@ public class AllTopicsActivity extends AppCompatActivity {
                         return;
                     }
                     if (snapshot != null) {
-                        List<Topic> topics = new ArrayList<>();
+                        topicList.clear();
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
                             Topic t = doc.toObject(Topic.class);
                             if (t != null) {
                                 t.setId(doc.getId());
                                 checkIfDownloaded(t);
-                                topics.add(t);
+                                topicList.add(t);
                             }
                         }
-                        adapter.setTopics(topics);
+                        adapter.setTopics(topicList);
                         binding.progressBar.setVisibility(View.GONE);
                     }
                 });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_TOPIC_DETAIL && resultCode == RESULT_OK) {
+            // Refresh word counts for all topics
+            refreshTopicWordCounts();
+        }
+    }
+
+    private void refreshTopicWordCounts() {
+        for (Topic topic : topicList) {
+            executorService.execute(() -> {
+                String key = topic.getId().toLowerCase();
+                int count = vocabularyDao.getCountByTopic(key);
+                runOnUiThread(() -> {
+                    topic.setWordCount(count);
+                    adapter.notifyDataSetChanged();
+                });
+            });
+        }
     }
 
     private void checkIfDownloaded(Topic topic) {

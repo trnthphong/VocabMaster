@@ -54,21 +54,33 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="@dimen/spacing_8">
-                        <TextView
-                            android:id="@+id/text_total_time"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0h"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                            android:textColor="@color/brand_primary" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="6dp"
+                                android:src="@drawable/clock"/>
+                            <TextView
+                                android:id="@+id/text_total_time"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0h"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                                android:textColor="@color/brand_primary" />
+                        </LinearLayout>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
                             android:text="Time Studied"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
                     </LinearLayout>
 
-                    <!-- Trophies -->
+                    <!-- Words Learned -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -76,17 +88,29 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="@dimen/spacing_8">
-                        <TextView
-                            android:id="@+id/text_total_cups"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                            android:textColor="@color/brand_primary" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="6dp"
+                                android:src="@drawable/word"/>
+                            <TextView
+                                android:id="@+id/text_total_cups"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                                android:textColor="@color/brand_primary" />
+                        </LinearLayout>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Trophies"
+                            android:layout_marginTop="4dp"
+                            android:text="Words Learned"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
                     </LinearLayout>
 
@@ -98,16 +122,28 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="@dimen/spacing_8">
-                        <TextView
-                            android:id="@+id/text_total_score"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                            android:textColor="@color/brand_primary" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="6dp"
+                                android:src="@drawable/trophy"/>
+                            <TextView
+                                android:id="@+id/text_total_score"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                                android:textColor="@color/brand_primary" />
+                        </LinearLayout>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
                             android:text="Total Points"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
                     </LinearLayout>
@@ -120,16 +156,28 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="@dimen/spacing_8">
-                        <TextView
-                            android:id="@+id/text_total_sessions"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                            android:textColor="@color/brand_primary" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="6dp"
+                                android:src="@drawable/lesson"/>
+                            <TextView
+                                android:id="@+id/text_total_sessions"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                                android:textColor="@color/brand_primary" />
+                        </LinearLayout>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
                             android:text="Sessions"
                             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
                     </LinearLayout>

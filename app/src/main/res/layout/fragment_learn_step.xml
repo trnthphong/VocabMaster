@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#4046D8"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,106 +12,88 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- DẠNG 1: INTRO -->
+        <!-- ══ DẠNG 1: INTRO FLASHCARD (từng từ một) ══ -->
         <LinearLayout
             android:id="@+id/layout_intro"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center"
             android:visibility="gone">
 
+            <!-- Stub views để binding không crash -->
+            <ImageView android:id="@+id/img_intro" android:layout_width="0dp"
+                android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/text_intro_word" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:visibility="gone" />
+            <TextView android:id="@+id/text_intro_phonetic" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:visibility="gone" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_intro_audio"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:visibility="gone" android:text="🔊" />
+            <TextView android:id="@+id/text_intro_definition" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:visibility="gone" />
+            <TextView android:id="@+id/text_intro_example" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:visibility="gone" />
+            <LinearLayout android:id="@+id/intro_word_list_container"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_intro_skip"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:visibility="gone" android:text="Bỏ qua" />
+
+            <!-- Header -->
             <TextView
                 android:id="@+id/text_intro_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                android:textColor="@color/brand_primary" />
-
-            <ImageView
-                android:id="@+id/img_intro"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_marginBottom="16dp"
-                android:scaleType="centerCrop"
-                android:visibility="gone" />
+                android:layout_marginBottom="4dp"
+                android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                android:textColor="@color/white" />
 
             <TextView
-                android:id="@+id/text_intro_word"
+                android:id="@+id/text_intro_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.VocabMaster.H1"
-                android:textColor="@color/brand_primary" />
-
-            <TextView
-                android:id="@+id/text_intro_phonetic"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                android:textColor="#888" />
+                android:textColor="#CCCCCC" />
 
+            <!-- Flashcard flip — dùng layout_flashcard_topic -->
+            <FrameLayout
+                android:id="@+id/flashcard_container"
+                android:layout_width="match_parent"
+                android:layout_height="480dp"
+                android:layout_marginBottom="16dp">
+
+                <include
+                    layout="@layout/layout_flashcard_topic"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+            </FrameLayout>
+
+            <!-- Nút Tiếp tục (chỉ hiện sau khi flip) -->
+            <LinearLayout
+                android:id="@+id/layout_know_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+            </LinearLayout>
+
+            <!-- Nút next khi chưa flip (dùng cho btn_intro_next) -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_intro_audio"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:id="@+id/btn_intro_next"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="🔊 Nghe phát âm"
+                android:text="Bắt đầu luyện tập →"
                 android:visibility="gone" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    <TextView
-                        android:id="@+id/text_intro_definition"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:id="@+id/text_intro_example"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                        android:textStyle="italic" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="horizontal">
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_intro_skip"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="Bỏ qua" />
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_intro_next"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="2"
-                    android:text="Tiếp tục" />
-            </LinearLayout>
         </LinearLayout>
 
-        <!-- DẠNG 2 & 4: MCQ -->
+        <!-- ══ DẠNG 2 & 4: MCQ ══ -->
         <LinearLayout
             android:id="@+id/layout_mcq"
             android:layout_width="match_parent"
@@ -122,51 +107,100 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                android:textColor="@color/brand_primary" />
+                android:textColor="@color/white" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
-                <TextView
-                    android:id="@+id/text_mcq_question"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="0dp">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:padding="24dp"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                    android:textColor="@color/brand_primary" />
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/img_mcq"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/text_mcq_question"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:padding="20dp"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H2"
+                        android:textColor="@color/brand_primary" />
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_option1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_option1"
+                android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
-                android:textAllCaps="false" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_option2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:textAllCaps="false"
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_option2"
+                android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
-                android:textAllCaps="false" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_option3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:textAllCaps="false"
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_option3"
+                android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
-                android:textAllCaps="false" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_option4"
+                android:textAllCaps="false"
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_option4"
+                android:layout_width="match_parent" android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:textAllCaps="false"
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null" />
+
+            <!-- Feedback đúng/sai -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_mcq_feedback"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAllCaps="false" />
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="14dp">
+                    <TextView
+                        android:id="@+id/text_mcq_feedback"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_mcq_continue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tiếp tục"
+                        app:cornerRadius="8dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- DẠNG 3: TYPE ANSWER -->
+        <!-- ══ DẠNG 3: TYPE ANSWER ══ -->
         <LinearLayout
             android:id="@+id/layout_type_answer"
             android:layout_width="match_parent"
@@ -180,29 +214,43 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
-                android:textColor="@color/brand_primary" />
+                android:textColor="@color/white" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
-                <TextView
-                    android:id="@+id/text_type_question"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="0dp">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:padding="24dp"
-                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge" />
+                    android:orientation="vertical">
+                    <ImageView
+                        android:id="@+id/img_type_hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/text_type_question"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:padding="20dp"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                        android:textColor="@color/brand_primary" />
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                android:layout_marginBottom="12dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:boxBackgroundColor="@color/white">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edit_type_answer"
                     android:layout_width="match_parent"
@@ -215,34 +263,41 @@
                 android:id="@+id/text_type_feedback"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:textSize="16sp"
+                android:layout_marginBottom="10dp"
+                android:textSize="15sp"
                 android:textStyle="bold"
+                android:textColor="@color/white"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_type_submit"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
+                android:enabled="false"
                 android:text="Kiểm tra"
-                android:enabled="false" />
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_type_continue"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="56dp"
                 android:text="Tiếp tục"
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null"
                 android:visibility="gone" />
         </LinearLayout>
 
-        <!-- DẠNG 5: SUMMARY -->
+        <!-- ══ DẠNG 5: SUMMARY ══ -->
         <LinearLayout
             android:id="@+id/layout_summary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:gravity="center"
+            android:orientation="vertical"
             android:paddingTop="40dp"
             android:visibility="gone">
 
@@ -250,31 +305,35 @@
                 android:id="@+id/text_summary_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H1"
-                android:textColor="@color/brand_primary"
-                android:layout_marginBottom="16dp" />
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/text_summary_stats"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
+                android:layout_marginBottom="12dp"
                 android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
-                android:layout_marginBottom="12dp" />
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/text_summary_xp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="32dp"
                 android:textAppearance="@style/TextAppearance.VocabMaster.H2"
-                android:textColor="#FF9800"
-                android:layout_marginBottom="32dp" />
+                android:textColor="#FFC107" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_summary_done"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Về trang bộ từ" />
+                android:layout_height="56dp"
+                android:text="Về trang bộ từ"
+                android:background="@drawable/button_login_neumorph"
+                android:textColor="@color/bg_grey"
+                app:backgroundTint="@null" />
         </LinearLayout>
 
     </LinearLayout>

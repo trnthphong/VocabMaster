@@ -67,8 +67,9 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.ViewHolder> 
             holder.nameText.setText("");
         }
         
-        // Cập nhật số từ (sử dụng trường order theo yêu cầu)
-        holder.countText.setText(topic.getOrder() + " words");
+        // Hiển thị số từ — ưu tiên wordCount, fallback order
+        int count = topic.getWordCount() > 0 ? topic.getWordCount() : topic.getOrder();
+        holder.countText.setText(count + " words");
         
         // Sử dụng Glide để tải hình ảnh từ URL (imageUrl)
         if (topic.getImageUrl() != null && !topic.getImageUrl().isEmpty()) {

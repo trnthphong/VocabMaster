@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,13 +17,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class TopicLearnActivity extends AppCompatActivity {
-
-    public static final int BATCH_SIZE = 7; // 5-10 từ mỗi lần
 
     private ActivityTopicLearnBinding binding;
     private VocabularyDao vocabularyDao;
@@ -35,18 +34,20 @@ public class TopicLearnActivity extends AppCompatActivity {
     private String topicTitle;
     private boolean isPersonal;
 
-    private List<Vocabulary> batch = new ArrayList<>();
-    private List<LearnStep> steps = new ArrayList<>();
-    private int currentStepIndex = 0;
-    private int learnedCount = 0;
-    private MediaPlayer mediaPlayer;
+    List<Vocabulary> batch = new ArrayList<>();
+    // Queue câu hỏi — sai sẽ đẩy lại vào cuối
+    Queue<LearnStep> stepQueue = new LinkedList<>();
+    int totalSteps = 0;
+    int doneSteps = 0;
+    int correctCount = 0;
+    MediaPlayer mediaPlayer;
 
-    // Represents one exercise step
     static class LearnStep {
-        enum Type { INTRO, WORD_TO_MEANING, MEANING_TO_WORD, LISTEN_CHOOSE, SUMMARY }
+        enum Type { INTRO_ALL, WORD_TO_MEANING, MEANING_TO_WORD, WORD_TO_VIETNAMESE, VIETNAMESE_TO_WORD, LISTEN_CHOOSE, SUMMARY }
         Type type;
         Vocabulary vocab;
-        List<Vocabulary> allBatch; // for generating wrong options
+        List<Vocabulary> allBatch;
+        int retryCount = 0;
 
         LearnStep(Type type, Vocabulary vocab, List<Vocabulary> allBatch) {
             this.type = type;
@@ -70,160 +71,161 @@ public class TopicLearnActivity extends AppCompatActivity {
 
         vocabularyDao = AppDatabase.getDatabase(this).vocabularyDao();
         mediaPlayer = new MediaPlayer();
+        LearnStepFragment.sSharedMediaPlayer = mediaPlayer;
 
-        // Nhận list từ đã chọn từ TopicWordPickActivity
         String json = getIntent().getStringExtra("selected_words_json");
         if (json != null) {
             batch = new com.google.gson.Gson().fromJson(json,
                     new com.google.gson.reflect.TypeToken<List<Vocabulary>>(){}.getType());
-            buildSteps();
+            buildQueue();
             showCurrentStep();
-        } else {
-            // fallback: tự load nếu không có json (không nên xảy ra)
-            loadBatch();
         }
     }
 
-    private void loadBatch() {
-        String key = isPersonal ? topicId : topicId.toLowerCase();
-        binding.progressBar.setVisibility(View.GONE);
+    private void buildQueue() {
+        stepQueue.clear();
+        List<LearnStep> practiceSteps = new ArrayList<>();
 
-        executor.execute(() -> {
-            // Priority: new words first, then learning words
-            List<Vocabulary> newWords = vocabularyDao.getNewWordsByTopic(key);
-            List<Vocabulary> batchList = new ArrayList<>(newWords);
+        // Bước 1: Làm quen tất cả từ cùng lúc (1 màn hình duy nhất)
+        stepQueue.add(new LearnStep(LearnStep.Type.INTRO_ALL, null, batch));
 
-            if (batchList.size() < BATCH_SIZE) {
-                List<Vocabulary> learning = vocabularyDao.getLearnedWordsByTopic(key);
-                // filter only status=1 (learning)
-                for (Vocabulary v : learning) {
-                    if (v.getLearnStatus() == 1 && batchList.size() < BATCH_SIZE) {
-                        batchList.add(v);
-                    }
-                }
-            }
-
-            mainHandler.post(() -> {
-                binding.progressBar.setVisibility(View.GONE);
-                if (batchList.isEmpty()) {
-                    Toast.makeText(this, "Không còn từ mới để học!", Toast.LENGTH_SHORT).show();
-                    finish();
-                    return;
-                }
-                batch = batchList;
-                buildSteps();
-                showCurrentStep();
-            });
-        });
-    }
-
-    private void buildSteps() {
-        steps.clear();
+        // Bước 2+: Tạo câu hỏi luyện tập cho từng từ, mỗi từ 2-3 dạng
         for (Vocabulary v : batch) {
-            // Step 1: Intro (làm quen)
-            steps.add(new LearnStep(LearnStep.Type.INTRO, v, batch));
-            // Step 2: Word → Meaning (chọn nghĩa)
-            steps.add(new LearnStep(LearnStep.Type.WORD_TO_MEANING, v, batch));
-            // Step 3: Meaning → Word (ghi từ)
-            steps.add(new LearnStep(LearnStep.Type.MEANING_TO_WORD, v, batch));
-            // Step 4: Listen → Choose (chỉ thêm nếu có audio)
+            practiceSteps.add(new LearnStep(LearnStep.Type.WORD_TO_MEANING, v, batch));
+            practiceSteps.add(new LearnStep(LearnStep.Type.MEANING_TO_WORD, v, batch));
             if (v.getAnyAudioUrl() != null && !v.getAnyAudioUrl().isEmpty()) {
-                steps.add(new LearnStep(LearnStep.Type.LISTEN_CHOOSE, v, batch));
+                practiceSteps.add(new LearnStep(LearnStep.Type.LISTEN_CHOOSE, v, batch));
             }
+            // Thêm câu hỏi tiếng Việt nếu có
+            String vi = v.getVietnamese_translation();
+            if (vi != null && !vi.isEmpty()) {
+                practiceSteps.add(new LearnStep(LearnStep.Type.WORD_TO_VIETNAMESE, v, batch));
+                practiceSteps.add(new LearnStep(LearnStep.Type.VIETNAMESE_TO_WORD, v, batch));
+            }
+            // Thêm lần 2 word→meaning để củng cố
+            practiceSteps.add(new LearnStep(LearnStep.Type.WORD_TO_MEANING, v, batch));
         }
-        // Final summary step
-        steps.add(new LearnStep(LearnStep.Type.SUMMARY, null, batch));
 
+        // Xáo trộn toàn bộ câu hỏi luyện tập
+        Collections.shuffle(practiceSteps);
+        stepQueue.addAll(practiceSteps);
+
+        // Summary ở cuối
+        stepQueue.add(new LearnStep(LearnStep.Type.SUMMARY, null, batch));
+
+        totalSteps = stepQueue.size();
         updateProgress();
     }
 
-    private void showCurrentStep() {
-        if (currentStepIndex >= steps.size()) {
-            showSummary();
-            return;
-        }
-        LearnStep step = steps.get(currentStepIndex);
+    void showCurrentStep() {
+        LearnStep step = stepQueue.peek();
+        if (step == null) { showSummaryScreen(); return; }
+
         updateProgress();
 
         switch (step.type) {
-            case INTRO:        showIntro(step.vocab); break;
-            case WORD_TO_MEANING: showWordToMeaning(step.vocab, step.allBatch); break;
-            case MEANING_TO_WORD: showMeaningToWord(step.vocab, step.allBatch); break;
-            case LISTEN_CHOOSE:   showListenChoose(step.vocab, step.allBatch); break;
-            case SUMMARY:         showSummary(); break;
+            case INTRO_ALL:          showIntroAll(); break;
+            case WORD_TO_MEANING:    showExercise(step, false); break;
+            case MEANING_TO_WORD:    showExercise(step, false); break;
+            case WORD_TO_VIETNAMESE: showExercise(step, false); break;
+            case VIETNAMESE_TO_WORD: showExercise(step, false); break;
+            case LISTEN_CHOOSE:      showExercise(step, false); break;
+            case SUMMARY:            showSummaryScreen(); break;
         }
     }
 
-    private void showIntro(Vocabulary v) {
-        LearnStepFragment fragment = LearnStepFragment.newIntro(v);
-        fragment.setOnNextListener(skipped -> {
-            if (!skipped) markLearning(v);
-            nextStep();
+    private void showIntroAll() {
+        LearnStep step = stepQueue.poll(); // consume
+        LearnStepFragment fragment = LearnStepFragment.newIntroAll(batch, mediaPlayer);
+        fragment.setOnNextListener(ignored -> {
+            doneSteps++;
+            showCurrentStep();
         });
-        getSupportFragmentManager().beginTransaction()
-                .replace(binding.fragmentContainer.getId(), fragment)
-                .commitNow();
+        commitFragment(fragment);
     }
 
-    private void showWordToMeaning(Vocabulary v, List<Vocabulary> all) {
-        LearnStepFragment fragment = LearnStepFragment.newWordToMeaning(v, all);
+    private void showExercise(LearnStep step, boolean isRetry) {
+        LearnStepFragment fragment;
+        switch (step.type) {
+            case WORD_TO_MEANING:
+                fragment = LearnStepFragment.newWordToMeaning(step.vocab, step.allBatch);
+                break;
+            case MEANING_TO_WORD:
+                fragment = LearnStepFragment.newMeaningToWord(step.vocab, step.allBatch);
+                break;
+            case WORD_TO_VIETNAMESE:
+                fragment = LearnStepFragment.newWordToVietnamese(step.vocab, step.allBatch);
+                break;
+            case VIETNAMESE_TO_WORD:
+                fragment = LearnStepFragment.newVietnameseToWord(step.vocab, step.allBatch);
+                break;
+            case LISTEN_CHOOSE:
+                fragment = LearnStepFragment.newListenChoose(step.vocab, step.allBatch, mediaPlayer);
+                break;
+            default:
+                nextStep();
+                return;
+        }
+
         fragment.setOnNextListener(correct -> {
-            if (correct) learnedCount++;
-            nextStep();
+            stepQueue.poll(); // consume current
+            doneSteps++;
+            if (correct) {
+                correctCount++;
+            } else if (step.retryCount < 2) {
+                // Sai → đẩy lại vào cuối queue (tối đa 2 lần retry)
+                step.retryCount++;
+                // Thêm vào trước SUMMARY
+                List<LearnStep> remaining = new ArrayList<>(stepQueue);
+                // Tìm vị trí trước SUMMARY
+                int insertAt = remaining.size();
+                for (int i = 0; i < remaining.size(); i++) {
+                    if (remaining.get(i).type == LearnStep.Type.SUMMARY) {
+                        insertAt = i;
+                        break;
+                    }
+                }
+                remaining.add(insertAt, step);
+                stepQueue.clear();
+                stepQueue.addAll(remaining);
+                totalSteps++; // thêm 1 step vì retry
+            }
+            showCurrentStep();
         });
-        getSupportFragmentManager().beginTransaction()
-                .replace(binding.fragmentContainer.getId(), fragment)
-                .commitNow();
+        commitFragment(fragment);
     }
 
-    private void showMeaningToWord(Vocabulary v, List<Vocabulary> all) {
-        LearnStepFragment fragment = LearnStepFragment.newMeaningToWord(v, all);
-        fragment.setOnNextListener(correct -> {
-            if (correct) learnedCount++;
-            nextStep();
-        });
-        getSupportFragmentManager().beginTransaction()
-                .replace(binding.fragmentContainer.getId(), fragment)
-                .commitNow();
-    }
-
-    private void showListenChoose(Vocabulary v, List<Vocabulary> all) {
-        LearnStepFragment fragment = LearnStepFragment.newListenChoose(v, all, mediaPlayer);
-        fragment.setOnNextListener(correct -> {
-            if (correct) learnedCount++;
-            nextStep();
-        });
-        getSupportFragmentManager().beginTransaction()
-                .replace(binding.fragmentContainer.getId(), fragment)
-                .commitNow();
-    }
-
-    private void showSummary() {
-        // Mark all batch words as learned in DB
+    private void showSummaryScreen() {
         executor.execute(() -> {
             long now = System.currentTimeMillis();
             for (Vocabulary v : batch) {
                 vocabularyDao.updateLearnStatus(v.getVocabularyId(), 2, now);
             }
-            // Save XP to Firestore (no heart deduction)
-            int xpGained = batch.size() * 5;
-            saveXp(xpGained);
+            saveXp(batch.size() * 5);
         });
 
-        LearnStepFragment fragment = LearnStepFragment.newSummary(batch.size(), learnedCount);
+        LearnStepFragment fragment = LearnStepFragment.newSummary(batch.size(), correctCount);
         fragment.setOnNextListener(ignored -> finish());
-        getSupportFragmentManager().beginTransaction()
-                .replace(binding.fragmentContainer.getId(), fragment)
-                .commitNow();
-
+        commitFragment(fragment);
         binding.studyProgress.setProgress(100);
     }
 
-    private void markLearning(Vocabulary v) {
-        if (v.getLearnStatus() == 0) {
-            executor.execute(() ->
-                vocabularyDao.updateLearnStatus(v.getVocabularyId(), 1, System.currentTimeMillis()));
-        }
+    private void nextStep() {
+        stepQueue.poll();
+        doneSteps++;
+        showCurrentStep();
+    }
+
+    private void commitFragment(LearnStepFragment fragment) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(binding.fragmentContainer.getId(), fragment)
+                .commitNow();
+    }
+
+    private void updateProgress() {
+        if (totalSteps <= 0) return;
+        int progress = (int) ((doneSteps / (float) totalSteps) * 100);
+        binding.studyProgress.setProgress(Math.min(progress, 99));
     }
 
     private void saveXp(int xp) {
@@ -231,18 +233,6 @@ public class TopicLearnActivity extends AppCompatActivity {
         if (uid == null) return;
         FirebaseFirestore.getInstance().collection("users").document(uid)
                 .update("xp", com.google.firebase.firestore.FieldValue.increment(xp));
-    }
-
-    private void nextStep() {
-        currentStepIndex++;
-        showCurrentStep();
-    }
-
-    private void updateProgress() {
-        int total = steps.size();
-        int progress = total > 0 ? (int) ((currentStepIndex / (float) total) * 100) : 0;
-        binding.studyProgress.setProgress(progress);
-        binding.textStepCount.setText(Math.min(currentStepIndex + 1, total) + "/" + total);
     }
 
     private void confirmExit() {

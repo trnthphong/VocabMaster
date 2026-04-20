@@ -4,13 +4,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/surface_light">
+    android:background="#4046D8">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/back" />
+        android:background="#4046D8"
+        app:navigationIcon="@drawable/left_arrow"
+        app:navigationIconTint="@color/white"
+        app:titleTextColor="@color/white" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -29,12 +32,6 @@
             android:max="100"
             android:progress="0" />
 
-        <TextView
-            android:id="@+id/text_step_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
     </LinearLayout>
 
     <ProgressBar

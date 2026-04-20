@@ -119,6 +119,18 @@
                             android:visibility="gone"
                             tools:visibility="visible" />
 
+                        <TextView
+                            android:id="@+id/text_vietnamese"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="🇻🇳 Nghĩa tiếng Việt"
+                            android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                            android:textColor="@color/brand_primary"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_audio"
                             style="@style/Widget.MaterialComponents.Button.TextButton.Icon"

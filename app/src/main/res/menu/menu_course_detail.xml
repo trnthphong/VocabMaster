@@ -9,6 +9,6 @@
     <item
         android:id="@+id/action_delete_course"
         android:title="Xóa khóa học"
-        android:icon="@drawable/delete"
+        android:icon="@drawable/trash"
         app:showAsAction="ifRoom" />
 </menu>

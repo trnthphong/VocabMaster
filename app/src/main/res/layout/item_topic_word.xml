@@ -70,7 +70,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="8dp"
                 android:scaleType="centerInside"
-                android:src="@drawable/delete"
+                android:src="@drawable/trash"
                 app:tint="@color/error" />
 
         </LinearLayout>

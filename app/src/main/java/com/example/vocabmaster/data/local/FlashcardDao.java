@@ -29,7 +29,7 @@ public interface FlashcardDao {
     @Query("SELECT * FROM flashcards")
     LiveData<List<Flashcard>> getAllFlashcards();
 
-    @Query("SELECT * FROM flashcards WHERE courseId = -1")
+    @Query("SELECT * FROM flashcards WHERE courseId <= 0 ORDER BY id DESC")
     LiveData<List<Flashcard>> getPersonalFlashcards();
 
     @Query("SELECT * FROM flashcards WHERE courseId = :courseId AND lastReviewTime + interval * 86400000 <= :currentTime")

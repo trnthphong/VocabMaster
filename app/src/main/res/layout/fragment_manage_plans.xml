@@ -19,7 +19,7 @@
             android:layout_height="32dp"
             android:scaleType="fitCenter"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/back"
+            android:src="@drawable/left_arrow"
             app:tint="@color/brand_primary"
             android:contentDescription="Back" />
 

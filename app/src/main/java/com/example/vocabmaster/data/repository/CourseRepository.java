@@ -236,7 +236,30 @@ public class CourseRepository {
     public void addCourseToFirestore(Course course) { if (personalCoursesRef != null) personalCoursesRef.add(course).addOnSuccessListener(doc -> { course.setFirestoreId(doc.getId()); personalCoursesRef.document(doc.getId()).update("firestoreId", doc.getId()); }); }
     public void updateCourseInFirestore(Course course) { if (course.getFirestoreId() != null) personalCoursesRef.document(course.getFirestoreId()).set(course); }
     public void addCourseAndSync(Course course) { addCourseToFirestore(course); }
-    public void addPersonalFlashcard(Flashcard flashcard) { personalFlashcardsRef.add(flashcard).addOnSuccessListener(doc -> { flashcard.setFirestoreId(doc.getId()); executorService.execute(() -> flashcardDao.insert(flashcard)); }); }
+    public void addPersonalFlashcard(Flashcard flashcard) {
+        // Lưu Room ngay lập tức
+        executorService.execute(() -> flashcardDao.insert(flashcard));
+        // Sync lên Firestore sau
+        if (personalFlashcardsRef != null) {
+            personalFlashcardsRef.add(flashcard).addOnSuccessListener(doc ->
+                executorService.execute(() -> {
+                    flashcard.setFirestoreId(doc.getId());
+                    flashcardDao.update(flashcard);
+                })
+            );
+        }
+    }
     public void deleteFlashcard(Flashcard flashcard) { executorService.execute(() -> flashcardDao.delete(flashcard)); if (flashcard.getFirestoreId() != null) personalFlashcardsRef.document(flashcard.getFirestoreId()).delete(); }
+
+    public void updateFlashcard(Flashcard flashcard) {
+        executorService.execute(() -> flashcardDao.update(flashcard));
+        if (flashcard.getFirestoreId() != null) {
+            personalFlashcardsRef.document(flashcard.getFirestoreId()).update(
+                "term", flashcard.getTerm(),
+                "definition", flashcard.getDefinition(),
+                "example", flashcard.getExample()
+            );
+        }
+    }
     public Task<Void> deleteCourseFromFirestore(String id) { return personalCoursesRef.document(id).delete(); }
 }
