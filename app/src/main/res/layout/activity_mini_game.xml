@@ -153,21 +153,21 @@
                 <ImageView android:src="@drawable/vocab" android:layout_width="50dp" android:layout_height="50dp" />
                 <LinearLayout android:layout_marginStart="16dp" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
                     <TextView android:textSize="18sp" android:textStyle="bold" android:text="Thử thách từ vựng" android:layout_width="wrap_content" android:layout_height="wrap_content" />
-                    <TextView android:text="4 loại thử thách xáo trộn" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:text="Luyện tập ghi nhớ (Không cộng điểm)" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_speed_word"
+            android:id="@+id/card_ai_riddle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="20dp">
             <LinearLayout android:padding="20dp" android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
-                <ImageView android:src="@drawable/speedup" android:layout_width="50dp" android:layout_height="50dp" />
+                <ImageView android:src="@drawable/brain" android:layout_width="50dp" android:layout_height="50dp" />
                 <LinearLayout android:layout_marginStart="16dp" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <TextView android:textSize="18sp" android:textStyle="bold" android:text="Thử thách dùng từ nhanh" android:layout_width="wrap_content" android:layout_height="wrap_content" />
-                    <TextView android:text="Nối từ cùng AI" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:textSize="18sp" android:textStyle="bold" android:text="Đố vui cùng AI" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:text="Đoán từ qua gợi ý của AI" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
