@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        android:text="Đoán từ vựng dựa trên gợi ý từ AI.\nMỗi câu có 15 giây!"
+        android:text="Đoán từ vựng dựa trên gợi ý từ AI."
         android:textColor="@color/text_secondary"
         android:textSize="16sp" />
 
