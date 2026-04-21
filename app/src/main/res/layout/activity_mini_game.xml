@@ -144,21 +144,6 @@
         android:visibility="gone">
 
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_vocabulary_challenge"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            app:cardCornerRadius="20dp">
-            <LinearLayout android:padding="20dp" android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
-                <ImageView android:src="@drawable/vocab" android:layout_width="50dp" android:layout_height="50dp" />
-                <LinearLayout android:layout_marginStart="16dp" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <TextView android:textSize="18sp" android:textStyle="bold" android:text="Thử thách từ vựng" android:layout_width="wrap_content" android:layout_height="wrap_content" />
-                    <TextView android:text="Luyện tập ghi nhớ (Không cộng điểm)" android:layout_width="wrap_content" android:layout_height="wrap_content" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_ai_riddle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
