@@ -10,8 +10,8 @@
         android:id="@+id/card_flashcard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="32dp"
-        android:minHeight="450dp"
+        android:layout_margin="16dp"
+        android:minHeight="520dp"
         app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="28dp"
         app:cardElevation="12dp"
@@ -25,7 +25,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="450dp">
+            android:minHeight="520dp">
 
             <!-- Delete Button (Top Right) -->
             <ImageButton
@@ -45,14 +45,14 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="450dp">
+                android:minHeight="520dp">
 
                 <!-- Front Side -->
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/card_front"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="450dp"
+                    android:minHeight="520dp"
                     android:paddingBottom="24dp">
 
                     <TextView
@@ -75,8 +75,8 @@
                     <!-- Fixed size image, centered, fitCenter -->
                     <ImageView
                         android:id="@+id/image_vocab"
-                        android:layout_width="220dp"
-                        android:layout_height="220dp"
+                        android:layout_width="260dp"
+                        android:layout_height="260dp"
                         android:layout_marginTop="16dp"
                         android:scaleType="fitCenter"
                         android:visibility="gone"
@@ -104,7 +104,7 @@
                             android:textAlignment="center"
                             android:textAppearance="@style/TextAppearance.VocabMaster.H2"
                             android:textColor="@color/brand_primary"
-                            android:textSize="36sp"
+                            android:textSize="42sp"
                             android:textStyle="bold"
                             tools:text="Vocabulary" />
 
@@ -163,7 +163,7 @@
                     android:id="@+id/card_back"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:minHeight="450dp"
+                    android:minHeight="520dp"
                     android:padding="32dp"
                     android:visibility="gone">
 

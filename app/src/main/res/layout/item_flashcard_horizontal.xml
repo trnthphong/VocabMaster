@@ -56,8 +56,8 @@
 
                 <ImageView
                     android:id="@+id/image_vocab"
-                    android:layout_width="180dp"
-                    android:layout_height="180dp"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
                     android:layout_marginTop="16dp"
                     android:scaleType="centerCrop"
                     android:visibility="gone"
@@ -74,7 +74,7 @@
                     android:textAlignment="center"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H1"
                     android:textColor="@color/brand_primary"
-                    android:textSize="36sp"
+                    android:textSize="42sp"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toTopOf="@id/text_phonetic"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -92,10 +92,26 @@
                     android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
                     android:textColor="@color/text_secondary"
                     android:visibility="gone"
-                    app:layout_constraintBottom_toTopOf="@id/text_tap_hint"
+                    app:layout_constraintBottom_toTopOf="@id/text_vietnamese"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/text_word"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/text_vietnamese"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/brand_secondary"
+                    android:textStyle="italic"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toTopOf="@id/text_tap_hint"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/text_phonetic"
+                    tools:text="xin chào"
                     tools:visibility="visible" />
 
                 <TextView

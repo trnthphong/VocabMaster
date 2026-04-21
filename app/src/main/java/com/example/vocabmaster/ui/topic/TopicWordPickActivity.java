@@ -10,8 +10,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.local.AppDatabase;
@@ -77,8 +77,31 @@ public class TopicWordPickActivity extends AppCompatActivity {
         adapter = new WordPickAdapter(selectedIds, count -> {
             updateStartButton(count);
         });
-        binding.recyclerWords.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+
+        // ViewPager2 setup — swipe giống My Library
         binding.recyclerWords.setAdapter(adapter);
+        binding.recyclerWords.setOffscreenPageLimit(3);
+        binding.recyclerWords.setClipToPadding(false);
+        binding.recyclerWords.setClipChildren(false);
+
+        float margin = 32 * getResources().getDisplayMetrics().density;
+        binding.recyclerWords.setPageTransformer((page, position) -> {
+            float absPos = Math.abs(position);
+            page.setScaleY(0.88f + (1 - absPos) * 0.12f);
+            page.setAlpha(0.5f + (1 - absPos) * 0.5f);
+            page.setTranslationX(-position * margin);
+        });
+
+        binding.recyclerWords.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                int total = adapter.getItemCount();
+                if (total > 0) {
+                    binding.textCardCounter.setVisibility(View.VISIBLE);
+                    binding.textCardCounter.setText((position + 1) + " / " + total);
+                }
+            }
+        });
     }
 
     private void loadWords() {
@@ -113,6 +136,9 @@ public class TopicWordPickActivity extends AppCompatActivity {
                 binding.textSubtitle.setText(result.size() + " từ có sẵn");
                 adapter.setWords(result);
                 updateStartButton(0);
+                // Hiện counter
+                binding.textCardCounter.setVisibility(View.VISIBLE);
+                binding.textCardCounter.setText("1 / " + result.size());
             });
         });
     }
@@ -241,7 +267,6 @@ public class TopicWordPickActivity extends AppCompatActivity {
                     b.imageVocab.setVisibility(View.VISIBLE);
                     com.bumptech.glide.Glide.with(b.getRoot().getContext())
                             .load(imgUrl)
-                            .placeholder(R.drawable.macdinh)
                             .error(R.drawable.macdinh)
                             .centerCrop()
                             .into(b.imageVocab);

@@ -63,9 +63,17 @@ public class TopicFlashcardAdapter extends ListAdapter<Vocabulary, TopicFlashcar
             binding.textPhonetic.setText(vocab.getPhonetic() != null ? vocab.getPhonetic() : "");
             binding.textPhonetic.setVisibility(vocab.getPhonetic() != null && !vocab.getPhonetic().isEmpty() ? View.VISIBLE : View.GONE);
 
-            // Vietnamese translation
+            // Vietnamese translation — hiển thị bên dưới phiên âm
             String vi = vocab.getVietnamese_translation();
-            binding.labelTopic.setText(vi != null && !vi.isEmpty() ? "🇻🇳 " + vi : (vocab.getTopic() != null ? vocab.getTopic().toUpperCase() : "VOCAB"));
+            if (vi != null && !vi.isEmpty()) {
+                binding.textVietnamese.setText("🇻🇳 " + vi);
+                binding.textVietnamese.setVisibility(View.VISIBLE);
+            } else {
+                binding.textVietnamese.setVisibility(View.GONE);
+            }
+
+            // Topic label
+            binding.labelTopic.setText(vocab.getTopic() != null ? vocab.getTopic().toUpperCase() : "VOCAB");
 
             // Image
             String imgUrl = vocab.getImage_url();

@@ -53,17 +53,7 @@ public class TopicFlashcardActivity extends AppCompatActivity {
     private void setupViewPager() {
         adapter = new TopicFlashcardAdapter();
         binding.viewPagerFlashcards.setAdapter(adapter);
-        binding.viewPagerFlashcards.setOffscreenPageLimit(3);
-        binding.viewPagerFlashcards.setClipToPadding(false);
-        binding.viewPagerFlashcards.setClipChildren(false);
-
-        float margin = 40 * getResources().getDisplayMetrics().density;
-        binding.viewPagerFlashcards.setPageTransformer((page, position) -> {
-            float absPos = Math.abs(position);
-            page.setScaleY(0.85f + (1 - absPos) * 0.15f);
-            page.setAlpha(0.5f + (1 - absPos) * 0.5f);
-            page.setTranslationX(-position * margin);
-        });
+        binding.viewPagerFlashcards.setOffscreenPageLimit(2);
 
         binding.viewPagerFlashcards.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override

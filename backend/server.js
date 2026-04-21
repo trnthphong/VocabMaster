@@ -12,7 +12,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 async function generateContentAI(prompt) {
     if (!process.env.GEMINI_API_KEY) throw new Error("MISSING_KEY");
-    const models = ["gemini-1.5-flash", "gemini-pro"];
+    const models = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest"];
     for (const modelName of models) {
         try {
             console.log(`--- Thử gọi AI: ${modelName} ---`);
@@ -22,7 +22,7 @@ async function generateContentAI(prompt) {
             return JSON.parse(text);
         } catch (error) {
             console.warn(`⚠️ ${modelName} lỗi:`, error.message);
-            if (error.message.includes("429") || error.message.includes("quota")) throw new Error("QUOTA_EXCEEDED");
+            // Tiếp tục thử model tiếp theo, không throw sớm
         }
     }
     throw new Error("ALL_MODELS_FAILED");

@@ -4,13 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/surface_light">
+    android:background="#4046D8">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/left_arrow" />
+        app:navigationIcon="@drawable/left_arrow"
+        app:navigationIconTint="@color/white"
+
+        android:textColor="@color/white"
+        />
 
     <!-- Header info -->
     <LinearLayout
@@ -25,6 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Chọn từ bạn muốn học"
+            android:textColor="@color/white"
             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
 
         <LinearLayout
@@ -39,14 +44,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:text="Chọn tất cả" />
+                android:text="Chọn tất cả"
+                android:textColor="@color/white"
+                android:strokeColor="@color/white"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_shuffle"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔀 Xáo trộn" />
+                android:text="🔀 Xáo trộn"
+                android:textColor="@color/white"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -67,16 +75,26 @@
         android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
         android:visibility="gone" />
 
-    <!-- Horizontal RecyclerView for flashcards -->
-    <androidx.recyclerview.widget.RecyclerView
+    <TextView
+        android:id="@+id/text_card_counter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="4dp"
+        android:text="1 / 10"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- ViewPager2 for flashcard swipe -->
+    <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/recycler_words"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:orientation="horizontal" />
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="8dp" />
 
     <!-- Selected count and Start button -->
     <LinearLayout
@@ -92,6 +110,7 @@
             android:layout_gravity="center"
             android:layout_marginBottom="8dp"
             android:text="Đã chọn: 0 từ"
+            android:textColor="@color/white"
             android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
 
         <com.google.android.material.button.MaterialButton
@@ -99,6 +118,9 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="Bắt đầu học"
+            android:background="@drawable/button_login_neumorph"
+            android:textColor="@color/bg_grey"
+            app:backgroundTint="@null"
             android:textSize="16sp"
             app:cornerRadius="12dp" />
     </LinearLayout>

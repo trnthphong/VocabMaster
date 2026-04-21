@@ -64,8 +64,8 @@
             <FrameLayout
                 android:id="@+id/flashcard_container"
                 android:layout_width="match_parent"
-                android:layout_height="480dp"
-                android:layout_marginBottom="16dp">
+                android:layout_height="560dp"
+                android:layout_marginBottom="24dp">
 
                 <include
                     layout="@layout/layout_flashcard_topic"
@@ -80,6 +80,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+
                 android:visibility="gone">
             </LinearLayout>
 
@@ -88,8 +89,8 @@
                 android:id="@+id/btn_intro_next"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Bắt đầu luyện tập →"
+                android:layout_marginTop="24dp"
+                android:text="Bắt đầu luyện tập"
                 android:visibility="gone" />
         </LinearLayout>
 
@@ -143,29 +144,29 @@
                 android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
                 android:textAllCaps="false"
-                android:background="@drawable/button_login_neumorph"
-                android:textColor="@color/bg_grey"
+                android:background="@drawable/bg_selectable_item_3d"
+                android:textColor="@color/white"
                 app:backgroundTint="@null" />
             <com.google.android.material.button.MaterialButton android:id="@+id/btn_option2"
                 android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
                 android:textAllCaps="false"
-                android:background="@drawable/button_login_neumorph"
-                android:textColor="@color/bg_grey"
+                android:background="@drawable/bg_selectable_item_3d"
+                android:textColor="@color/white"
                 app:backgroundTint="@null" />
             <com.google.android.material.button.MaterialButton android:id="@+id/btn_option3"
                 android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
                 android:textAllCaps="false"
-                android:background="@drawable/button_login_neumorph"
-                android:textColor="@color/bg_grey"
+                android:background="@drawable/bg_selectable_item_3d"
+                android:textColor="@color/white"
                 app:backgroundTint="@null" />
             <com.google.android.material.button.MaterialButton android:id="@+id/btn_option4"
                 android:layout_width="match_parent" android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
                 android:textAllCaps="false"
-                android:background="@drawable/button_login_neumorph"
-                android:textColor="@color/bg_grey"
+                android:background="@drawable/bg_selectable_item_3d"
+                android:textColor="@color/white"
                 app:backgroundTint="@null" />
 
             <!-- Feedback đúng/sai -->
