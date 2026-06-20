@@ -18,16 +18,21 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.gamification.GamificationCalculator;
+import com.example.vocabmaster.data.gamification.GamificationConstants;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Topic;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.repository.FlashcardStudyRepository;
+import com.example.vocabmaster.data.repository.GamificationRepository;
 import com.example.vocabmaster.databinding.FragmentHomeBinding;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.library.CourseDetailActivity;
+import com.example.vocabmaster.ui.study.FlashcardStudyActivity;
 import com.example.vocabmaster.ui.study.MiniGameActivity;
 import com.example.vocabmaster.ui.study.StudyActivity;
 import com.google.android.gms.tasks.Task;
@@ -54,6 +59,8 @@ public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
     private FragmentHomeBinding binding;
     private FirebaseFirestore db;
+    private GamificationRepository gamificationRepository;
+    private FlashcardStudyRepository flashcardStudyRepository;
     private VocabularyDao vocabularyDao;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
@@ -70,6 +77,8 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         db = FirebaseFirestore.getInstance();
+        gamificationRepository = new GamificationRepository(requireContext());
+        flashcardStudyRepository = new FlashcardStudyRepository(requireActivity().getApplication());
         vocabularyDao = AppDatabase.getDatabase(requireContext()).vocabularyDao();
         return binding.getRoot();
     }
@@ -220,7 +229,7 @@ public class HomeFragment extends Fragment {
 
         binding.btnStartFlashcards.setOnClickListener(v -> {
             UiFeedback.performHaptic(requireContext(), 10);
-            Intent intent = new Intent(requireContext(), CourseDetailActivity.class);
+            Intent intent = new Intent(requireContext(), FlashcardStudyActivity.class);
             startActivity(intent);
         });
 
@@ -266,6 +275,26 @@ public class HomeFragment extends Fragment {
         startActivity(intent);
     }
 
+    private void updateSpacedRepetitionTask(String uid) {
+        if (flashcardStudyRepository == null || binding == null) return;
+        binding.subCards.setText("Đang kiểm tra lịch ôn...");
+        flashcardStudyRepository.loadDueStudyCardCount(uid)
+                .addOnSuccessListener(dueCount -> {
+                    if (binding == null || !isAdded()) return;
+                    int count = dueCount != null ? dueCount : 0;
+                    if (count > 0) {
+                        binding.subCards.setText(count + " thẻ cần ôn");
+                    } else {
+                        binding.subCards.setText("Không có thẻ cần ôn lúc này");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (binding != null && isAdded()) {
+                        binding.subCards.setText("Chạm để mở phiên ôn tập");
+                    }
+                });
+    }
+
     private void startJourneyFlow(Topic topic) {
         UiFeedback.performHaptic(requireContext(), 10);
         
@@ -309,6 +338,7 @@ public class HomeFragment extends Fragment {
 
         if (userListener != null) userListener.remove();
 
+        gamificationRepository.recoverHeartsIfDue(uid);
         userListener = db.collection("users").document(uid).addSnapshotListener((snapshot, e) -> {
             if (e != null) {
                 Log.w(TAG, "Listen failed.", e);
@@ -316,13 +346,14 @@ public class HomeFragment extends Fragment {
             }
 
             if (snapshot != null && snapshot.exists() && isAdded() && binding != null) {
-                currentUser = snapshot.toObject(User.class);
-                if (currentUser != null) {
-                    currentUser.setUid(uid);
-                    loadActiveCourse(uid);
-                    setupHeartTimer();
-                    updatePremiumUI();
-                }
+                    currentUser = snapshot.toObject(User.class);
+                    if (currentUser != null) {
+                        currentUser.setUid(uid);
+                        loadActiveCourse(uid);
+                        updateSpacedRepetitionTask(uid);
+                        setupHeartTimer();
+                        updatePremiumUI();
+                    }
             }
         });
     }
@@ -356,7 +387,7 @@ public class HomeFragment extends Fragment {
         }
         
         if (isPro) {
-            binding.textHearts.setText("∞");
+            binding.textHearts.setText("\u221E");
         }
     }
 
@@ -410,8 +441,8 @@ public class HomeFragment extends Fragment {
         if (currentUser == null || binding == null) return;
         binding.textGreeting.setText(getGreeting());
         binding.textUserName.setText(currentUser.getName());
-        if (currentUser.isActivePremium()) binding.textHearts.setText("∞");
-        else binding.textHearts.setText(String.valueOf(currentUser.getHearts()));
+        if (currentUser.isActivePremium()) binding.textHearts.setText("\u221E");
+        else binding.textHearts.setText(String.valueOf(Math.min(currentUser.getHearts(), GamificationConstants.MAX_HEARTS)));
         binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
         binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
     }
@@ -424,7 +455,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupHeartTimer() {
-        if (currentUser == null || currentUser.isActivePremium() || currentUser.getHearts() >= 5) {
+        if (currentUser == null || currentUser.isActivePremium()
+                || currentUser.getHearts() >= GamificationConstants.MAX_HEARTS) {
             stopTimer();
             return;
         }
@@ -445,7 +477,42 @@ public class HomeFragment extends Fragment {
     }
 
     private void updateTimerUI() {
-        // Logic timer...
+        if (currentUser == null || binding == null) return;
+        if (currentUser.isActivePremium()) {
+            binding.textHearts.setText("\u221E");
+            stopTimer();
+            return;
+        }
+
+        int hearts = Math.min(currentUser.getHearts(), GamificationConstants.MAX_HEARTS);
+        if (hearts >= GamificationConstants.MAX_HEARTS) {
+            binding.textHearts.setText(String.valueOf(hearts));
+            stopTimer();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        Long lastHeartRegenMillis = currentUser.getLastHeartRegen() != null
+                ? currentUser.getLastHeartRegen().toDate().getTime()
+                : null;
+        long nextHeartAtMillis = GamificationCalculator.nextHeartAtMillis(hearts, lastHeartRegenMillis, now);
+        long remainingMillis = nextHeartAtMillis - now;
+
+        if (nextHeartAtMillis <= 0L || remainingMillis <= 0L) {
+            String uid = FirebaseAuth.getInstance().getUid();
+            if (uid != null) gamificationRepository.recoverHeartsIfDue(uid);
+            binding.textHearts.setText(String.valueOf(hearts));
+            return;
+        }
+
+        binding.textHearts.setText(hearts + " " + formatCountdown(remainingMillis));
+    }
+
+    private String formatCountdown(long remainingMillis) {
+        long totalSeconds = Math.max(0L, remainingMillis / 1000L);
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format(Locale.US, "%02d:%02d", minutes, seconds);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.example.vocabmaster.ui.library;
 
 import android.os.Bundle;
+import android.content.Intent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.databinding.ActivityPersonalCardsBinding;
+import com.example.vocabmaster.ui.study.FlashcardStudyActivity;
 
 public class PersonalCardsActivity extends AppCompatActivity {
     private ActivityPersonalCardsBinding binding;
@@ -29,6 +31,14 @@ public class PersonalCardsActivity extends AppCompatActivity {
         setupViewPager();
         
         binding.toolbar.setNavigationOnClickListener(v -> finish());
+        binding.toolbar.inflateMenu(R.menu.menu_personal_cards);
+        binding.toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_study_flashcards) {
+                startActivity(new Intent(this, FlashcardStudyActivity.class));
+                return true;
+            }
+            return false;
+        });
 
         viewModel.getPersonalFlashcards().observe(this, flashcards -> {
             if (flashcards != null && !flashcards.isEmpty()) {

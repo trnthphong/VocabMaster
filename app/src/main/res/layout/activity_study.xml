@@ -6,13 +6,19 @@
     android:layout_height="match_parent"
     android:background="@color/light_blue">
 
+    <include
+        layout="@layout/layout_gamification_status"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <!-- Top Navigation Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
         android:layout_height="@dimen/bar_height"
         android:paddingHorizontal="@dimen/spacing_16"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/gamification_status_container">
 
         <ImageButton
             android:id="@+id/btn_close"

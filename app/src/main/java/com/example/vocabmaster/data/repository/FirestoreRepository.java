@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class FirestoreRepository {
     private final FirebaseFirestore db;
@@ -37,9 +38,12 @@ public class FirestoreRepository {
     public Task<Void> createNewUser(User user) {
         user.setCreatedAt(Timestamp.now());
         user.setLastActive(Timestamp.now());
+        user.setLastHeartRegen(Timestamp.now());
         user.setHearts(5);
         user.setXp(0);
         user.setStreak(0);
+        user.setLongestStreak(0);
+        user.setTimezone(TimeZone.getDefault().getID());
         user.setRole("user");
         user.setPremium(false);
         return usersRef.document(user.getUid()).set(user);

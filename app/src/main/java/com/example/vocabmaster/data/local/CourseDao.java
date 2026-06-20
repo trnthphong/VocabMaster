@@ -26,6 +26,9 @@ public interface CourseDao {
     @Query("SELECT * FROM courses ORDER BY id DESC")
     LiveData<List<Course>> getAllCourses();
 
+    @Query("SELECT * FROM courses ORDER BY id DESC")
+    List<Course> getAllCoursesSync();
+
     @Query("SELECT * FROM courses WHERE creatorId = :userId")
     LiveData<List<Course>> getCoursesByUser(String userId);
 

@@ -25,6 +25,8 @@ public class RoadmapAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private final List<RoadmapStep> steps;
     private final int viewType;
+    private String courseId;
+    private boolean isPersonal;
     private final int[] cardColors = {
             R.color.light_blue,
             R.color.light_yellow,
@@ -35,8 +37,19 @@ public class RoadmapAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     };
 
     public RoadmapAdapter(List<RoadmapStep> steps, int viewType) {
+        this(steps, viewType, null, false);
+    }
+
+    public RoadmapAdapter(List<RoadmapStep> steps, int viewType, String courseId, boolean isPersonal) {
         this.steps = steps;
         this.viewType = viewType;
+        this.courseId = courseId;
+        this.isPersonal = isPersonal;
+    }
+
+    public void setCourseContext(String courseId, boolean isPersonal) {
+        this.courseId = courseId;
+        this.isPersonal = isPersonal;
     }
 
     @Override
@@ -133,6 +146,11 @@ public class RoadmapAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             Intent intent = new Intent(v.getContext(), StudyActivity.class);
             intent.putExtra("lesson_id", step.getId());
             intent.putExtra("lesson_title", step.getTitle());
+            intent.putExtra("lesson_xp", step.getXpPoints());
+            if (courseId != null) {
+                intent.putExtra("course_id", courseId);
+                intent.putExtra("is_personal", isPersonal);
+            }
             v.getContext().startActivity(intent);
         }
     }

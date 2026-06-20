@@ -6,6 +6,8 @@
     android:orientation="vertical"
     android:background="#4046D8">
 
+    <include layout="@layout/layout_gamification_status" />
+
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"

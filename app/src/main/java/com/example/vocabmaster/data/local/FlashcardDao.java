@@ -9,6 +9,7 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.example.vocabmaster.data.model.Flashcard;
+import com.example.vocabmaster.data.model.CourseFlashcardCount;
 
 import java.util.List;
 
@@ -26,11 +27,20 @@ public interface FlashcardDao {
     @Query("SELECT * FROM flashcards WHERE courseId = :courseId")
     LiveData<List<Flashcard>> getFlashcardsByCourse(int courseId);
 
+    @Query("SELECT * FROM flashcards WHERE courseId = :courseId ORDER BY orderIndex, id")
+    List<Flashcard> getFlashcardsByCourseSync(int courseId);
+
+    @Query("SELECT courseId, COUNT(*) AS count FROM flashcards WHERE courseId > 0 GROUP BY courseId")
+    List<CourseFlashcardCount> getCourseFlashcardCounts();
+
     @Query("SELECT * FROM flashcards")
     LiveData<List<Flashcard>> getAllFlashcards();
 
     @Query("SELECT * FROM flashcards WHERE courseId <= 0 ORDER BY id DESC")
     LiveData<List<Flashcard>> getPersonalFlashcards();
+
+    @Query("SELECT * FROM flashcards WHERE courseId <= 0 ORDER BY id DESC")
+    List<Flashcard> getPersonalFlashcardsSync();
 
     @Query("SELECT * FROM flashcards WHERE courseId = :courseId AND lastReviewTime + interval * 86400000 <= :currentTime")
     LiveData<List<Flashcard>> getFlashcardsToReview(int courseId, long currentTime);

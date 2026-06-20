@@ -21,6 +21,7 @@ import com.example.vocabmaster.databinding.FragmentLibraryBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.ui.home.CreateTopicActivity;
 import com.example.vocabmaster.ui.library.MyTopicsActivity;
+import com.example.vocabmaster.ui.study.FlashcardStudyActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -78,6 +79,11 @@ public class LibraryFragment extends Fragment {
         // Nút New Card
         binding.btnCreateFlashcard.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), CreateFlashcardActivity.class);
+            startActivity(intent);
+        });
+
+        binding.btnStudyFlashcards.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), FlashcardStudyActivity.class);
             startActivity(intent);
         });
 

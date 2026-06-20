@@ -17,12 +17,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.gamification.GamificationConstants;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.repository.GamificationRepository;
 import com.example.vocabmaster.databinding.ActivityMiniGameBinding;
+import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
 import java.util.Locale;
@@ -31,10 +35,15 @@ public class MiniGameActivity extends AppCompatActivity {
 
     private static final String TAG = "MiniGameActivity";
     private ActivityMiniGameBinding binding;
+    private GamificationRepository gamificationRepository;
+    private GamificationStatusBinder gamificationStatusBinder;
+    private String currentUid;
     
     private TextToSpeech tts;
     private boolean isTtsReady = false;
     private MediaPlayer mediaPlayer;
+    private final Handler heartCountdownHandler = new Handler(Looper.getMainLooper());
+    private Runnable heartCountdownRunnable;
 
     // AI Riddle Mode variables
     private boolean isAiRiddleMode = false;
@@ -54,6 +63,13 @@ public class MiniGameActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMiniGameBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        gamificationRepository = new GamificationRepository(this);
+        gamificationStatusBinder = new GamificationStatusBinder(this, binding.getRoot());
+        currentUid = FirebaseAuth.getInstance().getUid();
+        if (currentUid != null) {
+            gamificationRepository.recoverHeartsIfDue(currentUid);
+        }
+        gamificationStatusBinder.start(currentUid);
 
         initTTS();
         initMediaPlayer();
@@ -96,6 +112,7 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void showAiModes() {
+        stopHeartCountdown();
         binding.layoutModeSelection.setVisibility(View.GONE);
         binding.layoutAiModes.setVisibility(View.VISIBLE);
         binding.textTitle.setText("Chơi với máy");
@@ -103,6 +120,7 @@ public class MiniGameActivity extends AppCompatActivity {
 
     // --- AI RIDDLE MODE ---
     private void showAiRiddleLobby() {
+        stopHeartCountdown();
         isAiRiddleMode = true;
         binding.layoutAiModes.setVisibility(View.GONE);
         View lobby = getLayoutInflater().inflate(R.layout.layout_game_ai_riddle_lobby, binding.gameContainer, false);
@@ -121,6 +139,24 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void startAiRiddleGame() {
+        stopHeartCountdown();
+        if (currentUid == null) {
+            beginAiRiddleGame();
+            return;
+        }
+
+        gamificationRepository.recoverHeartsIfDue(currentUid)
+                .addOnSuccessListener(result -> {
+                    if (result.isPremium() || result.getHearts() > 0) {
+                        beginAiRiddleGame();
+                    } else {
+                        showOutOfHearts(result);
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Cannot check hearts", Toast.LENGTH_SHORT).show());
+    }
+
+    private void beginAiRiddleGame() {
         aiRiddleScore = 0;
         updateScoreUI();
         fetchAndShowNextRiddle();
@@ -185,12 +221,30 @@ public class MiniGameActivity extends AppCompatActivity {
                 UiFeedback.showSnack(binding.getRoot(), "Chính xác! +" + currentPointsPossible + " điểm");
                 new Handler(Looper.getMainLooper()).postDelayed(this::fetchAndShowNextRiddle, 1000);
             } else {
+                handleWrongAnswer(btnSubmit);
                 playSoundEffect(false);
                 Toast.makeText(this, "Chưa đúng rồi, thử lại nhé!", Toast.LENGTH_SHORT).show();
             }
         });
 
         startRiddleTimer(textTimer, progressTimer, textEngHint, textViHint, textPlaceholders);
+    }
+
+    private void handleWrongAnswer(MaterialButton btnSubmit) {
+        if (currentUid == null) return;
+
+        btnSubmit.setEnabled(false);
+        gamificationRepository.spendHeart(currentUid)
+                .addOnSuccessListener(result -> {
+                    btnSubmit.setEnabled(true);
+                    if (!result.isAllowed() || (!result.isPremium() && result.getHearts() <= 0)) {
+                        showOutOfHearts(result);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    btnSubmit.setEnabled(true);
+                    Toast.makeText(this, "Cannot update hearts", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private String getMaskedWord(String word, int percent) {
@@ -309,6 +363,60 @@ public class MiniGameActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void showOutOfHearts(GamificationRepository.HeartState state) {
+        if (riddleTimer != null) riddleTimer.cancel();
+        stopHeartCountdown();
+
+        binding.layoutModeSelection.setVisibility(View.GONE);
+        binding.layoutAiModes.setVisibility(View.GONE);
+        binding.gameContainer.setVisibility(View.VISIBLE);
+        binding.gameContainer.removeAllViews();
+        binding.textTitle.setText("H\u1ebft tim");
+
+        View view = getLayoutInflater().inflate(R.layout.layout_game_out_of_hearts, binding.gameContainer, false);
+        TextView timerText = view.findViewById(R.id.text_out_of_hearts_timer);
+        MaterialButton backButton = view.findViewById(R.id.btn_back_lobby);
+        binding.gameContainer.addView(view);
+
+        long nextHeartAtMillis = state != null ? state.getNextHeartAtMillis() : -1L;
+        if (nextHeartAtMillis <= 0L) {
+            nextHeartAtMillis = System.currentTimeMillis() + GamificationConstants.HEART_REGEN_INTERVAL_MILLIS;
+        }
+
+        startHeartCountdown(timerText, nextHeartAtMillis);
+        backButton.setOnClickListener(v -> showAiRiddleLobby());
+    }
+
+    private void startHeartCountdown(TextView timerText, long nextHeartAtMillis) {
+        stopHeartCountdown();
+        heartCountdownRunnable = () -> {
+            long remainingMillis = nextHeartAtMillis - System.currentTimeMillis();
+            if (remainingMillis <= 0L) {
+                timerText.setText("00:00");
+                if (currentUid != null) gamificationRepository.recoverHeartsIfDue(currentUid);
+                stopHeartCountdown();
+                return;
+            }
+            timerText.setText(formatCountdown(remainingMillis));
+            heartCountdownHandler.postDelayed(heartCountdownRunnable, 1000);
+        };
+        heartCountdownHandler.post(heartCountdownRunnable);
+    }
+
+    private void stopHeartCountdown() {
+        if (heartCountdownRunnable != null) {
+            heartCountdownHandler.removeCallbacks(heartCountdownRunnable);
+            heartCountdownRunnable = null;
+        }
+    }
+
+    private String formatCountdown(long remainingMillis) {
+        long totalSeconds = Math.max(0L, remainingMillis / 1000L);
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format(Locale.US, "%02d:%02d", minutes, seconds);
+    }
+
     private void updateScoreUI() {
         if (isAiRiddleMode) {
             binding.textScore.setText("Điểm: " + aiRiddleScore);
@@ -318,6 +426,7 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void handleBack() {
+        stopHeartCountdown();
         if (riddleTimer != null) riddleTimer.cancel();
         
         if (binding.gameContainer.getVisibility() == View.VISIBLE) {
@@ -340,6 +449,8 @@ public class MiniGameActivity extends AppCompatActivity {
             mediaPlayer = null;
         }
         if (riddleTimer != null) riddleTimer.cancel();
+        stopHeartCountdown();
+        if (gamificationStatusBinder != null) gamificationStatusBinder.stop();
         super.onDestroy();
     }
 }
