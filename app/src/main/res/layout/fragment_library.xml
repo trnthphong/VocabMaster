@@ -297,6 +297,15 @@
                     android:text="Flashcards"
                     android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_study_flashcards"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ôn tập"
+                    android:textColor="@color/white"
+                    app:icon="@drawable/flash_card"
+                    app:iconTint="@color/white" />
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_create_flashcard"
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"

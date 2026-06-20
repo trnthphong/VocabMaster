@@ -13,21 +13,32 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.gamification.GamificationConstants;
 import com.example.vocabmaster.data.model.Challenge;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
+import com.example.vocabmaster.data.repository.GamificationRepository;
+import com.example.vocabmaster.data.repository.StudyPlanRepository;
 import com.example.vocabmaster.databinding.ActivityStudyBinding;
 import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
+import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StudyActivity extends AppCompatActivity {
     private static final String TAG = "StudyActivity";
@@ -38,8 +49,15 @@ public class StudyActivity extends AppCompatActivity {
     private String wordId;
     private List<Challenge> challenges = new ArrayList<>();
     private int currentChallengeIndex = 0;
+    private int lessonXp = GamificationConstants.DEFAULT_LESSON_XP;
+    private String courseId;
+    private boolean isPersonalCourse = false;
+    private boolean completionHandled = false;
     private Vocabulary currentVocab;
     private CourseRepository repository;
+    private GamificationRepository gamificationRepository;
+    private GamificationStatusBinder gamificationStatusBinder;
+    private StudyPlanRepository studyPlanRepository;
     private MediaPlayer mediaPlayer;
     
     private boolean isFlashcardMode = false;
@@ -53,10 +71,18 @@ public class StudyActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         repository = new CourseRepository(getApplication());
+        gamificationRepository = new GamificationRepository(this);
+        gamificationStatusBinder = new GamificationStatusBinder(this, binding.getRoot());
+        studyPlanRepository = new StudyPlanRepository(getApplication());
         mediaPlayer = new MediaPlayer();
+        binding.layoutStats.setVisibility(View.GONE);
+        gamificationStatusBinder.start();
         
         lessonId = getIntent().getStringExtra("lesson_id");
         wordId = getIntent().getStringExtra("word_id");
+        courseId = getIntent().getStringExtra("course_id");
+        isPersonalCourse = getIntent().getBooleanExtra("is_personal", false);
+        lessonXp = getIntent().getIntExtra("lesson_xp", GamificationConstants.DEFAULT_LESSON_XP);
         useTopicLayout = getIntent().getBooleanExtra("use_topic_layout", false);
         String lessonTitle = getIntent().getStringExtra("lesson_title");
         if (lessonTitle != null) binding.textHeaderTitle.setText(lessonTitle);
@@ -125,11 +151,19 @@ public class StudyActivity extends AppCompatActivity {
     private void loadLessonChallenges() {
         if (lessonId == null) return;
 
+        loadLessonXpFallback();
         db.collection("challenges")
                 .whereEqualTo("lessonId", lessonId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    challenges = queryDocumentSnapshots.toObjects(Challenge.class);
+                    challenges = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        Challenge challenge = doc.toObject(Challenge.class);
+                        if (challenge != null) {
+                            challenge.setId(doc.getId());
+                            challenges.add(challenge);
+                        }
+                    }
                     if (challenges != null && !challenges.isEmpty()) {
                         Collections.sort(challenges, (c1, c2) -> Integer.compare(c1.getOrderNum(), c2.getOrderNum()));
                         displayChallenge();
@@ -144,10 +178,23 @@ public class StudyActivity extends AppCompatActivity {
                 });
     }
 
+    private void loadLessonXpFallback() {
+        db.collection("lessons").document(lessonId).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) lessonXp = readLessonXp(doc);
+                });
+    }
+
+    private int readLessonXp(DocumentSnapshot doc) {
+        Long xp = doc.getLong("xpPoints");
+        if (xp == null) xp = doc.getLong("xp_points");
+        return xp != null ? xp.intValue() : GamificationConstants.DEFAULT_LESSON_XP;
+    }
+
     private void displayChallenge() {
         if (currentChallengeIndex >= challenges.size()) {
             Toast.makeText(this, "Chúc mừng! Bạn đã hoàn thành bài học", Toast.LENGTH_SHORT).show();
-            finish();
+            completeLesson();
             return;
         }
 
@@ -197,6 +244,66 @@ public class StudyActivity extends AppCompatActivity {
     private void nextChallenge() {
         currentChallengeIndex++;
         displayChallenge();
+    }
+
+    private void completeLesson() {
+        if (completionHandled) return;
+        completionHandled = true;
+
+        String uid = FirebaseAuth.getInstance().getUid();
+        int xpEarned = lessonXp > 0 ? lessonXp : GamificationConstants.DEFAULT_LESSON_XP;
+        if (uid == null) {
+            openStudySummary(xpEarned);
+            return;
+        }
+
+        Task<Void> progressTask = saveChallengeProgress(uid);
+        Task<GamificationRepository.StudyAwardResult> awardTask =
+                gamificationRepository.awardStudyCompletion(uid, xpEarned);
+
+        Tasks.whenAllComplete(progressTask, awardTask)
+                .addOnCompleteListener(task -> {
+                    if (courseId != null) {
+                        studyPlanRepository.markLessonAsCompleted(uid, lessonId, courseId);
+                    }
+                    openStudySummary(xpEarned);
+                });
+    }
+
+    private Task<Void> saveChallengeProgress(String uid) {
+        if (challenges == null || challenges.isEmpty()) {
+            return Tasks.forResult(null);
+        }
+
+        WriteBatch batch = db.batch();
+        for (Challenge challenge : challenges) {
+            String challengeId = challenge.getId();
+            if (challengeId == null || challengeId.trim().isEmpty()) {
+                challengeId = lessonId + "_" + challenge.getOrderNum();
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", uid + "_" + challengeId);
+            data.put("userId", uid);
+            data.put("challengeId", challengeId);
+            data.put("completed", true);
+            data.put("completedAt", Timestamp.now());
+
+            batch.set(db.collection("challengeProgress").document(uid + "_" + challengeId), data);
+        }
+        return batch.commit();
+    }
+
+    private void openStudySummary(int xpEarned) {
+        Intent intent = new Intent(this, StudySummaryActivity.class);
+        intent.putExtra("xp", xpEarned);
+        intent.putExtra("lesson_id", lessonId);
+        if (courseId != null) {
+            intent.putExtra("course_id", courseId);
+            intent.putExtra("is_personal", isPersonalCourse);
+        }
+        startActivity(intent);
+        finish();
     }
 
     private void playAudio(String url) {
@@ -317,5 +424,6 @@ public class StudyActivity extends AppCompatActivity {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        if (gamificationStatusBinder != null) gamificationStatusBinder.stop();
     }
 }

@@ -17,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.TimeZone;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -75,7 +76,11 @@ public class RegisterActivity extends AppCompatActivity {
                             user.put("premium", false);
                             user.put("xp", 0);
                             user.put("streak", 0);
+                            user.put("longestStreak", 0);
                             user.put("hearts", 5);
+                            user.put("lastHeartRegen", FieldValue.serverTimestamp());
+                            user.put("lastActive", FieldValue.serverTimestamp());
+                            user.put("timezone", TimeZone.getDefault().getID());
                             user.put("role", "user");
                             user.put("darkMode", false);
                             user.put("dailyGoal", 20);

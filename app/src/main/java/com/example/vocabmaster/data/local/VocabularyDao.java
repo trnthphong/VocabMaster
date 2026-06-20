@@ -7,6 +7,7 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.model.TopicStudySetCount;
 
 import java.util.List;
 
@@ -23,6 +24,9 @@ public interface VocabularyDao {
 
     @Query("SELECT * FROM vocabularies_local WHERE topic = :topic")
     List<Vocabulary> getVocabulariesByTopic(String topic);
+
+    @Query("SELECT topic, COUNT(*) AS count FROM vocabularies_local WHERE topic IS NOT NULL AND topic != '' GROUP BY topic ORDER BY topic")
+    List<TopicStudySetCount> getTopicStudySetCounts();
 
     @Query("SELECT * FROM vocabularies_local WHERE topic = :topic AND learnStatus = 0")
     List<Vocabulary> getNewWordsByTopic(String topic);

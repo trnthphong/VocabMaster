@@ -1,5 +1,7 @@
 package com.example.vocabmaster.ui.library;
 
+import com.example.vocabmaster.data.gamification.GamificationConstants;
+
 public class RoadmapStep {
     private String id;
     private String level; // VD: Unit 1
@@ -9,8 +11,13 @@ public class RoadmapStep {
     private boolean isLocked;
     private boolean isCompleted;
     private String type;
+    private int xpPoints;
 
     public RoadmapStep(String id, String level, String title, String description, int iconRes, boolean isLocked, boolean isCompleted, String type) {
+        this(id, level, title, description, iconRes, isLocked, isCompleted, type, GamificationConstants.DEFAULT_LESSON_XP);
+    }
+
+    public RoadmapStep(String id, String level, String title, String description, int iconRes, boolean isLocked, boolean isCompleted, String type, int xpPoints) {
         this.id = id;
         this.level = level;
         this.title = title;
@@ -19,6 +26,7 @@ public class RoadmapStep {
         this.isLocked = isLocked;
         this.isCompleted = isCompleted;
         this.type = type;
+        this.xpPoints = xpPoints;
     }
 
     public String getId() { return id; }
@@ -29,4 +37,5 @@ public class RoadmapStep {
     public boolean isLocked() { return isLocked; }
     public boolean isCompleted() { return isCompleted; }
     public String getType() { return type; }
+    public int getXpPoints() { return xpPoints; }
 }

@@ -11,9 +11,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.repository.GamificationRepository;
 import com.example.vocabmaster.databinding.ActivityTopicLearnBinding;
+import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +28,8 @@ public class TopicLearnActivity extends AppCompatActivity {
 
     private ActivityTopicLearnBinding binding;
     private VocabularyDao vocabularyDao;
+    private GamificationRepository gamificationRepository;
+    private GamificationStatusBinder gamificationStatusBinder;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -40,6 +43,7 @@ public class TopicLearnActivity extends AppCompatActivity {
     int totalSteps = 0;
     int doneSteps = 0;
     int correctCount = 0;
+    boolean completionAwarded = false;
     MediaPlayer mediaPlayer;
 
     static class LearnStep {
@@ -70,6 +74,9 @@ public class TopicLearnActivity extends AppCompatActivity {
         binding.toolbar.setNavigationOnClickListener(v -> confirmExit());
 
         vocabularyDao = AppDatabase.getDatabase(this).vocabularyDao();
+        gamificationRepository = new GamificationRepository(this);
+        gamificationStatusBinder = new GamificationStatusBinder(this, binding.getRoot());
+        gamificationStatusBinder.start();
         mediaPlayer = new MediaPlayer();
         LearnStepFragment.sSharedMediaPlayer = mediaPlayer;
 
@@ -201,7 +208,7 @@ public class TopicLearnActivity extends AppCompatActivity {
             for (Vocabulary v : batch) {
                 vocabularyDao.updateLearnStatus(v.getVocabularyId(), 2, now);
             }
-            saveXp(batch.size() * 5);
+            awardTopicCompletion(batch.size() * 5);
         });
 
         LearnStepFragment fragment = LearnStepFragment.newSummary(batch.size(), correctCount);
@@ -228,11 +235,12 @@ public class TopicLearnActivity extends AppCompatActivity {
         binding.studyProgress.setProgress(Math.min(progress, 99));
     }
 
-    private void saveXp(int xp) {
+    private void awardTopicCompletion(int xp) {
+        if (completionAwarded) return;
+        completionAwarded = true;
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        FirebaseFirestore.getInstance().collection("users").document(uid)
-                .update("xp", com.google.firebase.firestore.FieldValue.increment(xp));
+        gamificationRepository.awardStudyCompletion(uid, xp);
     }
 
     private void confirmExit() {
@@ -248,5 +256,6 @@ public class TopicLearnActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
+        if (gamificationStatusBinder != null) gamificationStatusBinder.stop();
     }
 }

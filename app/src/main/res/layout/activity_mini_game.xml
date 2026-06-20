@@ -5,11 +5,14 @@
     android:layout_height="match_parent"
     android:background="@color/surface_light">
 
+    <include layout="@layout/layout_gamification_status" />
+
     <!-- Header -->
     <RelativeLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="60dp"
+        android:layout_below="@id/gamification_status_container"
         android:paddingHorizontal="16dp">
 
         <ImageButton

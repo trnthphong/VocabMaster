@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.gamification.GamificationConstants;
 import com.example.vocabmaster.data.model.CourseScheduleDay;
 import com.example.vocabmaster.data.repository.StudyPlanRepository;
 import com.example.vocabmaster.databinding.ActivityCourseDetailBinding;
@@ -99,11 +100,11 @@ public class CourseDetailActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerViews() {
-        roadmapTodayAdapter = new RoadmapAdapter(todayStepList, RoadmapAdapter.VIEW_TYPE_TODAY);
+        roadmapTodayAdapter = new RoadmapAdapter(todayStepList, RoadmapAdapter.VIEW_TYPE_TODAY, courseId, isPersonal);
         binding.recyclerRoadmap.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerRoadmap.setAdapter(roadmapTodayAdapter);
 
-        roadmapOverviewAdapter = new RoadmapAdapter(allStepsList, RoadmapAdapter.VIEW_TYPE_OVERVIEW);
+        roadmapOverviewAdapter = new RoadmapAdapter(allStepsList, RoadmapAdapter.VIEW_TYPE_OVERVIEW, courseId, isPersonal);
         binding.recyclerOverviewUnits.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerOverviewUnits.setAdapter(roadmapOverviewAdapter);
 
@@ -198,6 +199,8 @@ public class CourseDetailActivity extends AppCompatActivity {
                     if (!querySnapshot.isEmpty()) {
                         courseId = querySnapshot.getDocuments().get(0).getId();
                         isPersonal = true;
+                        roadmapTodayAdapter.setCourseContext(courseId, isPersonal);
+                        roadmapOverviewAdapter.setCourseContext(courseId, isPersonal);
                         fetchCourseDetails();
                         loadStudySessions();
                     }
@@ -289,7 +292,7 @@ public class CourseDetailActivity extends AppCompatActivity {
                     todayStepList.add(new RoadmapStep(lc.lessonDoc.getId(), lc.unitTitle, lc.lessonDoc.getString("title"), 
                         completedCount + "/" + totalChallenges + " Thử thách hoàn thành", 
                         (lessonIndexInUnit == 0) ? R.drawable.start : (lessonIndexInUnit == 1 ? R.drawable.speedup : R.drawable.finish), 
-                        false, false, lc.lessonDoc.getString("type")));
+                        false, false, lc.lessonDoc.getString("type"), getLessonXp(lc.lessonDoc)));
                 } else if (foundActive) isLocked = true;
 
                 String currentUnitId = lc.unitDoc.getId();
@@ -299,13 +302,19 @@ public class CourseDetailActivity extends AppCompatActivity {
                 allStepsList.add(new RoadmapStep(lc.lessonDoc.getId(), lc.unitTitle, lc.lessonDoc.getString("title"), 
                     completedCount + "/" + totalChallenges + " Challenges", 
                     (lessonIndexInUnit == 0) ? R.drawable.start : (lessonIndexInUnit == 1 ? R.drawable.speedup : R.drawable.finish), 
-                    isLocked, isCompleted, lc.lessonDoc.getString("type")));
+                    isLocked, isCompleted, lc.lessonDoc.getString("type"), getLessonXp(lc.lessonDoc)));
             }
             
             roadmapTodayAdapter.notifyDataSetChanged();
             roadmapOverviewAdapter.notifyDataSetChanged();
             binding.progressRoadmap.setVisibility(View.GONE);
         });
+    }
+
+    private int getLessonXp(DocumentSnapshot lessonDoc) {
+        Long xp = lessonDoc.getLong("xpPoints");
+        if (xp == null) xp = lessonDoc.getLong("xp_points");
+        return xp != null ? xp.intValue() : GamificationConstants.DEFAULT_LESSON_XP;
     }
 
     private void deleteCourse() {
