@@ -58,6 +58,18 @@
         tools:layout="@layout/fragment_settings" />
 
     <fragment
+        android:id="@+id/navigation_support_center"
+        android:name="com.example.vocabmaster.ui.profile.SupportCenterFragment"
+        android:label="Support Center"
+        tools:layout="@layout/fragment_support_center" />
+
+    <fragment
+        android:id="@+id/navigation_terms_policy"
+        android:name="com.example.vocabmaster.ui.profile.TermsPolicyFragment"
+        android:label="Terms Policy"
+        tools:layout="@layout/fragment_terms_policy" />
+
+    <fragment
         android:id="@+id/navigation_premium"
         android:name="com.example.vocabmaster.ui.profile.PremiumFragment"
         android:label="Premium"

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.ItemFlashcardHorizontalBinding;
+import com.example.vocabmaster.util.SoundEffectManager;
 
 public class TopicFlashcardAdapter extends ListAdapter<Vocabulary, TopicFlashcardAdapter.VH> {
 
@@ -99,6 +100,7 @@ public class TopicFlashcardAdapter extends ListAdapter<Vocabulary, TopicFlashcar
 
             // Click to flip
             binding.cardFlashcard.setOnClickListener(v -> {
+                SoundEffectManager.playFlip(v.getContext());
                 isFlipped = !isFlipped;
                 binding.cardFront.setVisibility(isFlipped ? View.GONE : View.VISIBLE);
                 binding.cardBack.setVisibility(isFlipped ? View.VISIBLE : View.GONE);

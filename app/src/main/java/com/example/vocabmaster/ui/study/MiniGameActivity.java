@@ -24,6 +24,7 @@ import com.example.vocabmaster.data.repository.GamificationRepository;
 import com.example.vocabmaster.databinding.ActivityMiniGameBinding;
 import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.util.SoundEffectManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -98,6 +99,11 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void playSoundEffect(boolean isSuccess) {
+        if (isSuccess) {
+            SoundEffectManager.playCorrect(this);
+        } else {
+            SoundEffectManager.playWrong(this);
+        }
         if (isSuccess) {
             UiFeedback.performHaptic(this, 30);
         } else {

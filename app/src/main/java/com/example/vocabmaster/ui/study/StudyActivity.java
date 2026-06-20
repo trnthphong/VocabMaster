@@ -24,6 +24,7 @@ import com.example.vocabmaster.databinding.ActivityStudyBinding;
 import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.util.SoundEffectManager;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
@@ -227,9 +228,11 @@ public class StudyActivity extends AppCompatActivity {
                 
                 btnOption.setOnClickListener(v -> {
                     if (option.isCorrect()) {
+                        SoundEffectManager.playCorrect(this);
                         Toast.makeText(this, "Chính xác!", Toast.LENGTH_SHORT).show();
                         nextChallenge();
                     } else {
+                        SoundEffectManager.playWrong(this);
                         UiFeedback.performHaptic(this, 20);
                         Toast.makeText(this, "Sai rồi, thử lại nhé!", Toast.LENGTH_SHORT).show();
                     }
@@ -323,6 +326,7 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     private void flipCard() {
+        SoundEffectManager.playFlip(this);
         if (binding.cardFront.getVisibility() == View.VISIBLE) {
             binding.cardFront.setVisibility(View.GONE);
             binding.cardBack.setVisibility(View.VISIBLE);
@@ -334,6 +338,7 @@ public class StudyActivity extends AppCompatActivity {
 
     private void flipTopicCard() {
         if (topicBinding == null) return;
+        SoundEffectManager.playFlip(this);
         if (topicBinding.cardFront.getVisibility() == View.VISIBLE) {
             topicBinding.cardFront.setVisibility(View.GONE);
             topicBinding.cardBack.setVisibility(View.VISIBLE);

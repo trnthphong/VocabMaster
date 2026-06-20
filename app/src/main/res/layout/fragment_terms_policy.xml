@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_light">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:elevation="0dp">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/left_arrow"
+            app:title="Điều khoản &amp; Chính sách"
+            app:titleTextColor="@color/text_primary" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cập nhật lần cuối: 21/06/2026"
+                android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+                android:textColor="@color/text_secondary" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Điều khoản sử dụng"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Bạn chịu trách nhiệm về thông tin tài khoản, nội dung flashcard tự tạo và cách sử dụng các tài liệu học tập trong VocabMaster. Không đăng tải nội dung vi phạm pháp luật, bản quyền hoặc gây hại cho người dùng khác."
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/text_secondary" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="@color/card_border" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Chính sách bảo mật"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Ứng dụng lưu dữ liệu cần thiết để vận hành tài khoản, tiến độ học, XP, streak, tim, flashcard và cài đặt cá nhân. Dữ liệu được dùng để đồng bộ trải nghiệm học tập, hỗ trợ người dùng và cải thiện chất lượng sản phẩm."
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/text_secondary" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="@color/card_border" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Thanh toán &amp; Premium"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Các gói trả phí mở khóa quyền lợi theo mô tả trong ứng dụng. Nếu thanh toán gặp lỗi hoặc quyền lợi chưa được cập nhật, hãy liên hệ Trung tâm hỗ trợ cùng mã giao dịch."
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/text_secondary" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="@color/card_border" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Nội dung học tập"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="VocabMaster cố gắng duy trì nội dung chính xác, nhưng dữ liệu học tập có thể cần chỉnh sửa theo thời gian. Người dùng có thể báo lỗi nội dung qua Trung tâm hỗ trợ."
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/text_secondary" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="@color/card_border" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Liên hệ"
+                        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Mọi câu hỏi về điều khoản, quyền riêng tư hoặc dữ liệu cá nhân có thể gửi tới support@vocabmaster.app."
+                        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                        android:textColor="@color/text_secondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -21,6 +21,7 @@ import com.example.vocabmaster.data.srs.SpacedRepetitionConstants;
 import com.example.vocabmaster.databinding.ActivityFlashcardStudyBinding;
 import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.example.vocabmaster.ui.common.MotionSystem;
+import com.example.vocabmaster.util.SoundEffectManager;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayDeque;
@@ -252,6 +253,7 @@ public class FlashcardStudyActivity extends AppCompatActivity {
     private void flipToBack() {
         if (currentCard == null || showingBack) return;
         showingBack = true;
+        SoundEffectManager.playFlip(this);
 
         float scale = getResources().getDisplayMetrics().density;
         binding.cardFront.setCameraDistance(8000f * scale);

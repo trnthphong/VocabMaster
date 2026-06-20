@@ -35,6 +35,7 @@ public class User {
     private boolean darkMode;
     private String language;
     private boolean notificationsEnabled;
+    private boolean soundEffectsEnabled = true;
     private String currentUnitTitle;
     
     private String activeCourseId;
@@ -133,6 +134,8 @@ public class User {
     public void setLanguage(String language) { this.language = language; }
     public boolean isNotificationsEnabled() { return notificationsEnabled; }
     public void setNotificationsEnabled(boolean notificationsEnabled) { this.notificationsEnabled = notificationsEnabled; }
+    public boolean isSoundEffectsEnabled() { return soundEffectsEnabled; }
+    public void setSoundEffectsEnabled(boolean soundEffectsEnabled) { this.soundEffectsEnabled = soundEffectsEnabled; }
     public String getCurrentUnitTitle() { return currentUnitTitle; }
     public void setCurrentUnitTitle(String currentUnitTitle) { this.currentUnitTitle = currentUnitTitle; }
     public String getActiveCourseId() { return activeCourseId; }
