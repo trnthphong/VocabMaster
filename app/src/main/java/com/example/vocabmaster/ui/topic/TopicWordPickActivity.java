@@ -19,6 +19,7 @@ import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.ActivityTopicWordPickBinding;
 import com.example.vocabmaster.databinding.ItemWordPickBinding;
+import com.example.vocabmaster.util.SoundEffectManager;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -294,6 +295,7 @@ public class TopicWordPickActivity extends AppCompatActivity {
                 // Click to flip (not on button)
                 b.cardFlashcard.setOnClickListener(vw -> {
                     if (!isFlipped) {
+                        SoundEffectManager.playFlip(vw.getContext());
                         isFlipped = true;
                         b.cardFront.setVisibility(View.GONE);
                         b.cardBack.setVisibility(View.VISIBLE);
@@ -302,6 +304,7 @@ public class TopicWordPickActivity extends AppCompatActivity {
 
                 // Tap hint on back to flip back
                 b.textTapHintBack.setOnClickListener(vw -> {
+                    SoundEffectManager.playFlip(vw.getContext());
                     isFlipped = false;
                     b.cardFront.setVisibility(View.VISIBLE);
                     b.cardBack.setVisibility(View.GONE);

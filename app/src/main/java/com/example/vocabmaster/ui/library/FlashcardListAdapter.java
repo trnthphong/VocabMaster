@@ -21,6 +21,7 @@ import com.bumptech.glide.Glide;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
+import com.example.vocabmaster.util.SoundEffectManager;
 
 import java.io.IOException;
 
@@ -146,6 +147,7 @@ public class FlashcardListAdapter extends ListAdapter<Flashcard, FlashcardListAd
             }
 
             binding.cardFlashcard.setOnClickListener(v -> {
+                SoundEffectManager.playFlip(v.getContext());
                 if (binding.cardFront.getVisibility() == View.VISIBLE) {
                     binding.cardFront.setVisibility(View.GONE);
                     binding.cardBack.setVisibility(View.VISIBLE);

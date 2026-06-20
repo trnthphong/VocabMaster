@@ -15,6 +15,7 @@ import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.util.SoundEffectManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,6 +106,7 @@ public class TopicFlashcardAdapter extends RecyclerView.Adapter<TopicFlashcardAd
         }
 
         private void flipCard() {
+            SoundEffectManager.playFlip(itemView.getContext());
             if (binding.cardFront.getVisibility() == View.VISIBLE) {
                 binding.cardFront.setVisibility(View.GONE);
                 binding.cardBack.setVisibility(View.VISIBLE);

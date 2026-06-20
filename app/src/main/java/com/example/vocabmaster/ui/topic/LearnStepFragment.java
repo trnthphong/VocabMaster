@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide;
 import com.example.vocabmaster.R;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.databinding.FragmentLearnStepBinding;
+import com.example.vocabmaster.util.SoundEffectManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -215,6 +216,7 @@ public class LearnStepFragment extends Fragment {
 
                 // Flip on tap
                 b.flashcardContainer.setOnClickListener(cv -> {
+                    SoundEffectManager.playFlip(requireContext());
                     isFlipped[0] = !isFlipped[0];
                     fcBinding.cardFront.setVisibility(isFlipped[0] ? View.GONE : View.VISIBLE);
                     fcBinding.cardBack.setVisibility(isFlipped[0] ? View.VISIBLE : View.GONE);
@@ -499,27 +501,12 @@ public class LearnStepFragment extends Fragment {
         }
     }
 
-    /** Phát âm báo đúng/sai dùng ToneGenerator (không cần file asset) */
     private void playFeedbackSound(boolean correct) {
-        new Thread(() -> {
-            android.media.ToneGenerator tg = null;
-            try {
-                tg = new android.media.ToneGenerator(
-                        android.media.AudioManager.STREAM_MUSIC, 80);
-                if (correct) {
-                    // Đúng: 2 nốt cao ngắn
-                    tg.startTone(android.media.ToneGenerator.TONE_PROP_ACK, 120);
-                    Thread.sleep(150);
-                } else {
-                    // Sai: 1 nốt thấp dài hơn
-                    tg.startTone(android.media.ToneGenerator.TONE_PROP_NACK, 300);
-                    Thread.sleep(350);
-                }
-            } catch (Exception ignored) {
-            } finally {
-                if (tg != null) tg.release();
-            }
-        }).start();
+        if (correct) {
+            SoundEffectManager.playCorrect(requireContext());
+        } else {
+            SoundEffectManager.playWrong(requireContext());
+        }
     }
 
     @Override

@@ -46,6 +46,7 @@ public class FirestoreRepository {
         user.setTimezone(TimeZone.getDefault().getID());
         user.setRole("user");
         user.setPremium(false);
+        user.setSoundEffectsEnabled(true);
         return usersRef.document(user.getUid()).set(user);
     }
 

@@ -19,6 +19,7 @@ import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentSettingsBinding;
 import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.util.SoundEffectManager;
 import com.example.vocabmaster.util.ThemeUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -27,6 +28,7 @@ public class SettingsFragment extends Fragment {
     private FragmentSettingsBinding binding;
     private FirebaseFirestore db;
     private User currentUser;
+    private boolean applyingSoundEffectsSetting;
 
     private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
     private final int[] avatarResIds = {
@@ -59,6 +61,15 @@ public class SettingsFragment extends Fragment {
             saveSetting("darkMode", isChecked);
         });
         binding.switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("notificationsEnabled", isChecked));
+        binding.switchSoundEffects.setChecked(SoundEffectManager.isEnabled(requireContext()));
+        binding.switchSoundEffects.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (applyingSoundEffectsSetting) return;
+            SoundEffectManager.setEnabled(requireContext(), isChecked);
+            saveSetting("soundEffectsEnabled", isChecked);
+            if (isChecked) {
+                SoundEffectManager.playTap(requireContext());
+            }
+        });
 
         // --- Subscription Section ---
         binding.layoutBuyPlan.setOnClickListener(v ->
@@ -68,11 +79,11 @@ public class SettingsFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.navigation_manage_plans));
 
         // --- About Section ---
-        binding.layoutHelp.setOnClickListener(v -> 
-                Toast.makeText(getContext(), "Tính năng đang được phát triển", Toast.LENGTH_SHORT).show());
-        binding.layoutTerms.setOnClickListener(v -> 
-                Toast.makeText(getContext(), "Chính sách bảo mật & Điều khoản sử dụng", Toast.LENGTH_SHORT).show());
-        
+        binding.layoutHelp.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.navigation_support_center));
+        binding.layoutTerms.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.navigation_terms_policy));
+
         binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
 
         loadSettings();
@@ -143,6 +154,10 @@ public class SettingsFragment extends Fragment {
                 if (currentUser != null) {
                     binding.switchDarkMode.setChecked(currentUser.isDarkMode());
                     binding.switchNotifications.setChecked(currentUser.isNotificationsEnabled());
+                    applyingSoundEffectsSetting = true;
+                    binding.switchSoundEffects.setChecked(currentUser.isSoundEffectsEnabled());
+                    applyingSoundEffectsSetting = false;
+                    SoundEffectManager.setEnabled(requireContext(), currentUser.isSoundEffectsEnabled());
                 }
             }
         });
