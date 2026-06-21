@@ -411,7 +411,21 @@ public class HomeFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) handleLoadedCourse(querySnapshot.getDocuments().get(0));
-                    else updateProfileUI();
+                    else fallbackSearchAnyUserCourse(uid);
+                });
+    }
+
+    private void fallbackSearchAnyUserCourse(String uid) {
+        db.collection("users").document(uid).collection("personal_courses")
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) handleLoadedCourse(querySnapshot.getDocuments().get(0));
+                    else {
+                        activeCourse = null;
+                        nextLessonDoc = null;
+                        updateProfileUI();
+                    }
                 });
     }
 
@@ -419,22 +433,66 @@ public class HomeFragment extends Fragment {
         activeCourse = doc.toObject(Course.class);
         if (activeCourse != null) {
             activeCourse.setFirestoreId(doc.getId());
+            if (currentUser != null && (currentUser.getActiveCourseId() == null || !doc.getId().equals(currentUser.getActiveCourseId()))) {
+                db.collection("users").document(currentUser.getUid()).update("activeCourseId", doc.getId());
+            }
             findNextLesson(activeCourse.getFirestoreId(), doc.getReference().getParent().getPath().contains("personal_courses"));
         } else updateProfileUI();
     }
 
     private void findNextLesson(String courseId, boolean isPersonal) {
-        String unitsPath = isPersonal ? 
-                "users/" + FirebaseAuth.getInstance().getUid() + "/personal_courses/" + courseId + "/units" : 
-                "units";
-        
-        db.collection(unitsPath).get().addOnSuccessListener(unitSnapshots -> {
-            if (unitSnapshots.isEmpty()) {
-                updateProfileUI();
-                return;
-            }
-            updateProfileUI(); 
-        });
+        nextLessonDoc = null;
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (isPersonal && uid != null) {
+            db.collection("users").document(uid)
+                    .collection("personal_courses").document(courseId)
+                    .collection("units")
+                    .orderBy("orderNum")
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener(unitSnapshots -> {
+                        if (unitSnapshots.isEmpty()) {
+                            updateProfileUI();
+                            return;
+                        }
+
+                        unitSnapshots.getDocuments().get(0).getReference()
+                                .collection("lessons")
+                                .orderBy("orderNum")
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener(lessonSnapshots -> {
+                                    if (!lessonSnapshots.isEmpty()) {
+                                        nextLessonDoc = lessonSnapshots.getDocuments().get(0);
+                                    }
+                                    updateProfileUI();
+                                });
+                    });
+        } else {
+            db.collection("units")
+                    .whereEqualTo("courseId", courseId)
+                    .orderBy("orderNum")
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener(unitSnapshots -> {
+                        if (unitSnapshots.isEmpty()) {
+                            updateProfileUI();
+                            return;
+                        }
+
+                        db.collection("lessons")
+                                .whereEqualTo("unitId", unitSnapshots.getDocuments().get(0).getId())
+                                .orderBy("orderNum")
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener(lessonSnapshots -> {
+                                    if (!lessonSnapshots.isEmpty()) {
+                                        nextLessonDoc = lessonSnapshots.getDocuments().get(0);
+                                    }
+                                    updateProfileUI();
+                                });
+                    });
+        }
     }
 
     private void updateProfileUI() {
@@ -445,6 +503,43 @@ public class HomeFragment extends Fragment {
         else binding.textHearts.setText(String.valueOf(Math.min(currentUser.getHearts(), GamificationConstants.MAX_HEARTS)));
         binding.tvXpCount.setText(String.valueOf(currentUser.getXp()));
         binding.tvStreakCount.setText(String.valueOf(currentUser.getStreak()));
+        updateActiveCourseUI();
+    }
+
+    private void updateActiveCourseUI() {
+        if (binding == null) return;
+
+        if (activeCourse == null) {
+            binding.textCurrentCourseTitle.setText("No active course");
+            binding.textCurrentUnitTitle.setText("Create a course to start");
+            binding.textCourseProgress.setText("Your roadmap will appear here");
+            binding.textCoursePercent.setText("0%");
+            binding.progressCourseCircular.setProgress(0);
+            binding.imgCurrentCourseFlag.setImageResource(R.drawable.vocab);
+            return;
+        }
+
+        String courseTitle = activeCourse.getTitle() != null ? activeCourse.getTitle() : "Active course";
+        String lessonTitle = nextLessonDoc != null ? nextLessonDoc.getString("title") : "Open roadmap";
+        int progress = (int) Math.round(activeCourse.getProgressPercentage());
+        progress = Math.max(0, Math.min(100, progress));
+
+        binding.textCurrentCourseTitle.setText(courseTitle);
+        binding.textCurrentUnitTitle.setText(lessonTitle != null ? lessonTitle : "Open roadmap");
+        binding.textCourseProgress.setText("Level " + activeCourse.getProficiencyLevel() + " • " + activeCourse.getDailyTimeMinutes() + " min/day");
+        binding.textCoursePercent.setText(progress + "%");
+        binding.progressCourseCircular.setProgress(progress);
+        binding.imgCurrentCourseFlag.setImageResource(getFlagForCourse(activeCourse));
+    }
+
+    private int getFlagForCourse(Course course) {
+        String text = ((course.getLanguage() != null ? course.getLanguage() : "") + " " +
+                (course.getTitle() != null ? course.getTitle() : "")).toLowerCase();
+        if (text.contains("english") || text.contains("anh")) return R.drawable.eng;
+        if (text.contains("japanese") || text.contains("japan") || text.contains("nhật")) return R.drawable.japan;
+        if (text.contains("chinese") || text.contains("china") || text.contains("trung")) return R.drawable.china;
+        if (text.contains("russian") || text.contains("russia") || text.contains("nga")) return R.drawable.russia;
+        return R.drawable.vocab;
     }
 
     private String getGreeting() {

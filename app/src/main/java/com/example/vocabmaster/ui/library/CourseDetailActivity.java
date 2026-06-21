@@ -4,9 +4,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,8 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.vocabmaster.MainActivity;
 import com.example.vocabmaster.R;
-import com.example.vocabmaster.data.gamification.GamificationConstants;
 import com.example.vocabmaster.data.model.CourseScheduleDay;
 import com.example.vocabmaster.data.repository.StudyPlanRepository;
 import com.example.vocabmaster.databinding.ActivityCourseDetailBinding;
@@ -26,6 +28,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -33,11 +36,15 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CourseDetailActivity extends AppCompatActivity {
+    private static final String TAG = "CourseDetailActivity";
     private ActivityCourseDetailBinding binding;
     private FirebaseFirestore db;
     private String courseId;
@@ -48,6 +55,8 @@ public class CourseDetailActivity extends AppCompatActivity {
     private List<RoadmapStep> allStepsList = new ArrayList<>();
     private List<RoadmapStep> todayStepList = new ArrayList<>();
     private Set<String> completedChallenges = new HashSet<>();
+    private Set<String> todayLessonIds = new HashSet<>();
+    private boolean scheduleLoaded = false;
     private StudyPlanRepository studyPlanRepository;
 
     @Override
@@ -78,6 +87,14 @@ public class CourseDetailActivity extends AppCompatActivity {
         loadStudySessions();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (binding != null && db != null) {
+            loadUserDataAndRoadmap();
+        }
+    }
+
     private void setupTabs() {
         binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -100,11 +117,13 @@ public class CourseDetailActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerViews() {
-        roadmapTodayAdapter = new RoadmapAdapter(todayStepList, RoadmapAdapter.VIEW_TYPE_TODAY, courseId, isPersonal);
+        roadmapTodayAdapter = new RoadmapAdapter(todayStepList, RoadmapAdapter.VIEW_TYPE_TODAY);
+        roadmapTodayAdapter.setCourseId(courseId);
         binding.recyclerRoadmap.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerRoadmap.setAdapter(roadmapTodayAdapter);
 
-        roadmapOverviewAdapter = new RoadmapAdapter(allStepsList, RoadmapAdapter.VIEW_TYPE_OVERVIEW, courseId, isPersonal);
+        roadmapOverviewAdapter = new RoadmapAdapter(allStepsList, RoadmapAdapter.VIEW_TYPE_OVERVIEW);
+        roadmapOverviewAdapter.setCourseId(courseId);
         binding.recyclerOverviewUnits.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerOverviewUnits.setAdapter(roadmapOverviewAdapter);
 
@@ -118,13 +137,36 @@ public class CourseDetailActivity extends AppCompatActivity {
         if (uid != null && courseId != null) {
             studyPlanRepository.getSchedule(uid, courseId).observe(this, sessions -> {
                 if (sessions != null && !sessions.isEmpty()) {
+                    scheduleLoaded = true;
+                    updateTodayLessonIds(sessions);
                     sessionAdapter.setSessions(sessions);
+                    updateWeeklyCalendar(sessions);
+                    loadUserDataAndRoadmap();
                 }
             });
         }
     }
 
+    private void updateTodayLessonIds(List<CourseScheduleDay> sessions) {
+        todayLessonIds.clear();
+        Calendar today = Calendar.getInstance();
+        resetTime(today);
+        for (CourseScheduleDay session : sessions) {
+            Date date = session.getDate();
+            if (date == null) continue;
+            Calendar sessionDay = Calendar.getInstance();
+            sessionDay.setTime(date);
+            resetTime(sessionDay);
+            if (sessionDay.getTimeInMillis() == today.getTimeInMillis()
+                    && session.getLessonIds() != null) {
+                todayLessonIds.addAll(session.getLessonIds());
+            }
+        }
+    }
+
     private void setupRealTimeCalendar() {
+        resetWeeklyCalendar();
+
         Calendar calendar = Calendar.getInstance();
         int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
         int activeColor = ContextCompat.getColor(this, R.color.brand_primary);
@@ -145,6 +187,90 @@ public class CourseDetailActivity extends AppCompatActivity {
             todayLayout.setBackgroundResource(R.drawable.bg_circle_glass);
             todayText.setTextColor(activeColor);
             todayText.setTypeface(null, Typeface.BOLD);
+        }
+    }
+
+    private void resetWeeklyCalendar() {
+        int[] trophyIds = {
+                R.id.check_mon, R.id.check_tue, R.id.check_wed, R.id.check_thu,
+                R.id.check_fri, R.id.check_sat, R.id.check_sun
+        };
+
+        for (int id : trophyIds) {
+            ImageView trophy = findViewById(id);
+            if (trophy != null) {
+                trophy.setVisibility(View.INVISIBLE);
+                trophy.setAlpha(1.0f);
+                trophy.setImageResource(R.drawable.trophy);
+                trophy.clearColorFilter();
+            }
+        }
+    }
+
+    private void updateWeeklyCalendar(List<CourseScheduleDay> sessions) {
+        setupRealTimeCalendar();
+
+        Calendar weekStart = Calendar.getInstance();
+        weekStart.setFirstDayOfWeek(Calendar.MONDAY);
+        weekStart.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        resetTime(weekStart);
+
+        Calendar weekEnd = (Calendar) weekStart.clone();
+        weekEnd.add(Calendar.DAY_OF_YEAR, 7);
+
+        Set<Integer> plannedDays = new HashSet<>();
+        Set<Integer> completedDaysThisWeek = new HashSet<>();
+
+        for (CourseScheduleDay session : sessions) {
+            Date date = session.getDate();
+            if (date == null) continue;
+
+            Calendar sessionCal = Calendar.getInstance();
+            sessionCal.setTime(date);
+            int dayOfWeek = sessionCal.get(Calendar.DAY_OF_WEEK);
+
+            if (!date.before(weekStart.getTime())
+                    && date.before(weekEnd.getTime())) {
+                plannedDays.add(dayOfWeek);
+                if ("completed".equals(session.getStatus())) {
+                    completedDaysThisWeek.add(dayOfWeek);
+                }
+            }
+        }
+
+        for (Integer dayOfWeek : plannedDays) {
+            ImageView trophy = findViewById(getTrophyIdForDay(dayOfWeek));
+            if (trophy == null) continue;
+
+            trophy.setVisibility(View.VISIBLE);
+            trophy.setImageResource(R.drawable.trophy);
+            if (completedDaysThisWeek.contains(dayOfWeek)) {
+                trophy.setAlpha(1.0f);
+                trophy.setColorFilter(ContextCompat.getColor(this, R.color.warning));
+            } else {
+                trophy.setAlpha(0.75f);
+                trophy.setColorFilter(ContextCompat.getColor(this, R.color.gray_text));
+            }
+        }
+    }
+
+    private void resetTime(Calendar calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+    }
+
+    private int getTrophyIdForDay(int dayOfWeek) {
+        switch (dayOfWeek) {
+            case Calendar.MONDAY: return R.id.check_mon;
+            case Calendar.TUESDAY: return R.id.check_tue;
+            case Calendar.WEDNESDAY: return R.id.check_wed;
+            case Calendar.THURSDAY: return R.id.check_thu;
+            case Calendar.FRIDAY: return R.id.check_fri;
+            case Calendar.SATURDAY: return R.id.check_sat;
+            case Calendar.SUNDAY: return R.id.check_sun;
+            default: return R.id.check_mon;
         }
     }
 
@@ -199,8 +325,8 @@ public class CourseDetailActivity extends AppCompatActivity {
                     if (!querySnapshot.isEmpty()) {
                         courseId = querySnapshot.getDocuments().get(0).getId();
                         isPersonal = true;
-                        roadmapTodayAdapter.setCourseContext(courseId, isPersonal);
-                        roadmapOverviewAdapter.setCourseContext(courseId, isPersonal);
+                        roadmapTodayAdapter.setCourseId(courseId);
+                        roadmapOverviewAdapter.setCourseId(courseId);
                         fetchCourseDetails();
                         loadStudySessions();
                     }
@@ -266,9 +392,13 @@ public class CourseDetailActivity extends AppCompatActivity {
         }
 
         Tasks.whenAllComplete(challengeTasks).addOnCompleteListener(t -> {
+            roadmapTodayAdapter.setCourseId(courseId);
+            roadmapOverviewAdapter.setCourseId(courseId);
             allStepsList.clear();
             todayStepList.clear();
+            Map<String, SessionAdapter.LessonSessionInfo> lessonInfoMap = new HashMap<>();
             boolean foundActive = false;
+            RoadmapStep todayFallbackStep = null;
             String lastUnitId = "";
             int lessonIndexInUnit = 0;
 
@@ -284,15 +414,42 @@ public class CourseDetailActivity extends AppCompatActivity {
                 }
 
                 if (totalChallenges == 0) totalChallenges = 1;
-                boolean isCompleted = (completedCount >= totalChallenges);
+                Boolean completedField = lc.lessonDoc.getBoolean("completed");
+                Boolean isCompletedField = lc.lessonDoc.getBoolean("isCompleted");
+                boolean lessonMarkedCompleted = Boolean.TRUE.equals(completedField) || Boolean.TRUE.equals(isCompletedField);
+                boolean isCompleted = lessonMarkedCompleted || (completedCount >= totalChallenges);
+                if (lessonMarkedCompleted && completedCount < totalChallenges) {
+                    completedCount = totalChallenges;
+                }
+                int progressPercent = Math.round((completedCount * 100f) / totalChallenges);
+                Long xpLong = lc.lessonDoc.getLong("xpPoints");
+                int xpPoints = xpLong == null ? 10 : xpLong.intValue();
+                String docLessonId = lc.lessonDoc.getId();
+                String fieldLessonId = lc.lessonDoc.getString("lessonId");
+                lessonInfoMap.put(docLessonId, new SessionAdapter.LessonSessionInfo(
+                        lc.lessonDoc.getString("title"),
+                        lc.lessonDoc.getString("type"),
+                        progressPercent,
+                        xpPoints
+                ));
                 boolean isLocked = false, isActive = false;
+
+                boolean isScheduledToday = scheduleLoaded
+                        && (todayLessonIds.contains(docLessonId)
+                        || (fieldLessonId != null && todayLessonIds.contains(fieldLessonId)));
+                if (isScheduledToday) {
+                    todayStepList.add(new RoadmapStep(docLessonId, lc.unitTitle, lc.lessonDoc.getString("title"), 
+                        isCompleted ? "Đã hoàn thành" : "Nhấn để hoàn thành bài học hôm nay", 
+                        isCompleted ? R.drawable.ic_check : ((lessonIndexInUnit == 0) ? R.drawable.start : (lessonIndexInUnit == 1 ? R.drawable.speedup : R.drawable.finish)), 
+                        false, isCompleted, lc.lessonDoc.getString("type")));
+                }
 
                 if (!isCompleted && !foundActive) {
                     isActive = true; foundActive = true;
-                    todayStepList.add(new RoadmapStep(lc.lessonDoc.getId(), lc.unitTitle, lc.lessonDoc.getString("title"), 
-                        completedCount + "/" + totalChallenges + " Thử thách hoàn thành", 
-                        (lessonIndexInUnit == 0) ? R.drawable.start : (lessonIndexInUnit == 1 ? R.drawable.speedup : R.drawable.finish), 
-                        false, false, lc.lessonDoc.getString("type"), getLessonXp(lc.lessonDoc)));
+                    todayFallbackStep = new RoadmapStep(docLessonId, lc.unitTitle, lc.lessonDoc.getString("title"),
+                            "Nhấn để hoàn thành bài học hôm nay",
+                            (lessonIndexInUnit == 0) ? R.drawable.start : (lessonIndexInUnit == 1 ? R.drawable.speedup : R.drawable.finish),
+                            false, false, lc.lessonDoc.getString("type"));
                 } else if (foundActive) isLocked = true;
 
                 String currentUnitId = lc.unitDoc.getId();
@@ -302,32 +459,122 @@ public class CourseDetailActivity extends AppCompatActivity {
                 allStepsList.add(new RoadmapStep(lc.lessonDoc.getId(), lc.unitTitle, lc.lessonDoc.getString("title"), 
                     completedCount + "/" + totalChallenges + " Challenges", 
                     (lessonIndexInUnit == 0) ? R.drawable.start : (lessonIndexInUnit == 1 ? R.drawable.speedup : R.drawable.finish), 
-                    isLocked, isCompleted, lc.lessonDoc.getString("type"), getLessonXp(lc.lessonDoc)));
+                    isLocked, isCompleted, lc.lessonDoc.getString("type")));
+            }
+
+            if (todayStepList.isEmpty() && todayFallbackStep != null) {
+                todayStepList.add(todayFallbackStep);
             }
             
+            sessionAdapter.setLessonInfoMap(lessonInfoMap);
             roadmapTodayAdapter.notifyDataSetChanged();
             roadmapOverviewAdapter.notifyDataSetChanged();
             binding.progressRoadmap.setVisibility(View.GONE);
         });
     }
 
-    private int getLessonXp(DocumentSnapshot lessonDoc) {
-        Long xp = lessonDoc.getLong("xpPoints");
-        if (xp == null) xp = lessonDoc.getLong("xp_points");
-        return xp != null ? xp.intValue() : GamificationConstants.DEFAULT_LESSON_XP;
-    }
-
     private void deleteCourse() {
         if (courseId == null) return;
         String uid = FirebaseAuth.getInstance().getUid();
-        Task<Void> deleteTask = (isPersonal && uid != null) ? 
-                db.collection("users").document(uid).collection("personal_courses").document(courseId).delete() :
-                db.collection("courses").document(courseId).delete();
+        if (isPersonal && uid != null) {
+            DocumentReference courseRef = db.collection("users").document(uid).collection("personal_courses").document(courseId);
+            courseRef.delete()
+                    .addOnSuccessListener(aVoid -> {
+                        clearActiveCourseIfNeeded(uid, courseId);
+                        cleanupDeletedCourseInBackground(courseRef);
+                        Toast.makeText(this, "Đã xóa khóa học", Toast.LENGTH_SHORT).show();
+                        goBackToLibrary();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Delete personal course failed. courseId=" + courseId, e);
+                        Toast.makeText(this, "Lỗi khi xóa khóa học: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+        } else {
+            db.collection("courses").document(courseId).delete()
+                    .addOnSuccessListener(aVoid -> goBackToLibrary())
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Delete public course failed. courseId=" + courseId, e);
+                        Toast.makeText(this, "Lỗi khi xóa khóa học: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+        }
+    }
 
-        deleteTask.addOnSuccessListener(aVoid -> {
-            if (uid != null) db.collection("users").document(uid).update("activeCourseId", null);
-            finish();
+    private void clearActiveCourseIfNeeded(String uid, String deletedCourseId) {
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(userDoc -> {
+                    String activeCourseId = userDoc.getString("activeCourseId");
+                    if (deletedCourseId.equals(activeCourseId)) {
+                        db.collection("users").document(uid).update("activeCourseId", null);
+                    }
+                })
+                .addOnFailureListener(e -> Log.w(TAG, "Active course cleanup skipped. courseId=" + deletedCourseId, e));
+    }
+
+    private void cleanupDeletedCourseInBackground(DocumentReference courseRef) {
+        deletePersonalCourseTree(courseRef)
+                .addOnFailureListener(e -> Log.w(TAG, "Background course subtree cleanup failed. courseId=" + courseId, e));
+    }
+
+    private void goBackToLibrary() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("navigate_to_library", true);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
+    }
+
+    private Task<Void> deletePersonalCourseTree(DocumentReference courseRef) {
+        return courseRef.collection("units").get().continueWithTask(unitTask -> {
+            List<Task<Void>> deleteTasks = new ArrayList<>();
+            if (!unitTask.isSuccessful() || unitTask.getResult() == null) {
+                return Tasks.whenAll(deleteTasks);
+            }
+
+            for (DocumentSnapshot unitDoc : unitTask.getResult()) {
+                deleteTasks.add(unitDoc.getReference().collection("lessons").get().continueWithTask(lessonTask -> {
+                    List<Task<Void>> lessonDeleteTasks = new ArrayList<>();
+                    if (lessonTask.isSuccessful() && lessonTask.getResult() != null) {
+                        for (DocumentSnapshot lessonDoc : lessonTask.getResult()) {
+                            lessonDeleteTasks.add(deleteLessonChallenges(lessonDoc));
+                            lessonDeleteTasks.add(lessonDoc.getReference().delete());
+                        }
+                    }
+                    return Tasks.whenAll(lessonDeleteTasks).continueWithTask(done -> unitDoc.getReference().delete());
+                }));
+            }
+
+            return Tasks.whenAll(deleteTasks);
         });
+    }
+
+    private Task<Void> deleteLessonChallenges(DocumentSnapshot lessonDoc) {
+        String lessonId = lessonDoc.getId();
+        Task<Void> subcollectionDelete = lessonDoc.getReference().collection("challenges").get().continueWithTask(task -> {
+            List<Task<Void>> deletes = new ArrayList<>();
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (DocumentSnapshot challengeDoc : task.getResult()) {
+                    deletes.add(challengeDoc.getReference().delete());
+                }
+            }
+            return Tasks.whenAll(deletes);
+        });
+
+        Task<Void> globalDelete = db.collection("challenges").whereEqualTo("lessonId", lessonId).get().continueWithTask(task -> {
+            List<Task<Void>> deletes = new ArrayList<>();
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (DocumentSnapshot challengeDoc : task.getResult()) {
+                    deletes.add(challengeDoc.getReference().delete());
+                }
+            }
+            return Tasks.whenAll(deletes);
+        }).continueWith(task -> {
+            if (!task.isSuccessful()) {
+                Log.w(TAG, "Global challenge cleanup skipped for lessonId=" + lessonId, task.getException());
+            }
+            return null;
+        });
+
+        return Tasks.whenAll(subcollectionDelete, globalDelete);
     }
 
     private static class LessonWithChallenges {

@@ -114,6 +114,11 @@ public class TopicDetailActivity extends AppCompatActivity {
      * sau đó mới hiển thị nội dung.
      */
     private void checkAndDownloadThenLoad() {
+        if (isPersonal) {
+            downloadPersonalTopic();
+            return;
+        }
+
         String key = isPersonal ? topicId : topicId.toLowerCase();
         executor.execute(() -> {
             int count = vocabularyDao.getCountByTopic(key);
@@ -177,11 +182,16 @@ public class TopicDetailActivity extends AppCompatActivity {
         String uid = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
         if (uid == null) { loadData(); return; }
         binding.textDownloadStatus.setText("Đang tải bộ từ cá nhân...");
+        android.util.Log.d("TopicDetail", "sync personal topic from Firestore topicId=" + topicId);
         db.collection("users").document(uid)
                 .collection("personal_topics").document(topicId)
                 .collection("vocabularies")
                 .get()
                 .addOnSuccessListener(snapshot -> {
+                    android.util.Log.d("TopicDetail", "personal Firestore words=" + snapshot.size());
+                    db.collection("users").document(uid)
+                            .collection("personal_topics").document(topicId)
+                            .update("word_count", snapshot.size());
                     List<Vocabulary> vocabs = new ArrayList<>();
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
                         Vocabulary v = doc.toObject(Vocabulary.class);
@@ -194,11 +204,15 @@ public class TopicDetailActivity extends AppCompatActivity {
                         }
                     }
                     executor.execute(() -> {
+                        vocabularyDao.deleteByTopic(topicId);
                         if (!vocabs.isEmpty()) vocabularyDao.insertAll(vocabs);
                         mainHandler.post(this::loadData); // Không cần dịch
                     });
                 })
-                .addOnFailureListener(e -> loadData());
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("TopicDetail", "personal sync failed", e);
+                    loadData();
+                });
     }
 
     private void translateAndUpdate(List<Vocabulary> vocabs) {

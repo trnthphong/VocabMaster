@@ -87,10 +87,13 @@
         android:id="@+id/btn_submit_answer"
         android:layout_width="match_parent"
         android:layout_height="64dp"
+        android:background="@drawable/button_login_neumorph"
+        app:backgroundTint="@null"
         android:text="Kiểm tra"
         android:textSize="18sp"
         android:textStyle="bold"
         android:enabled="false"
+        android:textColor="@color/bg_grey"
         app:cornerRadius="16dp"
         app:layout_constraintBottom_toBottomOf="parent" />
 
