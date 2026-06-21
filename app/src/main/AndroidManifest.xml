@@ -67,6 +67,8 @@
         <activity android:name=".ui.home.CreateCourseFlowActivity" />
         <activity android:name=".ui.home.JourneySetupActivity" />
         <activity android:name=".ui.home.TopicWordListActivity" />
+        <activity android:name=".ui.home.YoloVocabularyActivity" />
+        <activity android:name=".ui.social.QrFriendScanActivity" />
         <activity android:name=".ui.home.PlacementTestActivity" />
         <activity android:name=".ui.home.AllTopicsActivity" />
         <activity android:name=".ui.home.CreateTopicActivity" />

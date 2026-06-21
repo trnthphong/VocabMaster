@@ -96,6 +96,7 @@ dependencies {
     // AI
     implementation(libs.generativeai)
     implementation("com.google.guava:guava:33.0.0-android")
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
 
     // QR Code
     implementation(libs.zxing)

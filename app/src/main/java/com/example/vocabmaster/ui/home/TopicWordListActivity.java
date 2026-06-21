@@ -12,6 +12,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,6 +56,13 @@ public class TopicWordListActivity extends AppCompatActivity {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private List<Vocabulary> currentWords = new ArrayList<>();
     private MediaPlayer mediaPlayer;
+    private final ActivityResultLauncher<Intent> yoloVocabularyLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && isPersonal) {
+                    checkLocalAndLoad();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,13 +82,26 @@ public class TopicWordListActivity extends AppCompatActivity {
 
         binding.textHeaderTitle.setText(displayTitle != null ? displayTitle : "Danh sách từ");
         binding.btnBack.setOnClickListener(v -> finish());
+        binding.btnAddNewWord.setOnClickListener(v -> openYoloVocabularyMvp());
         
         setupAdapters();
         checkLocalAndLoad();
     }
 
+    private void openYoloVocabularyMvp() {
+        Intent intent = new Intent(this, YoloVocabularyActivity.class);
+        intent.putExtra("topic_id", topic);
+        intent.putExtra("is_personal", isPersonal);
+        yoloVocabularyLauncher.launch(intent);
+    }
+
     private void checkLocalAndLoad() {
         if (binding.progressBar != null) binding.progressBar.setVisibility(View.VISIBLE);
+
+        if (isPersonal) {
+            loadWordsFromFirestore();
+            return;
+        }
         
         executorService.execute(() -> {
             List<Vocabulary> localWords = vocabularyDao.getVocabulariesByTopic(topic.toLowerCase());

@@ -1,17 +1,21 @@
 package com.example.vocabmaster;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
@@ -24,6 +28,8 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.vocabmaster.databinding.ActivityMainBinding;
 import com.example.vocabmaster.ui.auth.LoginActivity;
+import com.example.vocabmaster.ui.home.YoloVocabularyActivity;
+import com.example.vocabmaster.ui.social.QrFriendScanActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -63,6 +69,21 @@ public class MainActivity extends AppCompatActivity {
                 navController.navigate(R.id.navigation_add_course);
             });
 
+            setupCustomBottomNav();
+
+            binding.btnBottomCamera.setOnClickListener(v -> {
+                Intent intent = new Intent(this, YoloVocabularyActivity.class);
+                intent.putExtra("is_personal", true);
+                intent.putExtra("auto_capture", true);
+                startActivity(intent);
+            });
+
+            binding.btnBottomQrScan.setOnClickListener(v -> {
+                Intent intent = new Intent(this, QrFriendScanActivity.class);
+                intent.putExtra("auto_scan", true);
+                startActivity(intent);
+            });
+
             handleIntent(getIntent());
         }
 
@@ -85,6 +106,50 @@ public class MainActivity extends AppCompatActivity {
                 bindLogoutButton();
             }
         });
+    }
+
+    private void setupCustomBottomNav() {
+        binding.btnNavHome.setOnClickListener(v -> navigateToTopDestination(R.id.navigation_home));
+        binding.btnNavLibrary.setOnClickListener(v -> navigateToTopDestination(R.id.navigation_library));
+        binding.btnNavSocial.setOnClickListener(v -> navigateToTopDestination(R.id.navigation_social));
+        binding.btnNavProfile.setOnClickListener(v -> navigateToTopDestination(R.id.navigation_profile));
+
+        navController.addOnDestinationChangedListener((controller, destination, arguments) ->
+                updateBottomNavSelection(destination.getId()));
+        updateBottomNavSelection(navController.getCurrentDestination() != null
+                ? navController.getCurrentDestination().getId()
+                : R.id.navigation_home);
+    }
+
+    private void navigateToTopDestination(int destinationId) {
+        if (navController == null) return;
+        if (navController.getCurrentDestination() != null
+                && navController.getCurrentDestination().getId() == destinationId) {
+            return;
+        }
+        binding.navView.setSelectedItemId(destinationId);
+    }
+
+    private void updateBottomNavSelection(int destinationId) {
+        ColorStateList navColors = AppCompatResources.getColorStateList(this, R.color.nav_item_color);
+        int inactive = navColors != null
+                ? navColors.getDefaultColor()
+                : Color.rgb(145, 122, 253);
+        int active = navColors != null
+                ? navColors.getColorForState(new int[]{android.R.attr.state_checked}, inactive)
+                : ContextCompat.getColor(this, R.color.btn_purple);
+
+        tintBottomButton(binding.btnNavHome, destinationId == R.id.navigation_home, active, inactive);
+        tintBottomButton(binding.btnNavLibrary, destinationId == R.id.navigation_library, active, inactive);
+        tintBottomButton(binding.btnNavSocial, destinationId == R.id.navigation_social, active, inactive);
+        tintBottomButton(binding.btnNavProfile, destinationId == R.id.navigation_profile, active, inactive);
+        tintBottomButton(binding.btnBottomCamera, false, active, inactive);
+        tintBottomButton(binding.btnBottomQrScan, false, active, inactive);
+    }
+
+    private void tintBottomButton(ImageButton button, boolean selected, int active, int inactive) {
+        button.setImageTintList(ColorStateList.valueOf(selected ? active : inactive));
+        button.setAlpha(1f);
     }
 
     private void setupSidebarListeners() {
@@ -128,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         if (binding.navSidebar.getHeaderCount() > 0) {
             View headerView = binding.navSidebar.getHeaderView(0);
             headerView.setOnClickListener(v -> {
-                binding.navView.setSelectedItemId(R.id.navigation_profile);
+                navigateToTopDestination(R.id.navigation_profile);
                 binding.drawerLayout.closeDrawer(GravityCompat.START);
             });
         }
@@ -185,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
     private void handleIntent(Intent intent) {
         if (intent != null && intent.getBooleanExtra("navigate_to_library", false)) {
             if (navController != null) {
-                binding.navView.setSelectedItemId(R.id.navigation_library);
+                navigateToTopDestination(R.id.navigation_library);
                 try {
                     if (navController.getCurrentDestination() == null ||
                             navController.getCurrentDestination().getId() != R.id.navigation_library) {

@@ -33,6 +33,7 @@ import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.data.repository.SocialRepository;
 import com.example.vocabmaster.databinding.DialogCommentsBinding;
+import com.example.vocabmaster.databinding.DialogQrCodeBinding;
 import com.example.vocabmaster.databinding.FragmentProfileBinding;
 import com.example.vocabmaster.ui.library.CourseDetailActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -97,7 +98,10 @@ public class ProfileFragment extends Fragment {
     private void loadCurrentUser() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null) {
-            db.collection("users").document(uid).get().addOnSuccessListener(doc -> currentUser = doc.toObject(User.class));
+            db.collection("users").document(uid).get().addOnSuccessListener(doc -> {
+                currentUser = doc.toObject(User.class);
+                if (currentUser != null) currentUser.setUid(uid);
+            });
         }
     }
 
@@ -251,8 +255,61 @@ public class ProfileFragment extends Fragment {
         binding.imageAvatar.setImageResource(resId);
     }
 
-    private void showQRCodeDialog() { /* QR Logic ... */ }
-    private void copyIdToClipboard() { /* Copy Logic ... */ }
+    private void showQRCodeDialog() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
+            Toast.makeText(getContext(), "Can dang nhap de tao QR", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
+            if (!isAdded()) return;
+            String shortId = snapshot.getString("shortId");
+            if (TextUtils.isEmpty(shortId)) shortId = uid;
+            String qrData = "vocabmaster://friend?uid=" + uid + "&shortId=" + shortId;
+
+            DialogQrCodeBinding dialogBinding = DialogQrCodeBinding.inflate(getLayoutInflater());
+            AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                    .setView(dialogBinding.getRoot())
+                    .create();
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+
+            try {
+                dialogBinding.imgQrCode.setImageBitmap(generateQRCode(qrData));
+                dialogBinding.textQrShortId.setText("ID: " + shortId);
+            } catch (WriterException e) {
+                Toast.makeText(getContext(), "Khong tao duoc QR", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialogBinding.btnCloseQr.setOnClickListener(v -> dialog.dismiss());
+            dialog.show();
+        });
+    }
+
+    private void copyIdToClipboard() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null || getContext() == null) return;
+        db.collection("users").document(uid).get().addOnSuccessListener(snapshot -> {
+            String shortId = snapshot.getString("shortId");
+            if (TextUtils.isEmpty(shortId)) shortId = uid;
+            ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(ClipData.newPlainText("VocabMaster ID", shortId));
+            Toast.makeText(getContext(), "Da sao chep ID", Toast.LENGTH_SHORT).show();
+        });
+    }
     private void showAvatarSelectionDialog() { /* Avatar Logic ... */ }
-    private Bitmap generateQRCode(String data) throws WriterException { return null; }
+    private Bitmap generateQRCode(String data) throws WriterException {
+        int size = 720;
+        BitMatrix bitMatrix = new QRCodeWriter().encode(data, BarcodeFormat.QR_CODE, size, size);
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                bitmap.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
+            }
+        }
+        return bitmap;
+    }
 }
