@@ -1,78 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
-    app:strokeWidth="1dp"
-    app:strokeColor="#E0E0E0">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="10dp"
+    app:cardBackgroundColor="#FFF8E1"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
+        <!-- Header: Buổi X and Date -->
         <LinearLayout
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/bg_circle_glass"
-            android:backgroundTint="#F5F5F5">
-
-            <TextView
-                android:id="@+id/text_session_day"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="T2"
-                android:textStyle="bold"
-                android:textColor="@color/brand_primary"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/text_session_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="24"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="16dp"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/text_session_title"
+                android:id="@+id/text_session_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Buổi học số 5"
-                android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+                android:background="@drawable/bg_glass_card"
+                android:backgroundTint="#FF9800"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:text="Buổi 30"
+                android:textColor="@color/white"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/text_session_stats"
-                android:layout_width="wrap_content"
+                android:id="@+id/text_session_full_date"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="3 bài học • 15 phút"
-                android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall"
-                android:textColor="@color/text_secondary" />
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="Thứ Năm, 17 Tháng 4"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/image_session_status"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/info"
+                app:tint="#FF9800" />
         </LinearLayout>
 
-        <ImageView
-            android:id="@+id/image_session_status"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_dot_active"
-            app:tint="#BDBDBD" />
+        <!-- Skill row -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:id="@+id/text_session_skill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_circle_glass"
+                android:backgroundTint="@color/white"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:text="Listening +1 skill"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="@id/text_session_skill"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/text_session_skill">
+
+                <ImageView
+                    android:id="@+id/image_session_trophy"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/trophy"
+                    app:tint="#BDBDBD" />
+
+                <TextView
+                    android:id="@+id/text_session_stars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0/6"
+                    android:textColor="#9E9E9E"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Container for Lesson Items -->
+        <LinearLayout
+            android:id="@+id/layout_lessons_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical" />
+
+        <!-- Completion Message -->
+        <TextView
+            android:id="@+id/text_session_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="Bạn chưa hoàn thành buổi học này"
+            android:textColor="#FFB74D"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

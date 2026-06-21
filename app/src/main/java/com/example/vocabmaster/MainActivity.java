@@ -183,6 +183,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("navigate_to_library", false)) {
+            if (navController != null) {
+                binding.navView.setSelectedItemId(R.id.navigation_library);
+                try {
+                    if (navController.getCurrentDestination() == null ||
+                            navController.getCurrentDestination().getId() != R.id.navigation_library) {
+                        navController.navigate(R.id.navigation_library);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return;
+        }
+
         if (intent != null && intent.getData() != null) {
             Uri data = intent.getData();
             if ("vocabmaster".equals(data.getScheme()) && "payment-success".equals(data.getHost())) {
