@@ -12,12 +12,15 @@ public class Lesson {
     private int xpPoints;
     private boolean isCompleted;
     private List<String> vocabWords; // Danh sách các từ vựng trong bài học này
+    private List<String> challengeIds;
+    private int challengeCount;
     private int orderNum;
 
     public Lesson() {
         this.xpPoints = 10;
         this.isCompleted = false;
         this.vocabWords = new ArrayList<>();
+        this.challengeIds = new ArrayList<>();
     }
 
     public Lesson(String title, String type, int durationMinutes, int xpPoints) {
@@ -44,6 +47,10 @@ public class Lesson {
     public void setCompleted(boolean completed) { isCompleted = completed; }
     public List<String> getVocabWords() { return vocabWords; }
     public void setVocabWords(List<String> vocabWords) { this.vocabWords = vocabWords; }
+    public List<String> getChallengeIds() { return challengeIds; }
+    public void setChallengeIds(List<String> challengeIds) { this.challengeIds = challengeIds; }
+    public int getChallengeCount() { return challengeCount; }
+    public void setChallengeCount(int challengeCount) { this.challengeCount = challengeCount; }
     public int getOrderNum() { return orderNum; }
     public void setOrderNum(int orderNum) { this.orderNum = orderNum; }
 }

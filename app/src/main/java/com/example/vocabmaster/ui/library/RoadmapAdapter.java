@@ -76,9 +76,16 @@ public class RoadmapAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             todayHolder.binding.textLessonTitle.setText(step.getTitle());
             todayHolder.binding.textLessonStats.setText(step.getDescription());
             todayHolder.binding.imageLessonIcon.setImageResource(step.getIconRes());
+            todayHolder.binding.progressLesson.setProgress(step.getProgressPercent());
+            todayHolder.binding.textProgressPercent.setText(step.getProgressPercent() + "%");
+            todayHolder.binding.textSkillValue.setText(formatSkill(step.getType()));
+            todayHolder.binding.textChallengeValue.setText(
+                    step.getCompletedChallenges() + "/" + step.getTotalChallenges());
+            todayHolder.binding.textCupValue.setText(step.getCupsEarned() + "/3");
             bindTodayCompletionState(todayHolder, step);
             
             todayHolder.itemView.setOnClickListener(v -> startStudy(v, step));
+            todayHolder.binding.buttonContinueLesson.setOnClickListener(v -> startStudy(v, step));
             
         } else if (holder instanceof RoadmapViewHolder) {
             RoadmapViewHolder roadmapHolder = (RoadmapViewHolder) holder;
@@ -143,8 +150,8 @@ public class RoadmapAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             holder.binding.imageLessonIcon.setImageResource(R.drawable.ic_check);
             holder.binding.imageLessonIcon.setColorFilter(ContextCompat.getColor(holder.itemView.getContext(), R.color.white));
             iconCard.setCardBackgroundColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.success));
-            rootCard.setStrokeColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.success));
-            rootCard.setCardBackgroundColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.light_green));
+            rootCard.setStrokeColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.card_border));
+            rootCard.setCardBackgroundColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.white));
         } else {
             holder.binding.imageLessonIcon.clearColorFilter();
             iconCard.setCardBackgroundColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.brand_primary_light));
@@ -168,6 +175,21 @@ public class RoadmapAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     ContextCompat.getColor(holder.itemView.getContext(), R.color.blue)));
             holder.binding.imageStepIcon.setScaleX(1.0f);
             holder.binding.imageStepIcon.setScaleY(1.0f);
+        }
+    }
+
+    private String formatSkill(String skill) {
+        if (skill == null || skill.trim().isEmpty()) return "Tổng hợp";
+        switch (skill.trim().toLowerCase()) {
+            case "vocabulary": return "Từ vựng";
+            case "grammar": return "Ngữ pháp";
+            case "listening": return "Nghe";
+            case "speaking": return "Nói";
+            case "reading": return "Đọc";
+            case "writing": return "Viết";
+            case "quiz": return "Ôn tập";
+            default:
+                return skill.substring(0, 1).toUpperCase() + skill.substring(1);
         }
     }
 

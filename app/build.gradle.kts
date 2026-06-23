@@ -24,7 +24,7 @@ android {
         buildConfigField("String", "GEMINI_API_KEY", "\"${localProps.getProperty("GEMINI_API_KEY", "")}\"")
         buildConfigField("String", "UNSPLASH_ACCESS_KEY", "\"${localProps.getProperty("UNSPLASH_ACCESS_KEY", "")}\"")
         buildConfigField("String", "API_BASE_URL", "\"${localProps.getProperty("API_BASE_URL", "http://10.0.2.2:3000/")}\"")
-        buildConfigField("boolean", "USE_REMOTE_COURSE_GENERATION", localProps.getProperty("USE_REMOTE_COURSE_GENERATION", "false"))
+        buildConfigField("boolean", "USE_REMOTE_COURSE_GENERATION", localProps.getProperty("USE_REMOTE_COURSE_GENERATION", "true"))
         buildConfigField("boolean", "USE_REMOTE_PLACEMENT_TEST", localProps.getProperty("USE_REMOTE_PLACEMENT_TEST", "false"))
     }
 

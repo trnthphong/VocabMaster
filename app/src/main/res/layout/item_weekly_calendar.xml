@@ -19,7 +19,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="T2"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_mon_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="01"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_mon"
             android:layout_width="24dp"
@@ -43,7 +51,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="T3"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_tue_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="02"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_tue"
             android:layout_width="24dp"
@@ -67,7 +83,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="T4"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_wed_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="03"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_wed"
             android:layout_width="24dp"
@@ -91,7 +115,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="T5"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_thu_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="04"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_thu"
             android:layout_width="24dp"
@@ -115,7 +147,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="T6"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_fri_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="05"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_fri"
             android:layout_width="24dp"
@@ -139,7 +179,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="T7"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_sat_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="06"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_sat"
             android:layout_width="24dp"
@@ -163,7 +211,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="CN"
-            android:textAppearance="@style/TextAppearance.VocabMaster.Caption" />
+            android:textAppearance="@style/TextAppearance.VocabMaster.Caption"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_sun_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="07"
+            android:textAppearance="@style/TextAppearance.VocabMaster.BodySmall" />
         <ImageView
             android:id="@+id/check_sun"
             android:layout_width="24dp"

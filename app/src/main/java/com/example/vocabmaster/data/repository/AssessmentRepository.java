@@ -116,14 +116,22 @@ public class AssessmentRepository {
         localUserId = userId != null ? userId : "";
         localScore = 0;
         localQuestions.clear();
-        localQuestions.add(question("q1", "A1 Grammar", "Choose the correct word: I ___ a student.", "am", "is", "are", "be"));
-        localQuestions.add(question("q2", "A1 Vocabulary", "Which word means a place where you live?", "home", "book", "water", "teacher"));
-        localQuestions.add(question("q3", "A2 Grammar", "She usually ___ coffee in the morning.", "drinks", "drink", "drank", "drinking"));
-        localQuestions.add(question("q4", "A2 Vocabulary", "Choose the best synonym for 'quick'.", "fast", "late", "quiet", "heavy"));
-        localQuestions.add(question("q5", "B1 Grammar", "If it rains tomorrow, we ___ at home.", "will stay", "stay", "stayed", "would stayed"));
-        localQuestions.add(question("q6", "B1 Reading", "He missed the bus because he left home late. Why did he miss it?", "He left late", "He was sick", "The bus was early", "He forgot the route"));
-        localQuestions.add(question("q7", "B2 Grammar", "By next month, I ___ this course.", "will have finished", "finish", "finished", "am finishing"));
-        localQuestions.add(question("q8", "B2 Vocabulary", "Choose the closest meaning of 'reliable'.", "trustworthy", "expensive", "temporary", "confusing"));
+        localQuestions.add(question("q1", "A1 Grammar", "Choose the correct sentence.", "She is my friend.", "She are my friend.", "She be my friend.", "She am my friend."));
+        localQuestions.add(question("q2", "A1 Function", "You meet someone for the first time. What do you say?", "Nice to meet you.", "See you yesterday.", "I am agree.", "Where you from?"));
+        localQuestions.add(question("q3", "A1 Reading", "Read: 'Mina works in a cafe every morning.' Where does Mina work?", "in a cafe", "at a station", "in a library", "at a hotel"));
+        localQuestions.add(question("q4", "A2 Grammar", "Complete: She usually ___ coffee before work, but today she is drinking tea.", "drinks", "drink", "drank", "is drink"));
+        localQuestions.add(question("q5", "A2 Vocabulary in context", "A train is delayed. Which sentence is natural?", "The train is late.", "The train is delicious.", "The train is honest.", "The train is narrow."));
+        localQuestions.add(question("q6", "A2 Communication", "You did not understand the speaker. What is the best response?", "Could you repeat that, please?", "I repeat you.", "You must say.", "Again word now."));
+        localQuestions.add(question("q7", "B1 Grammar", "Complete: If the meeting starts late, we ___ the report tomorrow.", "will finish", "finished", "would finished", "finish yesterday"));
+        localQuestions.add(question("q8", "B1 Reading inference", "Read: 'Leo left early because the last bus was at 9 p.m.' Why did Leo leave early?", "He did not want to miss transport.", "He disliked the meeting.", "He was too tired to speak.", "He forgot his ticket."));
+        localQuestions.add(question("q9", "B1 Cohesion", "Choose the best connector: The task was difficult; ___, the team completed it on time.", "however", "because", "although", "before"));
+        localQuestions.add(question("q10", "B1 Vocabulary nuance", "In a work email, which word best replaces 'help' in: 'Thank you for your help'?", "assistance", "problem", "mistake", "delay"));
+        localQuestions.add(question("q11", "B2 Grammar", "Complete: By the time we arrive, the workshop ___ already ___.", "will have started", "will start", "has starting", "started"));
+        localQuestions.add(question("q12", "B2 Pragmatics", "You disagree politely in a meeting. Which response is best?", "I see your point, but I would approach it differently.", "No, you are wrong.", "I do not accept you.", "Your idea is bad."));
+        localQuestions.add(question("q13", "B2 Reading inference", "Read: 'The proposal is promising, though its timeline is ambitious.' What does the speaker imply?", "The idea is good but may be hard to finish on time.", "The proposal is impossible.", "The timeline is too slow.", "The speaker rejects the idea completely."));
+        localQuestions.add(question("q14", "B2 Vocabulary in context", "Choose the closest meaning of 'reliable' in: 'We need reliable data before deciding.'", "trustworthy", "cheap", "recent", "complicated"));
+        localQuestions.add(question("q15", "B2 Sentence transformation", "Which sentence has the same meaning? 'Despite the rain, they continued.'", "Although it rained, they continued.", "Because it rained, they continued.", "It rained, so they stopped.", "They continued to make it rain."));
+        localQuestions.add(question("q16", "B2 Summary skill", "Which option best summarizes: 'The app is easy to use, but it lacks advanced settings.'", "It is user-friendly but limited for advanced users.", "It is difficult and has many settings.", "It has no useful features.", "It is advanced but confusing."));
 
         Map<String, Object> result = new HashMap<>();
         result.put("test_id", "local_" + System.currentTimeMillis());
@@ -153,9 +161,9 @@ public class AssessmentRepository {
 
     private LearningProfile completeLocalPlacementTest(String testId) {
         String cefrLevel;
-        if (localScore <= 2) cefrLevel = "A1";
-        else if (localScore <= 4) cefrLevel = "A2";
-        else if (localScore <= 6) cefrLevel = "B1";
+        if (localScore <= 4) cefrLevel = "A1";
+        else if (localScore <= 8) cefrLevel = "A2";
+        else if (localScore <= 12) cefrLevel = "B1";
         else cefrLevel = "B2";
 
         LearningProfile profile = new LearningProfile(testId + "_profile", cefrLevel);
