@@ -275,16 +275,6 @@ public class HomeFragment extends Fragment {
             Toast.makeText(requireContext(), "Đang tải thông tin tài khoản, thử lại sau nhé", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (!currentUser.isActivePremium()) {
-            new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Quick Games cần Premium")
-                    .setMessage("Nâng cấp Premium để mở khóa chế độ Quick Games.")
-                    .setNegativeButton("Để sau", null)
-                    .setPositiveButton("Nâng cấp", (dialog, which) ->
-                            NavHostFragment.findNavController(this).navigate(R.id.navigation_premium))
-                    .show();
-            return;
-        }
         Intent intent = new Intent(requireContext(), MiniGameActivity.class);
         startActivity(intent);
     }
@@ -393,14 +383,9 @@ public class HomeFragment extends Fragment {
         if (currentUser == null) return;
         boolean isPro = currentUser.isActivePremium();
         
-        binding.textPremiumBadge.setVisibility(isPro ? View.GONE : View.VISIBLE);
-        binding.btnPlayMiniGame.setAlpha(isPro ? 1f : 0.55f);
-        binding.subGames.setText(isPro ? "Fun way to memorize" : "Premium required");
-        if (!isPro) {
-            binding.textPremiumBadge.setText("UPGRADE TODAY");
-            binding.textPremiumBadge.setOnClickListener(v -> 
-                NavHostFragment.findNavController(this).navigate(R.id.navigation_premium));
-        }
+        binding.textPremiumBadge.setVisibility(View.GONE);
+        binding.btnPlayMiniGame.setAlpha(1f);
+        binding.subGames.setText("Fun way to memorize");
         
         if (isPro) {
             binding.textHearts.setText("\u221E");
