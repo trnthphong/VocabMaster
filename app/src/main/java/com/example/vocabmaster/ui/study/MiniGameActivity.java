@@ -33,10 +33,12 @@ import com.example.vocabmaster.data.model.Notification;
 import com.example.vocabmaster.data.model.Topic;
 import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.data.model.Vocabulary;
+import com.example.vocabmaster.data.repository.GamificationRepository;
 import com.example.vocabmaster.databinding.ActivityMiniGameBinding;
 import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.example.vocabmaster.util.SoundEffectManager;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -62,6 +64,7 @@ import java.util.regex.Matcher;
 public class MiniGameActivity extends AppCompatActivity {
 
     private ActivityMiniGameBinding binding;
+    private GamificationRepository gamificationRepository;
     private GamificationStatusBinder gamificationStatusBinder;
     private String currentUid;
     private FirebaseFirestore firestore;
@@ -70,6 +73,7 @@ public class MiniGameActivity extends AppCompatActivity {
     private TextToSpeech tts;
     private boolean isTtsReady = false;
     private MediaPlayer mediaPlayer;
+    private boolean quickGameHeartSpendInProgress = false;
 
     // AI Riddle Mode variables
     private boolean isAiRiddleMode = false;
@@ -159,6 +163,8 @@ public class MiniGameActivity extends AppCompatActivity {
     private TextView friendLetterCountText;
     private TextInputEditText friendAnswerEdit;
     private MaterialButton friendSubmitButton;
+    private BottomSheetDialog friendRoundRankingDialog;
+    private LinearLayout friendRoundRankingContent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,10 +172,11 @@ public class MiniGameActivity extends AppCompatActivity {
         binding = ActivityMiniGameBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         firestore = FirebaseFirestore.getInstance();
+        gamificationRepository = new GamificationRepository(this);
         gamificationStatusBinder = new GamificationStatusBinder(this, binding.getRoot());
         currentUid = FirebaseAuth.getInstance().getUid();
         gamificationStatusBinder.start(currentUid);
-        verifyMiniGamePremiumAccess();
+        loadCurrentUserData();
 
         initTTS();
         initMediaPlayer();
@@ -197,7 +204,7 @@ public class MiniGameActivity extends AppCompatActivity {
         }
     }
 
-    private void verifyMiniGamePremiumAccess() {
+    private void loadCurrentUserData() {
         if (currentUid == null) {
             Toast.makeText(this, "Bạn cần đăng nhập để chơi Quick Games", Toast.LENGTH_SHORT).show();
             finish();
@@ -206,12 +213,8 @@ public class MiniGameActivity extends AppCompatActivity {
         firestore.collection("users").document(currentUid).get().addOnSuccessListener(snapshot -> {
             currentUserData = snapshot.toObject(User.class);
             if (currentUserData != null) currentUserData.setUid(currentUid);
-            if (currentUserData == null || !currentUserData.isActivePremium()) {
-                Toast.makeText(this, "Quick Games chỉ dành cho tài khoản Premium", Toast.LENGTH_SHORT).show();
-                finish();
-            }
         }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Không kiểm tra được gói Premium", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không tải được thông tin tài khoản", Toast.LENGTH_SHORT).show();
             finish();
         });
     }
@@ -225,6 +228,36 @@ public class MiniGameActivity extends AppCompatActivity {
             if (!isBlank(email)) return email;
         }
         return "Người chơi";
+    }
+
+    private void spendHeartBeforeQuickGame(Runnable onAllowed) {
+        if (currentUid == null) {
+            Toast.makeText(this, "Bạn cần đăng nhập để chơi Quick Games", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (quickGameHeartSpendInProgress) return;
+        quickGameHeartSpendInProgress = true;
+        gamificationRepository.spendHeart(currentUid)
+                .addOnSuccessListener(result -> {
+                    quickGameHeartSpendInProgress = false;
+                    if (result.isAllowed()) {
+                        onAllowed.run();
+                    } else {
+                        showOutOfHeartsDialog();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    quickGameHeartSpendInProgress = false;
+                    Toast.makeText(this, "Không kiểm tra được tim, thử lại sau nhé", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showOutOfHeartsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Hết tim")
+                .setMessage("Bạn cần chờ tim hồi lại trước khi chơi Quick Games tiếp.")
+                .setPositiveButton("Đã hiểu", null)
+                .show();
     }
 
     private void playSoundEffect(boolean isSuccess) {
@@ -470,7 +503,8 @@ public class MiniGameActivity extends AppCompatActivity {
                         return;
                     }
                     Collections.shuffle(usableVocabs);
-                    writeFriendRoom(topic, questionCount, questionTimeSeconds, usableVocabs.subList(0, questionCount));
+                    spendHeartBeforeQuickGame(() ->
+                            writeFriendRoom(topic, questionCount, questionTimeSeconds, usableVocabs.subList(0, questionCount)));
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Không tải được từ vựng của chủ đề", Toast.LENGTH_SHORT).show());
     }
@@ -550,11 +584,12 @@ public class MiniGameActivity extends AppCompatActivity {
                         Toast.makeText(this, "Phòng đã bắt đầu hoặc đã kết thúc", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    firestore.collection("friend_game_rooms").document(room.getId())
-                            .collection("players").document(currentUid)
-                            .set(createFriendPlayerData(), SetOptions.merge())
-                            .addOnSuccessListener(v -> enterFriendRoom(room.getId(), normalizedCode))
-                            .addOnFailureListener(e -> Toast.makeText(this, "Không vào được phòng", Toast.LENGTH_SHORT).show());
+                    spendHeartBeforeQuickGame(() ->
+                            firestore.collection("friend_game_rooms").document(room.getId())
+                                    .collection("players").document(currentUid)
+                                    .set(createFriendPlayerData(), SetOptions.merge())
+                                    .addOnSuccessListener(v -> enterFriendRoom(room.getId(), normalizedCode))
+                                    .addOnFailureListener(e -> Toast.makeText(this, "Không vào được phòng", Toast.LENGTH_SHORT).show()));
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Không vào được phòng", Toast.LENGTH_SHORT).show());
     }
@@ -626,6 +661,10 @@ public class MiniGameActivity extends AppCompatActivity {
                                 .addOnSuccessListener(this::renderFriendBattleLobby);
                     } else if (friendRoomStatus.equals("finished")) {
                         renderFriendBattleResults();
+                    } else if (friendRoomStatus.equals("playing")
+                            && friendRoundRankingDialog != null
+                            && friendRoundRankingDialog.isShowing()) {
+                        renderFriendBattleRoundRanking();
                     }
                 });
     }
@@ -831,6 +870,7 @@ public class MiniGameActivity extends AppCompatActivity {
     private void renderFriendBattleQuestion() {
         isFriendBattleLobbyVisible = false;
         if (friendBattleTimer != null) friendBattleTimer.cancel();
+        dismissFriendRoundRankingDialog();
         friendHintEngShown = false;
         friendHintViShown = false;
         friendHint50Shown = false;
@@ -902,11 +942,152 @@ public class MiniGameActivity extends AppCompatActivity {
             public void onFinish() {
                 friendTimerText.setText("0");
                 friendTimerProgress.setProgress(0);
+                revealFriendBattleAnswer();
+                new Handler(Looper.getMainLooper()).postDelayed(() -> showFriendBattleRoundRanking(), 500);
                 if (currentUid != null && currentUid.equals(friendHostId)) {
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> advanceFriendBattleQuestion(), 1200);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> advanceFriendBattleQuestion(), 3000);
                 }
             }
         }.start();
+    }
+
+    private void revealFriendBattleAnswer() {
+        String word = safe((String) friendCurrentQuestion.get("word"));
+        if (word.isEmpty()) return;
+
+        String definition = safe((String) friendCurrentQuestion.get("definition"));
+        String vietnamese = safe((String) friendCurrentQuestion.get("vietnamese"));
+
+        if (friendEnglishHintText != null && !definition.isEmpty()) {
+            friendEnglishHintText.setVisibility(View.VISIBLE);
+            friendEnglishHintText.setText("Hint (English): " + definition);
+        }
+        if (friendVietnameseHintText != null) {
+            friendVietnameseHintText.setVisibility(View.VISIBLE);
+            friendVietnameseHintText.setText("Gợi ý (Tiếng Việt): "
+                    + (vietnamese.isEmpty() ? "Chưa có bản dịch" : vietnamese));
+        }
+        if (friendPlaceholderText != null) {
+            friendPlaceholderText.setText("Đáp án: " + word);
+        }
+        if (friendLetterCountText != null) {
+            friendLetterCountText.setText("Hết giờ");
+        }
+        if (friendSubmitButton != null) {
+            friendSubmitButton.setEnabled(false);
+            friendSubmitButton.setText("HẾT GIỜ");
+        }
+        if (friendAnswerEdit != null) {
+            friendAnswerEdit.setEnabled(false);
+        }
+    }
+
+    private void showFriendBattleRoundRanking() {
+        if (!friendRoomStatus.equals("playing")) return;
+        if (friendRoundRankingDialog == null) {
+            friendRoundRankingDialog = new BottomSheetDialog(this);
+            friendRoundRankingDialog.setCancelable(false);
+
+            ScrollView scrollView = new ScrollView(this);
+            scrollView.setFillViewport(false);
+            friendRoundRankingContent = new LinearLayout(this);
+            friendRoundRankingContent.setOrientation(LinearLayout.VERTICAL);
+            friendRoundRankingContent.setPadding(dp(24), dp(18), dp(24), dp(22));
+            friendRoundRankingContent.setBackground(makeRoundRect(Color.WHITE, dp(22)));
+            scrollView.addView(friendRoundRankingContent, new ScrollView.LayoutParams(
+                    ScrollView.LayoutParams.MATCH_PARENT,
+                    ScrollView.LayoutParams.WRAP_CONTENT
+            ));
+            friendRoundRankingDialog.setContentView(scrollView);
+        }
+        renderFriendBattleRoundRanking();
+        if (!friendRoundRankingDialog.isShowing()) {
+            friendRoundRankingDialog.show();
+        }
+    }
+
+    private void renderFriendBattleRoundRanking() {
+        if (friendRoundRankingContent == null) return;
+        friendRoundRankingContent.removeAllViews();
+
+        TextView title = sectionLabel("Xếp hạng hiện tại");
+        title.setGravity(Gravity.CENTER);
+        friendRoundRankingContent.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Chuẩn bị sang câu tiếp theo...");
+        subtitle.setTextColor(getColor(R.color.text_secondary));
+        subtitle.setTextSize(13);
+        subtitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        subtitleParams.setMargins(0, dp(4), 0, dp(6));
+        friendRoundRankingContent.addView(subtitle, subtitleParams);
+
+        List<Map<String, Object>> ranking = new ArrayList<>(friendPlayers);
+        ranking.sort((a, b) -> Integer.compare(getPlayerScore(b), getPlayerScore(a)));
+        if (ranking.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText("Đang cập nhật điểm...");
+            empty.setTextColor(getColor(R.color.text_secondary));
+            empty.setTextSize(14);
+            empty.setGravity(Gravity.CENTER);
+            empty.setPadding(0, dp(10), 0, 0);
+            friendRoundRankingContent.addView(empty);
+            return;
+        }
+
+        for (int i = 0; i < ranking.size(); i++) {
+            addFriendRoundRankingRow(friendRoundRankingContent, ranking.get(i), i + 1);
+        }
+    }
+
+    private void dismissFriendRoundRankingDialog() {
+        if (friendRoundRankingDialog != null) {
+            friendRoundRankingDialog.dismiss();
+            friendRoundRankingDialog = null;
+        }
+        friendRoundRankingContent = null;
+    }
+
+    private void addFriendRoundRankingRow(LinearLayout container, Map<String, Object> player, int rank) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(8), 0, 0);
+        container.addView(row, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        TextView rankText = new TextView(this);
+        rankText.setText("#" + rank);
+        rankText.setTextColor(rank == 1 ? getColor(R.color.warning) : getColor(R.color.text_secondary));
+        rankText.setTextSize(15);
+        rankText.setTypeface(Typeface.DEFAULT_BOLD);
+        row.addView(rankText, new LinearLayout.LayoutParams(dp(44), LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView nameText = new TextView(this);
+        nameText.setText(getPlayerName(player));
+        nameText.setTextColor(getColor(R.color.text_primary));
+        nameText.setTextSize(15);
+        nameText.setSingleLine(true);
+        row.addView(nameText, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView scoreText = new TextView(this);
+        scoreText.setText(getPlayerScore(player) + " điểm");
+        scoreText.setTextColor(getColor(R.color.brand_primary));
+        scoreText.setTextSize(15);
+        scoreText.setTypeface(Typeface.DEFAULT_BOLD);
+        row.addView(scoreText, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
     }
 
     private void updateFriendBattleHints(int elapsedMillis, int totalMillis) {
@@ -968,6 +1149,7 @@ public class MiniGameActivity extends AppCompatActivity {
 
     private void advanceFriendBattleQuestion() {
         if (friendRoomId == null || !currentUid.equals(friendHostId) || !friendRoomStatus.equals("playing")) return;
+        dismissFriendRoundRankingDialog();
         if (friendCurrentQuestionIndex + 1 >= friendQuestionCount) {
             firestore.collection("friend_game_rooms").document(friendRoomId)
                     .update("status", "finished", "finishedAt", FieldValue.serverTimestamp());
@@ -981,6 +1163,7 @@ public class MiniGameActivity extends AppCompatActivity {
 
     private void renderFriendBattleResults() {
         if (friendBattleTimer != null) friendBattleTimer.cancel();
+        dismissFriendRoundRankingDialog();
         binding.gameContainer.removeAllViews();
         binding.textTitle.setText("Tổng kết");
 
@@ -1009,11 +1192,13 @@ public class MiniGameActivity extends AppCompatActivity {
         LinearLayout podium = new LinearLayout(this);
         podium.setOrientation(LinearLayout.HORIZONTAL);
         podium.setGravity(Gravity.BOTTOM);
+        podium.setClipChildren(false);
+        podium.setClipToPadding(false);
         LinearLayout.LayoutParams podiumParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(230)
+                dp(252)
         );
-        podiumParams.setMargins(0, dp(24), 0, dp(18));
+        podiumParams.setMargins(0, dp(18), 0, dp(18));
         root.addView(podium, podiumParams);
 
         addPodiumStep(podium, 2, getPlayerAtRank(2), dp(150), "#CBD5E1");
@@ -1196,6 +1381,7 @@ public class MiniGameActivity extends AppCompatActivity {
             friendCurrentQuestionIndex = -1;
             friendPlayers.clear();
             friendCurrentQuestion.clear();
+            dismissFriendRoundRankingDialog();
         }
     }
 
@@ -1247,7 +1433,7 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void startAiRiddleGame() {
-        beginAiRiddleGame();
+        spendHeartBeforeQuickGame(this::beginAiRiddleGame);
     }
 
     // --- SENTENCE SCRAMBLE MODE ---
@@ -1282,9 +1468,11 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void startSentenceScrambleGame() {
-        sentenceScrambleScore = 0;
-        updateScoreUI();
-        fetchAndShowNextSentence();
+        spendHeartBeforeQuickGame(() -> {
+            sentenceScrambleScore = 0;
+            updateScoreUI();
+            fetchAndShowNextSentence();
+        });
     }
 
     private void fetchAndShowNextSentence() {
@@ -1640,9 +1828,11 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void startLetterScrambleGame() {
-        letterScrambleScore = 0;
-        updateScoreUI();
-        fetchAndShowNextLetterWord();
+        spendHeartBeforeQuickGame(() -> {
+            letterScrambleScore = 0;
+            updateScoreUI();
+            fetchAndShowNextLetterWord();
+        });
     }
 
     private void fetchAndShowNextLetterWord() {
@@ -1996,29 +2186,31 @@ public class MiniGameActivity extends AppCompatActivity {
     }
 
     private void startLightningGame() {
-        lightningScore = 0;
-        lightningVocabs.clear();
-        updateScoreUI();
+        spendHeartBeforeQuickGame(() -> {
+            lightningScore = 0;
+            lightningVocabs.clear();
+            updateScoreUI();
 
-        new Thread(() -> {
-            List<Vocabulary> vocabs = AppDatabase.getDatabase(this).vocabularyDao().getRandomLearnedVocabularies(100);
-            List<Vocabulary> filteredVocabs = filterLightningVocabs(vocabs);
-            if (filteredVocabs.size() < 2) {
-                filteredVocabs = filterLightningVocabs(AppDatabase.getDatabase(this).vocabularyDao().getRandomVocabularies(100));
-            }
-
-            List<Vocabulary> finalVocabs = filteredVocabs;
-            runOnUiThread(() -> {
-                if (finalVocabs.size() < 2) {
-                    Toast.makeText(this, "Cần ít nhất 2 từ có nghĩa tiếng Việt để chơi!", Toast.LENGTH_SHORT).show();
-                    showLightningLobby();
-                    return;
+            new Thread(() -> {
+                List<Vocabulary> vocabs = AppDatabase.getDatabase(this).vocabularyDao().getRandomLearnedVocabularies(100);
+                List<Vocabulary> filteredVocabs = filterLightningVocabs(vocabs);
+                if (filteredVocabs.size() < 2) {
+                    filteredVocabs = filterLightningVocabs(AppDatabase.getDatabase(this).vocabularyDao().getRandomVocabularies(100));
                 }
-                lightningVocabs.clear();
-                lightningVocabs.addAll(finalVocabs);
-                displayLightningGame();
-            });
-        }).start();
+
+                List<Vocabulary> finalVocabs = filteredVocabs;
+                runOnUiThread(() -> {
+                    if (finalVocabs.size() < 2) {
+                        Toast.makeText(this, "Cần ít nhất 2 từ có nghĩa tiếng Việt để chơi!", Toast.LENGTH_SHORT).show();
+                        showLightningLobby();
+                        return;
+                    }
+                    lightningVocabs.clear();
+                    lightningVocabs.addAll(finalVocabs);
+                    displayLightningGame();
+                });
+            }).start();
+        });
     }
 
     private List<Vocabulary> filterLightningVocabs(List<Vocabulary> vocabs) {

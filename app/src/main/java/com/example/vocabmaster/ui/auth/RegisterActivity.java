@@ -118,6 +118,11 @@ public class RegisterActivity extends AppCompatActivity {
                     } else {
                         generateUniqueShortId(callback); // Thử lại nếu trùng
                     }
+                })
+                .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    UiFeedback.showErrorDialog(this, "Registration error",
+                            e.getMessage() != null ? e.getMessage() : "Could not connect to Firestore");
                 });
     }
 
