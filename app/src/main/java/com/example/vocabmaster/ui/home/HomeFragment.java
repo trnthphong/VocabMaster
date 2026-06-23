@@ -271,6 +271,20 @@ public class HomeFragment extends Fragment {
 
     private void openMiniGame() {
         UiFeedback.performHaptic(requireContext(), 10);
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "Đang tải thông tin tài khoản, thử lại sau nhé", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!currentUser.isActivePremium()) {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Quick Games cần Premium")
+                    .setMessage("Nâng cấp Premium để mở khóa chế độ Quick Games.")
+                    .setNegativeButton("Để sau", null)
+                    .setPositiveButton("Nâng cấp", (dialog, which) ->
+                            NavHostFragment.findNavController(this).navigate(R.id.navigation_premium))
+                    .show();
+            return;
+        }
         Intent intent = new Intent(requireContext(), MiniGameActivity.class);
         startActivity(intent);
     }
@@ -380,6 +394,8 @@ public class HomeFragment extends Fragment {
         boolean isPro = currentUser.isActivePremium();
         
         binding.textPremiumBadge.setVisibility(isPro ? View.GONE : View.VISIBLE);
+        binding.btnPlayMiniGame.setAlpha(isPro ? 1f : 0.55f);
+        binding.subGames.setText(isPro ? "Fun way to memorize" : "Premium required");
         if (!isPro) {
             binding.textPremiumBadge.setText("UPGRADE TODAY");
             binding.textPremiumBadge.setOnClickListener(v -> 
