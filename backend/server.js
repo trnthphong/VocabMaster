@@ -1,17 +1,16 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const path = require("path");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
 dotenv.config();
-dotenv.config({ path: path.join(__dirname, ".env.local"), override: true });
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const activeGeminiKey = process.env.GEMINI_API_KEY_TEST || process.env.GEMINI_API_KEY || "";
+const genAI = new GoogleGenAI({ apiKey: activeGeminiKey });
 
 const LANGUAGE_LABELS = {
   english: "English",
@@ -168,15 +167,22 @@ function ensureCourseShape(data, profile) {
 }
 
 async function generateContentAI(prompt) {
-  if (!process.env.GEMINI_API_KEY) throw new Error("MISSING_KEY");
+  if (!activeGeminiKey) throw new Error("MISSING_KEY");
 
-  const models = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+  const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
   for (const modelName of models) {
     try {
       console.log(`Trying AI model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().replace(/```json|```/g, "").trim();
+      const result = await genAI.models.generateContent({
+        model: modelName,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.7,
+        },
+      });
+      const text = String(result.text || "").replace(/```json|```/g, "").trim();
+      if (!text) throw new Error("EMPTY_RESPONSE");
       return JSON.parse(text);
     } catch (error) {
       console.warn(`${modelName} failed:`, error.message);

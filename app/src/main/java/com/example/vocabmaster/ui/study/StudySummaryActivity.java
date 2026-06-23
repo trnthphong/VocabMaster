@@ -41,21 +41,30 @@ public class StudySummaryActivity extends AppCompatActivity {
 
         int xp = getIntent().getIntExtra("xp", 0);
         int total = Math.max(1, getIntent().getIntExtra("total_challenges", 1));
-        int correct = getIntent().getIntExtra("correct_challenges", total);
+        int correct = Math.min(total, Math.max(0, getIntent().getIntExtra("correct_challenges", total)));
+        int bestAnswerStreak = getIntent().getIntExtra("best_answer_streak", 0);
+        long elapsedStudyMillis = Math.max(0L, getIntent().getLongExtra("elapsed_study_millis", 0L));
         lessonId = getIntent().getStringExtra("lesson_id");
         courseId = getIntent().getStringExtra("course_id");
+        boolean lessonUnlocked = getIntent().getBooleanExtra("lesson_unlocked", true);
 
         int accuracy = Math.round((correct * 100f) / total);
         int stars = getIntent().getIntExtra("stars", calculateStars(accuracy));
         binding.textXpEarned.setText("+" + xp + " XP");
         binding.textAccuracy.setText(accuracy + "%");
         binding.textCorrect.setText(correct + "/" + total);
+        binding.textCompletionTime.setText(formatElapsedTime(elapsedStudyMillis));
         binding.textStarsEarned.setText(buildStars(stars));
-        binding.textHeartsImpact.setText("Lesson complete. Keep the streak alive.");
+        binding.textHeartsImpact.setText(bestAnswerStreak >= 2
+                ? "Best answer streak: x" + bestAnswerStreak
+                : "Lesson complete. Keep the streak alive.");
 
         String nextLessonId = getIntent().getStringExtra("next_lesson_id");
         String nextLessonTitle = getIntent().getStringExtra("next_lesson_title");
-        if (nextLessonId != null) {
+        if (!lessonUnlocked) {
+            binding.btnNextLesson.setVisibility(View.GONE);
+            binding.textHeartsImpact.setText("Bạn cần đạt ít nhất 70% để mở bài học tiếp theo.");
+        } else if (nextLessonId != null) {
             configureNextLessonButton(nextLessonId, nextLessonTitle);
         } else {
             binding.btnNextLesson.setVisibility(View.GONE);
@@ -70,6 +79,13 @@ public class StudySummaryActivity extends AppCompatActivity {
         if (accuracy >= 100) return 3;
         if (accuracy >= 75) return 2;
         return 1;
+    }
+
+    private String formatElapsedTime(long elapsedMillis) {
+        long totalSeconds = Math.max(0L, elapsedMillis / 1000L);
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format("%02d:%02d", minutes, seconds);
     }
 
     private String buildStars(int stars) {

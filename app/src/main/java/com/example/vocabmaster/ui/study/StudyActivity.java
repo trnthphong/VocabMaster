@@ -1,6 +1,8 @@
 package com.example.vocabmaster.ui.study;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -8,6 +10,9 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.text.InputType;
 import android.util.Log;
@@ -26,14 +31,18 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.learning.QuestionGenerationPolicy;
 import com.example.vocabmaster.data.model.Challenge;
 import com.example.vocabmaster.data.model.Flashcard;
+import com.example.vocabmaster.data.model.UserProgress;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.CourseRepository;
 import com.example.vocabmaster.data.repository.StudyPlanRepository;
+import com.example.vocabmaster.data.srs.SpacedRepetitionCalculator;
 import com.example.vocabmaster.databinding.ActivityStudyBinding;
 import com.example.vocabmaster.databinding.LayoutFlashcardTopicBinding;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -57,6 +66,9 @@ import java.util.Set;
 public class StudyActivity extends AppCompatActivity {
     private static final String TAG = "StudyActivity";
     private static final int TARGET_PRACTICE_CHALLENGES = 12;
+    private static final int BASE_CORRECT_XP = 10;
+    private static final int STREAK_BONUS_STEP_XP = 2;
+    private static final int MAX_STREAK_BONUS_XP = 10;
     private ActivityStudyBinding binding;
     private LayoutFlashcardTopicBinding topicBinding;
     private FirebaseFirestore db;
@@ -67,11 +79,16 @@ public class StudyActivity extends AppCompatActivity {
     private int currentChallengeIndex = 0;
     private int correctAnswers = 0;
     private int wrongAnswers = 0;
+    private int currentAnswerStreak = 0;
+    private int bestAnswerStreak = 0;
+    private int earnedXp = 0;
+    private long lessonStartedAtMillis = 0L;
     private Vocabulary currentVocab;
     private CourseRepository repository;
     private StudyPlanRepository studyPlanRepository;
     private MediaPlayer mediaPlayer;
     private TextToSpeech tts;
+    private SpeechRecognizer speechRecognizer;
     private boolean isTtsReady = false;
     private boolean lessonCompletionSaved = false;
     private Set<String> introducedWords = new HashSet<>();
@@ -89,6 +106,7 @@ public class StudyActivity extends AppCompatActivity {
         repository = new CourseRepository(getApplication());
         studyPlanRepository = new StudyPlanRepository(getApplication());
         mediaPlayer = new MediaPlayer();
+        lessonStartedAtMillis = System.currentTimeMillis();
         initTextToSpeech();
         
         lessonId = getIntent().getStringExtra("lesson_id");
@@ -202,13 +220,15 @@ public class StudyActivity extends AppCompatActivity {
 
         db.collection("challengeProgress")
                 .whereEqualTo("userId", uid)
-                .whereEqualTo("completed", true)
-                .whereEqualTo("type", "INTRO")
                 .get()
                 .addOnCompleteListener(task -> {
                     introducedWords.clear();
                     if (task.isSuccessful() && task.getResult() != null) {
                         for (DocumentSnapshot doc : task.getResult()) {
+                            if (!"INTRO".equalsIgnoreCase(doc.getString("type"))) continue;
+                            boolean viewed = Boolean.TRUE.equals(doc.getBoolean("familiarized"))
+                                    || Boolean.TRUE.equals(doc.getBoolean("completed"));
+                            if (!viewed) continue;
                             String answerText = doc.getString("answerText");
                             if (answerText != null && !answerText.trim().isEmpty()) {
                                 introducedWords.add(answerText.trim().toLowerCase(Locale.US));
@@ -230,12 +250,12 @@ public class StudyActivity extends AppCompatActivity {
         challenges.add(buildFallbackChallenge("INTRO", 1, buildSimpleQuestion("INTRO", "learn"), keyWords, "learn"));
         challenges.add(buildFallbackChallenge("INTRO", 2, buildSimpleQuestion("INTRO", "practice"), keyWords, "practice"));
         challenges.add(buildFallbackChallenge("INTRO", 3, buildSimpleQuestion("INTRO", "listen"), keyWords, "listen"));
-        challenges.add(buildFallbackChallenge("SELECT", 4, "Chọn từ có nghĩa là \"học\".", keyWords, "learn"));
-        challenges.add(buildFallbackChallenge("TYPE", 5, "Viết từ có nghĩa là \"luyện tập\".", keyWords, "practice"));
+        challenges.add(buildFallbackChallenge("SELECT", 4, "Choose the word that best fits this lesson clue.", keyWords, "learn"));
+        challenges.add(buildFallbackChallenge("TYPE", 5, "Complete the sentence\nI need to ___ every day.", keyWords, "practice"));
         challenges.add(buildFallbackChallenge("LISTEN", 6, "Nghe và chọn từ đúng.", keyWords, "listen"));
         challenges.add(buildArrangeChallenge(7, "I can practice in " + title + "."));
-        challenges.add(buildFallbackChallenge("SELECT", 8, "Chọn từ có nghĩa là \"nói\".", keyWords, "speak"));
-        challenges.add(buildFallbackChallenge("TYPE", 9, "Viết từ có nghĩa là \"ôn lại\".", keyWords, "review"));
+        challenges.add(buildFallbackChallenge("SELECT", 8, "Choose the word used for talking out loud.", keyWords, "speak"));
+        challenges.add(buildFallbackChallenge("TYPE", 9, "Complete the sentence\nI will ___ this lesson tonight.", keyWords, "review"));
         challenges.add(buildFallbackChallenge("LISTEN", 10, "Nghe và chọn từ đúng.", keyWords, "review"));
 
         for (Challenge challenge : challenges) {
@@ -311,16 +331,17 @@ public class StudyActivity extends AppCompatActivity {
                 String key = introWord.trim().toLowerCase(Locale.US);
                 if (introducedWords.contains(key)) continue;
                 challenge.setType("INTRO");
-                challenge.setQuestion(buildSimpleQuestion("INTRO", introWord));
+                if (isBlank(challenge.getQuestion())) {
+                    challenge.setQuestion(buildSimpleQuestion("INTRO", introWord));
+                }
                 intros.add(challenge);
                 introducedWords.add(key);
                 continue;
             }
-            if ("SPEAK".equals(type)) continue;
             if ("INPUT".equals(type) || "FORM".equals(type)) type = "TYPE";
             if ("REVIEW".equals(type)) type = "SELECT";
             if (!"SELECT".equals(type) && !"TYPE".equals(type) && !"LISTEN".equals(type)
-                    && !"ARRANGE".equals(type) && !"MATCH".equals(type)) {
+                    && !"ARRANGE".equals(type) && !"MATCH".equals(type) && !"SPEAK".equals(type)) {
                 type = "SELECT";
             }
 
@@ -331,7 +352,13 @@ public class StudyActivity extends AppCompatActivity {
             }
 
             challenge.setType(type);
-            challenge.setQuestion(buildSimpleQuestion(type, correctText));
+            if (isBlank(challenge.getQuestion())) {
+                challenge.setQuestion("TYPE".equals(type)
+                        ? buildTypeQuestion(correctText, practices.size())
+                        : buildSimpleQuestion(type, correctText));
+            } else if ("TYPE".equals(type) && isGenericTypeQuestion(challenge.getQuestion())) {
+                challenge.setQuestion(buildTypeQuestion(correctText, practices.size()));
+            }
             practices.add(challenge);
 
             hasSelect |= "SELECT".equals(type);
@@ -357,7 +384,7 @@ public class StudyActivity extends AppCompatActivity {
                 extra = buildFallbackChallenge("SELECT", nextOrder++, buildSimpleQuestion("SELECT", word), words, word);
                 hasSelect = true;
             } else if (!hasType) {
-                extra = buildFallbackChallenge("TYPE", nextOrder++, buildSimpleQuestion("TYPE", word), words, word);
+                extra = buildFallbackChallenge("TYPE", nextOrder++, buildTypeQuestion(word, practices.size()), words, word);
                 hasType = true;
             } else if (!hasListen) {
                 extra = buildFallbackChallenge("LISTEN", nextOrder++, buildSimpleQuestion("LISTEN", word), words, word);
@@ -384,10 +411,14 @@ public class StudyActivity extends AppCompatActivity {
             }
             Challenge extra = "ARRANGE".equals(type)
                     ? buildArrangeChallenge(nextOrder++, "I can use " + word + ".")
-                    : buildFallbackChallenge(type, nextOrder++, buildSimpleQuestion(type, word), words, word);
+                    : buildFallbackChallenge(type, nextOrder++,
+                    "TYPE".equals(type) ? buildTypeQuestion(word, practices.size()) : buildSimpleQuestion(type, word),
+                    words, word);
             extra.setLessonId(lessonId);
             practices.add(extra);
         }
+
+        ensureCommunicationChallenges(practices);
 
         List<Challenge> normalized = new ArrayList<>();
         normalized.addAll(intros.subList(0, Math.min(3, intros.size())));
@@ -395,8 +426,70 @@ public class StudyActivity extends AppCompatActivity {
         nextOrder = 1;
         for (Challenge challenge : normalized) {
             challenge.setOrderNum(nextOrder++);
+            ensureChallengeMetadata(challenge);
         }
         challenges = normalized;
+    }
+
+    private void ensureChallengeMetadata(Challenge challenge) {
+        if (challenge == null) return;
+        if (challenge.getTargetText() != null && !challenge.getTargetText().trim().isEmpty()
+                && challenge.getSkill() != null && !challenge.getSkill().trim().isEmpty()
+                && challenge.getDifficulty() > 0) {
+            return;
+        }
+        String target = getCorrectText(challenge);
+        QuestionGenerationPolicy.applyMetadata(
+                challenge,
+                challenge.getCefrLevel(),
+                QuestionGenerationPolicy.inferSkill(challenge.getType()),
+                target,
+                challenge.getOrderNum()
+        );
+    }
+
+    private void ensureCommunicationChallenges(List<Challenge> practices) {
+        boolean hasCommunication = false;
+        for (Challenge challenge : practices) {
+            String question = challenge.getQuestion() == null ? "" : challenge.getQuestion().toLowerCase(Locale.US);
+            if (question.contains("hội thoại") || question.contains("giao tiếp")) {
+                hasCommunication = true;
+                break;
+            }
+        }
+        if (hasCommunication) return;
+
+        while (practices.size() > TARGET_PRACTICE_CHALLENGES - 2) {
+            practices.remove(practices.size() - 1);
+        }
+
+        String correctReply = "Yes, it is. Nice to meet you.";
+        Challenge dialogue = buildFallbackChallenge(
+                "SELECT",
+                0,
+                "Hội thoại hằng ngày:\nA: Hi! Is this your first time here?\nB: ___",
+                Arrays.asList(
+                        correctReply,
+                        "I am here at five kilos.",
+                        "No, I don't first.",
+                        "The weather meets you."),
+                correctReply);
+        dialogue.setId(lessonId + "_communication_reply");
+        dialogue.setLessonId(lessonId);
+
+        Challenge speaking = new Challenge();
+        speaking.setId(lessonId + "_communication_speaking");
+        speaking.setLessonId(lessonId);
+        speaking.setType("SPEAK");
+        speaking.setOrderNum(0);
+        speaking.setQuestion("Luyện giao tiếp: Hãy nói câu này thành tiếng:\nCould you help me with this, please?");
+        Challenge.ChallengeOption spokenOption = new Challenge.ChallengeOption();
+        spokenOption.setText("Tôi đã nói");
+        spokenOption.setCorrect(true);
+        speaking.setOptions(Collections.singletonList(spokenOption));
+
+        practices.add(Math.min(1, practices.size()), dialogue);
+        practices.add(Math.min(5, practices.size()), speaking);
     }
 
     private Challenge buildMatchChallenge(int orderNum, List<String> words) {
@@ -409,6 +502,10 @@ public class StudyActivity extends AppCompatActivity {
             option.setCorrect(true);
         }
         return challenge;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private void setSingleCorrectOption(Challenge challenge, String text) {
@@ -424,7 +521,7 @@ public class StudyActivity extends AppCompatActivity {
             case "INTRO":
                 return "Từ mới: " + correctText + " = " + meaning + ".";
             case "TYPE":
-                return "Viết từ có nghĩa là \"" + meaning + "\".";
+                return "Complete the sentence\n" + buildClozeSentence(correctText, 0);
             case "LISTEN":
                 return "Nghe và chọn từ đúng.";
             case "ARRANGE":
@@ -432,7 +529,45 @@ public class StudyActivity extends AppCompatActivity {
             case "MATCH":
                 return "Nối từ với nghĩa tiếng Việt.";
             default:
-                return "Chọn từ có nghĩa là \"" + meaning + "\".";
+                return "Choose the word that fits the clue.";
+        }
+    }
+
+    private boolean isGenericTypeQuestion(String question) {
+        if (question == null) return true;
+        String normalized = question.trim().toLowerCase(Locale.US);
+        return normalized.startsWith("vi")
+                || normalized.startsWith("type the word that means")
+                || normalized.startsWith("you are in ");
+    }
+
+    private String buildTypeQuestion(String word, int variant) {
+        switch (variant % 4) {
+            case 0:
+                return "Complete the sentence\n" + buildClozeSentence(word, variant);
+            case 1:
+                return "Type the missing word\n" + buildClozeSentence(word, variant);
+            case 2:
+                return "Complete the sentence\n" + buildClozeSentence(word, variant + 1);
+            default:
+                return "Write the missing English word\n" + buildClozeSentence(word, variant + 2);
+        }
+    }
+
+    private String buildClozeSentence(String word, int variant) {
+        switch (variant % 6) {
+            case 0:
+                return "I need to check the ___ before I leave.";
+            case 1:
+                return "Please put the ___ on today's agenda.";
+            case 2:
+                return "She wrote the ___ in her notebook.";
+            case 3:
+                return "We practiced the ___ before the test.";
+            case 4:
+                return "Can you explain the ___ one more time?";
+            default:
+                return "This ___ is important in the lesson.";
         }
     }
 
@@ -460,12 +595,15 @@ public class StudyActivity extends AppCompatActivity {
                     : buildFallbackChallenge(type, nextOrder++, "LISTEN".equals(type)
                     ? "Nghe và chọn từ đúng."
                     : ("TYPE".equals(type)
-                    ? "Viết từ có nghĩa là \"" + getVietnameseMeaning(word) + "\"."
-                    : "Chọn từ có nghĩa là \"" + getVietnameseMeaning(word) + "\"."), words, word);
+                    ? buildTypeQuestion(word, index)
+                    : "Choose the word that best fits this lesson clue."), words, word);
 
             String challengeId = db.collection("challenges").document().getId();
             challenge.setId(challengeId);
             challenge.setLessonId(lessonId);
+            if ("TYPE".equals(type)) {
+                challenge.setQuestion(buildTypeQuestion(word, index));
+            }
             challenges.add(challenge);
             db.collection("challenges").document(challengeId).set(challenge);
         }
@@ -479,6 +617,26 @@ public class StudyActivity extends AppCompatActivity {
             if (!"INTRO".equals(type)) count++;
         }
         return count;
+    }
+
+    private int calculatePracticeProgress(Challenge currentChallenge) {
+        int totalPractice = countPracticeChallenges();
+        if (totalPractice <= 0 || challenges == null) return 0;
+
+        int seenPractice = 0;
+        for (int i = 0; i <= currentChallengeIndex && i < challenges.size(); i++) {
+            Challenge challenge = challenges.get(i);
+            String type = challenge.getType() == null ? "" : challenge.getType().trim().toUpperCase(Locale.US);
+            if (!"INTRO".equals(type)) seenPractice++;
+        }
+
+        String currentType = currentChallenge == null || currentChallenge.getType() == null
+                ? ""
+                : currentChallenge.getType().trim().toUpperCase(Locale.US);
+        if ("INTRO".equals(currentType)) {
+            seenPractice = Math.max(0, seenPractice);
+        }
+        return Math.min(100, Math.round((seenPractice * 100f) / totalPractice));
     }
 
     private List<String> extractChallengeWords() {
@@ -500,19 +658,23 @@ public class StudyActivity extends AppCompatActivity {
 
     private void displayChallenge() {
         if (currentChallengeIndex >= challenges.size()) {
-            markLessonCompleted();
-            int totalChallenges = Math.max(1, challenges.size());
+            int totalChallenges = Math.max(1, countPracticeChallenges());
             int accuracy = Math.round((correctAnswers * 100f) / totalChallenges);
+            boolean lessonUnlocked = correctAnswers >= Math.max(1, (int) Math.ceil(totalChallenges * 0.7f));
+            markLessonCompleted(lessonUnlocked);
             int stars = accuracy >= 100 ? 3 : (accuracy >= 75 ? 2 : 1);
             
             Intent intent = new Intent(this, StudySummaryActivity.class);
-            intent.putExtra("xp", challenges.size() * 10);
+            intent.putExtra("xp", earnedXp);
+            intent.putExtra("best_answer_streak", bestAnswerStreak);
             intent.putExtra("lesson_id", lessonId);
             intent.putExtra("course_id", courseId);
             intent.putExtra("lesson_title", getIntent().getStringExtra("lesson_title"));
-            intent.putExtra("total_challenges", challenges.size());
+            intent.putExtra("total_challenges", totalChallenges);
             intent.putExtra("correct_challenges", correctAnswers);
             intent.putExtra("stars", stars);
+            intent.putExtra("lesson_unlocked", lessonUnlocked);
+            intent.putExtra("elapsed_study_millis", Math.max(0L, System.currentTimeMillis() - lessonStartedAtMillis));
             
             if (getIntent().hasExtra("next_lesson_id")) {
                 intent.putExtra("next_lesson_id", getIntent().getStringExtra("next_lesson_id"));
@@ -531,17 +693,18 @@ public class StudyActivity extends AppCompatActivity {
         binding.dynamicTaskLayout.setVisibility(View.VISIBLE);
         binding.dynamicTaskLayout.removeAllViews();
 
-        int progress = (int) (((float) (currentChallengeIndex + 1) / challenges.size()) * 100);
+        int progress = calculatePracticeProgress(challenge);
         binding.studyProgress.setProgress(progress);
 
-        View challengeView = getLayoutInflater().inflate(R.layout.layout_challenge_select, binding.dynamicTaskLayout, false);
+        String type = challenge.getType() == null ? "SELECT" : challenge.getType();
+        View challengeView = getLayoutInflater().inflate(getChallengeLayout(type), binding.dynamicTaskLayout, false);
         TextView textQuestion = challengeView.findViewById(R.id.text_question);
         GridLayout optionsContainer = challengeView.findViewById(R.id.options_container);
         LinearLayout feedbackContainer = challengeView.findViewById(R.id.feedback_container);
 
-        textQuestion.setText(challenge.getQuestion());
+        textQuestion.setText(formatQuestionForDisplay(challenge));
+        styleQuestionFrame(textQuestion);
 
-        String type = challenge.getType() == null ? "SELECT" : challenge.getType();
         if ("INTRO".equals(type)) {
             renderIntroChallenge(challenge, optionsContainer, feedbackContainer);
         } else if ("LISTEN".equals(type)) {
@@ -559,6 +722,86 @@ public class StudyActivity extends AppCompatActivity {
         }
 
         binding.dynamicTaskLayout.addView(challengeView);
+    }
+
+    private String formatQuestionForDisplay(Challenge challenge) {
+        String question = challenge == null ? null : challenge.getQuestion();
+        if (question == null) return "";
+        String trimmed = question.trim().replace("\r\n", "\n");
+        String[] prefixes = {
+                "Complete the sentence with the target word: ",
+                "Complete the sentences with the target word: ",
+                "Complete the sentence: ",
+                "Complete the sentences: ",
+                "Type the missing word: "
+        };
+        for (String prefix : prefixes) {
+            if (trimmed.startsWith(prefix)) {
+                String instruction = prefix.substring(0, prefix.length() - 2).trim();
+                return instruction + "\n\n" + trimmed.substring(prefix.length()).trim();
+            }
+        }
+        int firstLineBreak = trimmed.indexOf('\n');
+        if (firstLineBreak > 0) {
+            String instruction = trimmed.substring(0, firstLineBreak).trim();
+            String prompt = trimmed.substring(firstLineBreak + 1).trim();
+            if (!prompt.isEmpty()) return instruction + "\n\n" + prompt;
+        }
+
+        int colon = trimmed.indexOf(": ");
+        if (colon > 0 && colon < trimmed.length() - 2) {
+            return trimmed.substring(0, colon).trim()
+                    + "\n\n"
+                    + trimmed.substring(colon + 2).trim();
+        }
+
+        int firstQuote = trimmed.indexOf('"');
+        if (firstQuote > 0) {
+            return trimmed.substring(0, firstQuote).trim()
+                    + "\n\n"
+                    + trimmed.substring(firstQuote).trim();
+        }
+
+        String type = challenge.getType() == null
+                ? "SELECT"
+                : challenge.getType().trim().toUpperCase(Locale.US);
+        return getInstructionForChallenge(type) + "\n\n" + trimmed;
+    }
+
+    private void styleQuestionFrame(TextView textQuestion) {
+        textQuestion.setBackgroundResource(R.drawable.bg_question_dashed);
+        textQuestion.setPadding(dp(16), dp(14), dp(16), dp(14));
+    }
+
+    private String getInstructionForChallenge(String type) {
+        switch (type) {
+            case "INTRO": return "Làm quen từ mới";
+            case "LISTEN": return "Nghe và chọn đáp án";
+            case "MATCH": return "Nối các cặp phù hợp";
+            case "ARRANGE": return "Sắp xếp thành câu hoàn chỉnh";
+            case "SPEAK": return "Luyện phát âm";
+            case "TYPE":
+            case "INPUT":
+            case "FORM": return "Điền đáp án đúng";
+            default: return "Chọn đáp án đúng";
+        }
+    }
+
+    private int getChallengeLayout(String type) {
+        if ("INTRO".equals(type)) {
+            return R.layout.layout_challenge_intro;
+        } else if ("LISTEN".equals(type)) {
+            return R.layout.layout_challenge_listen;
+        } else if ("MATCH".equals(type)) {
+            return R.layout.layout_challenge_match;
+        } else if ("ARRANGE".equals(type)) {
+            return R.layout.layout_challenge_arrange;
+        } else if ("SPEAK".equals(type)) {
+            return R.layout.layout_challenge_speak;
+        } else if ("TYPE".equals(type) || "INPUT".equals(type) || "FORM".equals(type)) {
+            return R.layout.layout_challenge_type;
+        }
+        return R.layout.layout_challenge_choice;
     }
 
     private void renderIntroChallenge(Challenge challenge, GridLayout container, LinearLayout feedbackContainer) {
@@ -592,6 +835,7 @@ public class StudyActivity extends AppCompatActivity {
         container.addView(phonetic);
 
         Button button = makeOptionButton("Đã hiểu");
+        applyLoginActionButtonStyle(button);
         TextView meaning = makeFeedbackText(getVietnameseMeaning(word), true);
         GridLayout.LayoutParams meaningParams = new GridLayout.LayoutParams();
         meaningParams.columnSpec = GridLayout.spec(0, 2, 1f);
@@ -601,17 +845,18 @@ public class StudyActivity extends AppCompatActivity {
 
         ImageButton listen = new ImageButton(this);
         listen.setImageResource(R.drawable.volume);
-        listen.setBackgroundColor(Color.TRANSPARENT);
+        listen.setBackgroundResource(R.drawable.button_login_neumorph);
+        listen.setColorFilter(Color.WHITE);
         listen.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         listen.setAdjustViewBounds(true);
-        listen.setPadding(dp(10), dp(10), dp(10), dp(10));
+        listen.setPadding(dp(16), dp(16), dp(16), dp(22));
         listen.setOnClickListener(v -> speakText(word));
         GridLayout.LayoutParams listenParams = new GridLayout.LayoutParams();
         listenParams.columnSpec = GridLayout.spec(0, 2, 1f);
-        listenParams.width = 100;
-        listenParams.height = 100;
+        listenParams.width = dp(72);
+        listenParams.height = dp(72);
         listenParams.setGravity(Gravity.CENTER);
-        listenParams.setMargins(10, 4, 10, 12);
+        listenParams.setMargins(dp(10), dp(4), dp(10), dp(8));
         listen.setLayoutParams(listenParams);
         container.addView(listen);
         new Handler(Looper.getMainLooper()).postDelayed(() -> speakText(word), 250);
@@ -620,8 +865,31 @@ public class StudyActivity extends AppCompatActivity {
         btnParams.columnSpec = GridLayout.spec(0, 2, 1f);
         btnParams.setMargins(10, 10, 10, 10);
         button.setLayoutParams(btnParams);
-        button.setOnClickListener(v -> handleCorrectAnswer(challenge, container, feedbackContainer));
+        button.setOnClickListener(v -> {
+            recordIntroFamiliarized(challenge);
+            nextChallenge();
+        });
         container.addView(button);
+    }
+
+    private void applyLoginActionButtonStyle(Button button) {
+        button.setBackgroundResource(R.drawable.button_login_neumorph);
+        button.setTextColor(getColor(R.color.bg_grey));
+        button.setTextSize(18);
+        button.setTypeface(Typeface.DEFAULT_BOLD);
+        button.setMinHeight(dp(72));
+        button.setMinimumHeight(dp(72));
+        button.setPadding(dp(14), dp(18), dp(14), dp(24));
+    }
+
+    private void applyWhiteActionButtonStyle(Button button) {
+        button.setBackgroundResource(R.drawable.bg_button_white_3d);
+        button.setTextColor(getColor(R.color.brand_primary));
+        button.setTextSize(18);
+        button.setTypeface(Typeface.DEFAULT_BOLD);
+        button.setMinHeight(dp(72));
+        button.setMinimumHeight(dp(72));
+        button.setPadding(dp(14), dp(18), dp(14), dp(24));
     }
 
     private void renderChoiceChallenge(Challenge challenge, GridLayout container, LinearLayout feedbackContainer) {
@@ -642,7 +910,7 @@ public class StudyActivity extends AppCompatActivity {
                     applyCorrectButtonStyle(button);
                     handleCorrectAnswer(challenge, container, feedbackContainer);
                 } else {
-                    handleWrongAnswer(container, feedbackContainer, getCorrectText(challenge));
+                    handleWrongAnswer(challenge, container, feedbackContainer, getCorrectText(challenge));
                 }
             });
             container.addView(button);
@@ -673,23 +941,108 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     private void renderSpeakChallenge(Challenge challenge, GridLayout container, LinearLayout feedbackContainer) {
-        TextView hint = makeFeedbackText("Nói to câu trên, rồi xác nhận khi bạn đã nói xong.", true);
+        String targetSentence = extractSpeakingTarget(challenge);
+        TextView hint = makeFeedbackText("Nhấn ghi âm và đọc câu trên. Bạn có thể thử lại nếu chưa đúng.", true);
         GridLayout.LayoutParams hintParams = new GridLayout.LayoutParams();
         hintParams.columnSpec = GridLayout.spec(0, 2, 1f);
         hint.setLayoutParams(hintParams);
         container.addView(hint);
 
-        Button confirm = makeOptionButton(getCorrectText(challenge));
-        GridLayout.LayoutParams confirmParams = new GridLayout.LayoutParams();
-        confirmParams.columnSpec = GridLayout.spec(0, 2, 1f);
-        confirm.setLayoutParams(confirmParams);
-        confirm.setOnClickListener(v -> handleCorrectAnswer(challenge, container, feedbackContainer));
-        container.addView(confirm);
+        Button record = makeOptionButton("🎤 Bắt đầu ghi âm");
+        GridLayout.LayoutParams recordParams = new GridLayout.LayoutParams();
+        recordParams.columnSpec = GridLayout.spec(0, 2, 1f);
+        recordParams.width = GridLayout.LayoutParams.MATCH_PARENT;
+        recordParams.setMargins(dp(10), dp(16), dp(10), dp(8));
+        record.setLayoutParams(recordParams);
+        record.setOnClickListener(v -> startSpeechAssessment(
+                challenge, targetSentence, record, hint, container, feedbackContainer));
+        container.addView(record);
+
+        Button skip = makeOptionButton("Bỏ qua lúc này");
+        GridLayout.LayoutParams skipParams = new GridLayout.LayoutParams();
+        skipParams.columnSpec = GridLayout.spec(0, 2, 1f);
+        skipParams.width = GridLayout.LayoutParams.MATCH_PARENT;
+        skipParams.setMargins(dp(10), dp(4), dp(10), dp(8));
+        skip.setLayoutParams(skipParams);
+        skip.setOnClickListener(v -> nextChallenge());
+        container.addView(skip);
+    }
+
+    private void startSpeechAssessment(Challenge challenge, String targetSentence, Button recordButton,
+                                       TextView hint, ViewGroup container, LinearLayout feedbackContainer) {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 4102);
+            Toast.makeText(this, "Hãy cấp quyền micro rồi nhấn ghi âm lại nhé.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            Toast.makeText(this, "Thiết bị chưa hỗ trợ nhận dạng giọng nói.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (speechRecognizer != null) speechRecognizer.destroy();
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        recordButton.setEnabled(false);
+        recordButton.setText("Đang nghe...");
+
+        speechRecognizer.setRecognitionListener(new RecognitionListener() {
+            @Override public void onReadyForSpeech(Bundle params) { hint.setText("Mình đang nghe, hãy nói ngay nhé..."); }
+            @Override public void onBeginningOfSpeech() { }
+            @Override public void onRmsChanged(float rmsdB) { }
+            @Override public void onBufferReceived(byte[] buffer) { }
+            @Override public void onEndOfSpeech() { hint.setText("Đang đánh giá phát âm..."); }
+            @Override public void onError(int error) {
+                recordButton.setEnabled(true);
+                recordButton.setText("🎤 Thử ghi âm lại");
+                hint.setText("Mình chưa nghe rõ. Bạn thử lại hoặc chọn bỏ qua nhé.");
+            }
+            @Override public void onResults(Bundle results) {
+                ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                String heard = matches == null || matches.isEmpty() ? "" : matches.get(0);
+                float similarity = calculateSpeechSimilarity(targetSentence, heard);
+                if (similarity >= 0.7f) {
+                    handleCorrectAnswer(challenge, container, feedbackContainer);
+                } else {
+                    recordButton.setEnabled(true);
+                    recordButton.setText("🎤 Thử ghi âm lại");
+                    hint.setText("Mình nghe được: “" + heard + "”\nChưa đủ rõ, bạn thử lại nhé.");
+                }
+            }
+            @Override public void onPartialResults(Bundle partialResults) { }
+            @Override public void onEvent(int eventType, Bundle params) { }
+        });
+
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag());
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, targetSentence);
+        speechRecognizer.startListening(intent);
+    }
+
+    private String extractSpeakingTarget(Challenge challenge) {
+        String question = challenge.getQuestion() == null ? "" : challenge.getQuestion().trim();
+        int lastLine = question.lastIndexOf('\n');
+        if (lastLine >= 0 && lastLine < question.length() - 1) {
+            return question.substring(lastLine + 1).trim();
+        }
+        String answer = getCorrectText(challenge);
+        return "Tôi đã nói".equalsIgnoreCase(answer) ? question : answer;
+    }
+
+    private float calculateSpeechSimilarity(String expected, String actual) {
+        String normalizedExpected = expected.toLowerCase(Locale.US).replaceAll("[^a-z0-9' ]", " ").trim();
+        String normalizedActual = actual.toLowerCase(Locale.US).replaceAll("[^a-z0-9' ]", " ").trim();
+        if (normalizedExpected.isEmpty() || normalizedActual.isEmpty()) return 0f;
+        Set<String> expectedWords = new HashSet<>(Arrays.asList(normalizedExpected.split("\\s+")));
+        Set<String> actualWords = new HashSet<>(Arrays.asList(normalizedActual.split("\\s+")));
+        int matches = 0;
+        for (String word : expectedWords) if (actualWords.contains(word)) matches++;
+        return matches / (float) expectedWords.size();
     }
 
     private void renderTypeChallenge(Challenge challenge, GridLayout container, LinearLayout feedbackContainer) {
         String correctText = getCorrectText(challenge);
-        TextView hint = makeFeedbackText("Nghĩa: " + getVietnameseMeaning(correctText), true);
+        TextView hint = makeFeedbackText("Use the missing word from the sentence.", true);
         GridLayout.LayoutParams hintParams = new GridLayout.LayoutParams();
         hintParams.columnSpec = GridLayout.spec(0, 2, 1f);
         hint.setLayoutParams(hintParams);
@@ -711,6 +1064,7 @@ public class StudyActivity extends AppCompatActivity {
         container.addView(input);
 
         Button submit = makeOptionButton("Kiểm tra");
+        applyWhiteActionButtonStyle(submit);
         GridLayout.LayoutParams submitParams = new GridLayout.LayoutParams();
         submitParams.columnSpec = GridLayout.spec(0, 2, 1f);
         submitParams.setMargins(10, 8, 10, 8);
@@ -720,7 +1074,7 @@ public class StudyActivity extends AppCompatActivity {
             if (answer.equalsIgnoreCase(correctText.trim())) {
                 handleCorrectAnswer(challenge, container, feedbackContainer);
             } else {
-                handleWrongAnswer(container, feedbackContainer, correctText);
+                handleWrongAnswer(challenge, container, feedbackContainer, correctText);
             }
         });
         container.addView(submit);
@@ -733,7 +1087,7 @@ public class StudyActivity extends AppCompatActivity {
             return;
         }
 
-        TextView status = makeFeedbackText("Chọn một từ, rồi chọn nghĩa tương ứng.", true);
+        TextView status = makeFeedbackText("Chọn một từ, rồi chọn gợi ý tiếng Anh tương ứng.", true);
         GridLayout.LayoutParams statusParams = new GridLayout.LayoutParams();
         statusParams.columnSpec = GridLayout.spec(0, 2, 1f);
         status.setLayoutParams(statusParams);
@@ -806,7 +1160,7 @@ public class StudyActivity extends AppCompatActivity {
                         handleCorrectAnswer(challenge, container, feedbackContainer);
                     }
                 } else {
-                    handleWrongAnswer(container, feedbackContainer, selectedWord[0] + " = " + getVietnameseMeaning(selectedWord[0]));
+                    handleWrongAnswer(challenge, container, feedbackContainer, selectedWord[0] + " = " + getVietnameseMeaning(selectedWord[0]));
                 }
             });
             meaningColumn.addView(meaningButton);
@@ -838,7 +1192,7 @@ public class StudyActivity extends AppCompatActivity {
         answerBox.setColumnCount(3);
         answerBox.setMinimumHeight(dp(76));
         answerBox.setPadding(dp(8), dp(8), dp(8), dp(8));
-        answerBox.setBackground(makeRoundedBg(Color.WHITE, getColor(R.color.brand_primary), 2));
+        answerBox.setBackground(makeRoundedBg(Color.TRANSPARENT, Color.WHITE, 2));
         GridLayout.LayoutParams answerParams = new GridLayout.LayoutParams();
         answerParams.columnSpec = GridLayout.spec(0, 2, 1f);
         answerParams.width = GridLayout.LayoutParams.MATCH_PARENT;
@@ -895,6 +1249,7 @@ public class StudyActivity extends AppCompatActivity {
         }
 
         Button submit = makeOptionButton("Kiểm tra");
+        applyWhiteActionButtonStyle(submit);
         GridLayout.LayoutParams submitParams = new GridLayout.LayoutParams();
         submitParams.columnSpec = GridLayout.spec(0, 2, 1f);
         submitParams.width = GridLayout.LayoutParams.MATCH_PARENT;
@@ -914,29 +1269,99 @@ public class StudyActivity extends AppCompatActivity {
                 applyCorrectButtonStyle(submit);
                 handleCorrectAnswer(challenge, container, feedbackContainer);
             } else {
-                handleWrongAnswer(container, feedbackContainer, finalSentence);
+                handleWrongAnswer(challenge, container, feedbackContainer, finalSentence);
             }
         });
         container.addView(submit);
     }
 
     private void handleCorrectAnswer(Challenge challenge, ViewGroup container, LinearLayout feedbackContainer) {
+        int streakBeforeAnswer = currentAnswerStreak;
         correctAnswers++;
+        currentAnswerStreak++;
+        bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+        int xpGained = calculateXpForCorrectAnswer();
+        earnedXp += xpGained;
+        String streakMessage = currentAnswerStreak >= 2
+                ? "Correct! +" + xpGained + " XP\nStreak x" + currentAnswerStreak
+                : "Correct! +" + xpGained + " XP";
         disableInput(container);
         playFeedbackSound(true);
         UiFeedback.performHaptic(this, 10);
         showInlineFeedback(feedbackContainer, true, "Chính xác! Rất giỏi.");
+        showInlineFeedback(feedbackContainer, true, streakMessage);
         recordChallengeCompleted(challenge);
+        updateMemoryProfile(challenge, true, streakBeforeAnswer);
         showContinueButton(feedbackContainer);
     }
 
-    private void handleWrongAnswer(ViewGroup container, LinearLayout feedbackContainer, String correctText) {
+    private void handleWrongAnswer(Challenge challenge, ViewGroup container, LinearLayout feedbackContainer, String correctText) {
         wrongAnswers++;
+        currentAnswerStreak = 0;
         disableInput(container);
         playFeedbackSound(false);
         UiFeedback.performHaptic(this, 20);
         showInlineFeedback(feedbackContainer, false, "Chưa đúng rồi. Đáp án đúng:\n" + correctText);
+        updateMemoryProfile(challenge, false, 0);
         showContinueButton(feedbackContainer);
+    }
+
+    private void updateMemoryProfile(Challenge challenge, boolean correct, int streakBeforeAnswer) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null || challenge == null) return;
+
+        String target = getReviewTarget(challenge);
+        if (target.isEmpty()) return;
+
+        String progressId = uid + "_" + target.toLowerCase(Locale.US).replaceAll("[^a-z0-9]+", "_");
+        db.collection("userProgress").document(progressId).get()
+                .addOnSuccessListener(document -> {
+                    UserProgress previous = document.toObject(UserProgress.class);
+                    if (previous == null) {
+                        previous = new UserProgress();
+                        previous.setProgressId(progressId);
+                        previous.setUserId(uid);
+                        previous.setCardId(target);
+                        previous.setSetId(courseId != null ? courseId : lessonId);
+                    }
+
+                    SpacedRepetitionCalculator.Rating rating =
+                            QuestionGenerationPolicy.ratingForAnswer(correct, streakBeforeAnswer, challenge.getType());
+                    SpacedRepetitionCalculator.ReviewResult result =
+                            SpacedRepetitionCalculator.calculate(previous, rating, System.currentTimeMillis());
+                    UserProgress updated = SpacedRepetitionCalculator.applyResult(previous, result);
+                    updated.setLastReviewed(Timestamp.now());
+
+                    Map<String, Object> extra = new HashMap<>();
+                    extra.put("progressId", updated.getProgressId());
+                    extra.put("userId", uid);
+                    extra.put("cardId", updated.getCardId());
+                    extra.put("setId", updated.getSetId());
+                    extra.put("status", updated.getStatus());
+                    extra.put("interval", updated.getInterval());
+                    extra.put("easeFactor", updated.getEaseFactor());
+                    extra.put("nextReview", updated.getNextReview());
+                    extra.put("lastReviewed", updated.getLastReviewed());
+                    extra.put("lastChallengeId", challenge.getId());
+                    extra.put("lastChallengeType", challenge.getType());
+                    extra.put("lastSkill", challenge.getSkill());
+                    extra.put("lastDifficulty", challenge.getDifficulty());
+                    extra.put("correct", correct);
+                    db.collection("userProgress").document(progressId).set(extra, SetOptions.merge());
+                });
+    }
+
+    private String getReviewTarget(Challenge challenge) {
+        if (challenge.getTargetText() != null && !challenge.getTargetText().trim().isEmpty()) {
+            return challenge.getTargetText().trim();
+        }
+        String correctText = getCorrectText(challenge);
+        return correctText == null ? "" : correctText.trim();
+    }
+
+    private int calculateXpForCorrectAnswer() {
+        int streakBonus = Math.min(MAX_STREAK_BONUS_XP, Math.max(0, currentAnswerStreak - 1) * STREAK_BONUS_STEP_XP);
+        return BASE_CORRECT_XP + streakBonus;
     }
 
     private void playFeedbackSound(boolean correct) {
@@ -980,9 +1405,10 @@ public class StudyActivity extends AppCompatActivity {
 
     private void showContinueButton(LinearLayout container) {
         Button next = makeOptionButton("Tiếp tục");
+        applyLoginActionButtonStyle(next);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(56));
+                dp(72));
         params.setMargins(dp(8), dp(8), dp(8), 0);
         next.setLayoutParams(params);
         next.setOnClickListener(v -> nextChallenge());
@@ -1020,8 +1446,8 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     private void applyDefaultButtonStyle(Button button) {
-        button.setBackground(makeRoundedBg(Color.WHITE, getColor(R.color.brand_primary), 2));
-        button.setTextColor(getColor(R.color.brand_primary));
+        button.setBackground(makeRoundedBg(Color.TRANSPARENT, Color.WHITE, 2));
+        button.setTextColor(Color.WHITE);
     }
 
     private void applySelectedButtonStyle(Button button) {
@@ -1213,6 +1639,73 @@ public class StudyActivity extends AppCompatActivity {
         }
     }
 
+    private String getEnglishClue(String word) {
+        String key = word == null ? "" : word.trim().toLowerCase(Locale.US);
+        switch (key) {
+            case "resume": return "A document for applying to a job";
+            case "deadline": return "The final time to finish work";
+            case "meeting": return "A planned work discussion";
+            case "colleague": return "A person you work with";
+            case "project": return "A planned piece of work";
+            case "salary": return "Money paid for a job";
+            case "interview": return "A formal talk before getting a job";
+            case "task": return "A piece of work to do";
+            case "agenda": return "A list of meeting topics";
+            case "client": return "A person or company receiving a service";
+            case "report": return "A written update with information";
+            case "presentation": return "A talk given to an audience";
+            case "ticket": return "Proof you can travel or enter";
+            case "passport": return "An official document for international travel";
+            case "hotel": return "A place to stay when traveling";
+            case "station": return "A place where trains or buses stop";
+            case "map": return "A guide showing places and directions";
+            case "luggage": return "Bags used for travel";
+            case "reservation": return "A booking made before arrival";
+            case "direction": return "Information about where to go";
+            case "arrival": return "The time when someone reaches a place";
+            case "departure": return "The time when someone leaves";
+            case "booking": return "An arrangement made in advance";
+            case "itinerary": return "A travel plan or schedule";
+            case "lesson": return "A period of learning";
+            case "homework": return "Study work done after class";
+            case "teacher": return "A person who helps students learn";
+            case "student": return "A person who is learning";
+            case "library": return "A place with books and study materials";
+            case "exam": return "A test of knowledge";
+            case "grade": return "A score for school work";
+            case "subject": return "An area of study";
+            case "question": return "Something asked to get an answer";
+            case "answer": return "A response to a question";
+            case "score": return "The number of points received";
+            case "strategy": return "A plan for reaching a goal";
+            case "menu": return "A list of food or drink choices";
+            case "breakfast": return "The first meal of the day";
+            case "dinner": return "A main evening meal";
+            case "rice": return "A common grain eaten as food";
+            case "vegetable": return "A plant used as food";
+            case "drink": return "A liquid you can have";
+            case "spicy": return "Having a hot, strong taste";
+            case "delicious": return "Tasting very good";
+            case "computer": return "A device used for digital work";
+            case "phone": return "A device used to call or message";
+            case "password": return "A secret code for access";
+            case "website": return "A page or place on the internet";
+            case "download": return "To get a file from the internet";
+            case "software": return "Programs used on a device";
+            case "message": return "A written or spoken note";
+            case "battery": return "The power source in a device";
+            case "festival": return "A public celebration";
+            case "tradition": return "A custom passed through time";
+            case "custom": return "A common cultural habit";
+            case "museum": return "A place that displays history or art";
+            case "music": return "Organized sound people listen to";
+            case "history": return "Events from the past";
+            case "art": return "Creative work such as painting";
+            case "celebration": return "A happy event or party";
+            default: return "A useful word from this lesson";
+        }
+    }
+
     private String getVietnameseMeaning(String word) {
         String key = word == null ? "" : word.trim().toLowerCase(Locale.US);
         switch (key) {
@@ -1355,31 +1848,48 @@ public class StudyActivity extends AppCompatActivity {
                 .set(progress, SetOptions.merge());
     }
 
-    private void markLessonCompleted() {
+    private void recordIntroFamiliarized(Challenge challenge) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null || challenge == null || challenge.getId() == null) return;
+        Map<String, Object> progress = new HashMap<>();
+        progress.put("id", uid + "_" + challenge.getId());
+        progress.put("userId", uid);
+        progress.put("challengeId", challenge.getId());
+        progress.put("lessonId", lessonId);
+        progress.put("courseId", courseId);
+        progress.put("completed", false);
+        progress.put("familiarized", true);
+        progress.put("completedAt", new Date());
+        progress.put("type", "INTRO");
+        progress.put("answerText", getCorrectText(challenge));
+        db.collection("challengeProgress")
+                .document(uid + "_" + challenge.getId())
+                .set(progress, SetOptions.merge());
+    }
+
+    private void markLessonCompleted(boolean lessonUnlocked) {
         if (lessonCompletionSaved) return;
         lessonCompletionSaved = true;
 
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null && lessonId != null && courseId != null) {
-            for (Challenge challenge : challenges) {
-                recordChallengeCompleted(challenge);
-            }
-            int earnedXp = challenges == null ? 0 : challenges.size() * 10;
             db.collection("users").document(uid)
                     .update(
                             "xp", FieldValue.increment(earnedXp),
                             "totalPoints", FieldValue.increment(earnedXp),
                             "lastActive", new Date()
                     );
-            studyPlanRepository.markLessonAsCompleted(uid, lessonId, courseId);
-            db.collectionGroup("lessons")
-                    .whereEqualTo("lessonId", lessonId)
-                    .get()
-                    .addOnSuccessListener(snapshot -> {
-                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                            doc.getReference().update("completed", true, "isCompleted", true);
-                        }
-                    });
+            if (lessonUnlocked) {
+                studyPlanRepository.markLessonAsCompleted(uid, lessonId, courseId);
+                db.collectionGroup("lessons")
+                        .whereEqualTo("lessonId", lessonId)
+                        .get()
+                        .addOnSuccessListener(snapshot -> {
+                            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                                doc.getReference().update("completed", true, "isCompleted", true);
+                            }
+                        });
+            }
         }
     }
 
@@ -1504,6 +2014,10 @@ public class StudyActivity extends AppCompatActivity {
         if (tts != null) {
             tts.stop();
             tts.shutdown();
+        }
+        if (speechRecognizer != null) {
+            speechRecognizer.destroy();
+            speechRecognizer = null;
         }
     }
 }

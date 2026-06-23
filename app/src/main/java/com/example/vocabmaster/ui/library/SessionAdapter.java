@@ -57,9 +57,16 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
         holder.binding.textSessionBadge.setText("Buổi " + (position + 1));
         if (session.getDate() != null) {
             String dateStr = fullDateFormat.format(session.getDate());
-            // Capitalize first letter
             dateStr = dateStr.substring(0, 1).toUpperCase() + dateStr.substring(1);
             holder.binding.textSessionFullDate.setText(dateStr);
+        }
+
+        // Fix: Tính toán số thứ tự bài học bắt đầu dựa trên các buổi trước
+        int startLessonNumber = 1;
+        for (int j = 0; j < position; j++) {
+            if (sessions.get(j).getLessonIds() != null) {
+                startLessonNumber += sessions.get(j).getLessonIds().size();
+            }
         }
 
         List<LessonSessionInfo> infos = getLessonInfos(session);
@@ -68,17 +75,16 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
         int lessonCount = session.getLessonIds() != null ? session.getLessonIds().size() : 0;
         String skillSummary = "Vocabulary";
 
-        // Clear previous lessons
         holder.binding.layoutLessonsContainer.removeAllViews();
 
         for (int i = 0; i < infos.size(); i++) {
             LessonSessionInfo info = infos.get(i);
             
-            // Add lesson item view
             ItemLessonInSessionBinding lessonBinding = ItemLessonInSessionBinding.inflate(
                     LayoutInflater.from(holder.itemView.getContext()), holder.binding.layoutLessonsContainer, true);
             
-            lessonBinding.textLessonNumber.setText(String.valueOf(i + 1 + (position * 2))); // Dummy number for UI matching
+            // Format số bài học thành 01, 02...
+            lessonBinding.textLessonNumber.setText(String.format(Locale.US, "%02d", startLessonNumber + i));
             lessonBinding.textLessonTitle.setText(info.title);
             
             int stars = starsForProgress(info.progressPercent);
@@ -88,12 +94,21 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
             if (info.progressPercent >= 100) {
                 completedLessons++;
                 lessonBinding.textLessonSubtitle.setText("1/1 Section");
+                // Hiển thị trophy nếu hoàn thành xuất sắc (tùy chọn theo ảnh mẫu)
+                if (stars == 3) {
+                    lessonBinding.imageTrophySmall1.setVisibility(View.VISIBLE);
+                    lessonBinding.imageTrophySmall1.setColorFilter(Color.parseColor("#FFD700"));
+                    lessonBinding.imageTrophySmall2.setVisibility(View.VISIBLE);
+                    lessonBinding.imageTrophySmall2.setColorFilter(Color.parseColor("#FFD700"));
+                    lessonBinding.imageTrophySmall3.setVisibility(View.VISIBLE);
+                    lessonBinding.imageTrophySmall3.setColorFilter(Color.parseColor("#FFD700"));
+                }
             } else {
                 lessonBinding.textLessonSubtitle.setText("0/1 Section");
             }
 
             if (info.skill != null && !info.skill.isEmpty()) {
-                skillSummary = formatSkill(info.skill) + " +1 skill";
+                skillSummary = formatSkill(info.skill);
             }
         }
 
@@ -101,34 +116,39 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
         holder.binding.textSessionSkill.setText(skillSummary);
         holder.binding.textSessionStars.setText(totalStars + "/" + maxStars);
 
-        // Update trophy and stars color based on progress - "LIGHT UP" Gold when earned
         if (totalStars > 0) {
-            holder.binding.imageSessionTrophy.setColorFilter(Color.parseColor("#FFD700")); // Bright Gold
-            holder.binding.imageSessionTrophy.setAlpha(1.0f);
-            holder.binding.textSessionStars.setTextColor(Color.parseColor("#FFA000")); // Darker Gold for text readability
-            holder.binding.imageSessionTrophy.setScaleX(1.1f);
-            holder.binding.imageSessionTrophy.setScaleY(1.1f);
+            holder.binding.imageSessionTrophy.setColorFilter(Color.parseColor("#FFD700"));
+            holder.binding.textSessionStars.setTextColor(Color.parseColor("#FFA000"));
         } else {
-            holder.binding.imageSessionTrophy.setColorFilter(Color.parseColor("#BDBDBD")); // Grey
-            holder.binding.imageSessionTrophy.setAlpha(0.6f);
+            holder.binding.imageSessionTrophy.setColorFilter(Color.parseColor("#BDBDBD"));
             holder.binding.textSessionStars.setTextColor(Color.parseColor("#9E9E9E"));
-            holder.binding.imageSessionTrophy.setScaleX(1.0f);
-            holder.binding.imageSessionTrophy.setScaleY(1.0f);
         }
 
-        boolean sessionComplete = lessonCount > 0 && completedLessons >= lessonCount;
+        // Cập nhật giao diện hoàn thành theo ảnh mẫu
+        boolean sessionComplete = (lessonCount > 0 && completedLessons >= lessonCount) || "completed".equals(session.getStatus());
         if (sessionComplete) {
+            // Card xanh lá nhạt
+            holder.binding.getRoot().setCardBackgroundColor(Color.parseColor("#F1F8E9")); 
+            // Badge xanh lá có dấu tích
+            holder.binding.textSessionBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#4CAF50")));
+            holder.binding.textSessionBadge.setText("Buổi " + (position + 1) + " \u2713"); // Thêm dấu check
+            
             holder.binding.imageSessionStatus.setImageResource(R.drawable.ic_check);
-            holder.binding.imageSessionStatus.setColorFilter(ContextCompat.getColor(holder.itemView.getContext(), R.color.success));
-            holder.binding.textSessionMessage.setText("Bạn đã hoàn thành buổi học này");
-            holder.binding.textSessionMessage.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.success));
-            holder.binding.getRoot().setCardBackgroundColor(Color.parseColor("#E8F5E9")); // Light green
+            holder.binding.imageSessionStatus.setColorFilter(Color.parseColor("#4CAF50"));
+            
+            holder.binding.textSessionMessage.setText("Đã hoàn thành buổi học này");
+            holder.binding.textSessionMessage.setTextColor(Color.parseColor("#4CAF50"));
         } else {
+            // Giao diện mặc định (chưa hoàn thành)
+            holder.binding.getRoot().setCardBackgroundColor(Color.parseColor("#FFF8E1"));
+            holder.binding.textSessionBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF9800")));
+            holder.binding.textSessionBadge.setText("Buổi " + (position + 1));
+            
             holder.binding.imageSessionStatus.setImageResource(R.drawable.info);
             holder.binding.imageSessionStatus.setColorFilter(Color.parseColor("#FF9800"));
+            
             holder.binding.textSessionMessage.setText("Bạn chưa hoàn thành buổi học này");
             holder.binding.textSessionMessage.setTextColor(Color.parseColor("#FFB74D"));
-            holder.binding.getRoot().setCardBackgroundColor(Color.parseColor("#FFF8E1")); // Light orange/yellow
         }
     }
 
@@ -140,7 +160,6 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
             if (info != null) {
                 infos.add(info);
             } else {
-                // Fallback for missing info to show something in UI
                 infos.add(new LessonSessionInfo("Lesson " + lessonId, "vocabulary", 0, 10));
             }
         }

@@ -11,5 +11,6 @@
     <string name="wrong_answer">Wrong! Correct: %1$s</string>
     <string name="added_to_flashcards">Added to your flashcards!</string>
     <string name="google_maps_key" translatable="false">AIzaSyBHRfZ9vNjGcqPy1-BxFVHTTTai2-epZFU</string>
-    <string name="gemini_api_key" translatable="false">AIzaSyBHRfZ9vNjGcqPy1-BxFVHTTTai2-epZFU</string>
+    <!-- Debug only: remove before publishing the APK. -->
+    <string name="gemini_api_key" translatable="false">AQ.Ab8RN6KyE8Agz85qFdcUil-VbCvcZ9V6wz4gzcylXLFdv8As8Q</string>
 </resources>

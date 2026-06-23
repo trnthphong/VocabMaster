@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.R;
+import com.example.vocabmaster.data.learning.QuestionGenerationPolicy;
 import com.example.vocabmaster.data.model.Challenge;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Lesson;
@@ -44,6 +45,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
     
     private String selectedLanguage = "";
     private String selectedGoal = "";
+    private String selectedGoalDetail = "";
     private String selectedLevel = "";
     private List<String> selectedTopics = new ArrayList<>();
     private int selectedTime = 10;
@@ -97,6 +99,8 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             intent.putExtra("language", selectedLanguage);
             startActivityForResult(intent, REQUEST_CODE_PLACEMENT_TEST);
         });
+
+        binding.radioGroupGoal.setOnCheckedChangeListener((group, checkedId) -> updateGoalDetailPreview(checkedId));
     }
 
     @Override
@@ -119,6 +123,29 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             case "B1": binding.radioGroupLevel.check(R.id.level_intermediate); break;
             case "B2": binding.radioGroupLevel.check(R.id.level_advanced); break;
         }
+    }
+
+    private void updateGoalDetailPreview(int checkedId) {
+        String goal = "";
+        if (checkedId == R.id.goal_work) goal = "Work";
+        else if (checkedId == R.id.goal_travel) goal = "Travel";
+        else if (checkedId == R.id.goal_exam) goal = "Exam";
+        else if (checkedId == R.id.goal_hobby) goal = "Hobby";
+        selectedGoalDetail = buildGoalDetail(goal);
+        binding.textGoalDetail.setText(selectedGoalDetail);
+    }
+
+    private String buildGoalDetail(String goal) {
+        if ("Work".equals(goal)) {
+            return "Work: meetings, email, presentations, interviews, explaining problems, and polite workplace responses.";
+        } else if ("Travel".equals(goal)) {
+            return "Travel: airport, hotel, directions, transport, ordering, asking for help, and handling small problems abroad.";
+        } else if ("Exam".equals(goal)) {
+            return "Exam: grammar accuracy, reading inference, paraphrase, vocabulary in context, and answer strategy.";
+        } else if ("Hobby".equals(goal)) {
+            return "Hobby: daily conversations, personal interests, opinions, storytelling, media, and friendly small talk.";
+        }
+        return "Choose a goal so VocabMaster can tune situations, vocabulary, and question types.";
     }
 
     private void updateStepUI() {
@@ -163,6 +190,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             else if (checkedId == R.id.goal_travel) selectedGoal = "Travel";
             else if (checkedId == R.id.goal_exam) selectedGoal = "Exam";
             else if (checkedId == R.id.goal_hobby) selectedGoal = "Hobby";
+            selectedGoalDetail = buildGoalDetail(selectedGoal);
             return true;
         } else if (currentStep == 3) {
             int checkedId = binding.radioGroupLevel.getCheckedRadioButtonId();
@@ -210,7 +238,10 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         binding.btnNextFlow.setEnabled(false);
         binding.btnNextFlow.setText("AI đang thiết kế lộ trình...");
 
-        aiService.generateCurriculum(selectedLanguage, selectedLevel, selectedGoal, selectedTopics, new AIService.CurriculumCallback() {
+        String courseGoal = selectedGoalDetail == null || selectedGoalDetail.trim().isEmpty()
+                ? selectedGoal
+                : selectedGoal + " - " + selectedGoalDetail;
+        aiService.generateCurriculum(selectedLanguage, selectedLevel, courseGoal, selectedTopics, new AIService.CurriculumCallback() {
             @Override
             public void onSuccess(List<Unit> units) {
                 saveGeneratedCourse(units);
@@ -276,8 +307,20 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
                     DocumentReference lessonRef = unitRef.collection("lessons").document();
                     lesson.setLessonId(lessonRef.getId());
                     lesson.setUnitId(unitRef.getId());
+                    List<Challenge> lessonChallenges = buildChallenges(lesson, introducedWords);
+                    List<String> challengeIds = new ArrayList<>();
+                    for (Challenge challenge : lessonChallenges) {
+                        DocumentReference challengeRef = lessonRef.collection("challenges").document();
+                        challenge.setId(challengeRef.getId());
+                        challenge.setLessonId(lesson.getLessonId());
+                        if (!"INTRO".equalsIgnoreCase(challenge.getType())) {
+                            challengeIds.add(challenge.getId());
+                        }
+                    }
+                    lesson.setChallengeIds(challengeIds);
+                    lesson.setChallengeCount(challengeIds.size());
                     allTasks.add(lessonRef.set(lesson));
-                    allTasks.addAll(createChallengesForLesson(db, lessonRef, lesson, introducedWords));
+                    allTasks.addAll(saveChallengesForLesson(db, lessonRef, lessonChallenges));
                     allLessonsForSchedule.add(lesson);
                 }
             }
@@ -306,19 +349,15 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         String level = selectedLevel == null || selectedLevel.trim().isEmpty() ? "your level" : selectedLevel.trim();
         String goal = selectedGoal == null || selectedGoal.trim().isEmpty() ? "real situations" : selectedGoal.trim().toLowerCase(Locale.US);
         String topics = selectedTopics == null || selectedTopics.isEmpty() ? "daily vocabulary" : String.join(", ", selectedTopics);
-        return "Level " + level + " course focused on " + goal + " with " + topics + ".";
+        String detail = selectedGoalDetail == null || selectedGoalDetail.trim().isEmpty() ? "" : " " + selectedGoalDetail;
+        return "Level " + level + " course focused on " + goal + " with " + topics + "." + detail;
     }
 
-    private List<Task<Void>> createChallengesForLesson(FirebaseFirestore db, DocumentReference lessonRef, Lesson lesson, Set<String> introducedWords) {
+    private List<Task<Void>> saveChallengesForLesson(FirebaseFirestore db, DocumentReference lessonRef, List<Challenge> challenges) {
         List<Task<Void>> tasks = new ArrayList<>();
-        List<Challenge> challenges = buildChallenges(lesson, introducedWords);
 
         for (Challenge challenge : challenges) {
-            DocumentReference challengeRef = lessonRef.collection("challenges").document();
-            challenge.setId(challengeRef.getId());
-            challenge.setLessonId(lesson.getLessonId());
-
-            tasks.add(challengeRef.set(challenge));
+            tasks.add(lessonRef.collection("challenges").document(challenge.getId()).set(challenge));
             tasks.add(db.collection("challenges").document(challenge.getId()).set(challenge));
         }
 
@@ -353,18 +392,39 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
             introducedWords.add(key);
             if (order > 3) break;
         }
-        challenges.add(buildChallenge("SELECT", order++, buildMeaningQuestion(mainWord, lesson), words, mainWord));
-        challenges.add(buildChallenge("TYPE", order++, buildTypeQuestion(selectWord), words, selectWord));
-        challenges.add(buildChallenge("LISTEN", order++, buildListeningQuestion(listenWord), words, listenWord));
-        challenges.add(buildArrangeChallenge(order++, buildPracticePhrase(listenWord, lesson)));
-        challenges.add(buildMatchChallenge(order++, words));
-        challenges.add(buildChallenge("TYPE", order++, buildTypeQuestion(typeWord), words, typeWord));
-        challenges.add(buildChallenge("SELECT", order++, buildMeaningQuestion(reviewWord, lesson), words, reviewWord));
-        challenges.add(buildChallenge("LISTEN", order++, buildListeningQuestion(mainWord), words, mainWord));
-        challenges.add(buildArrangeChallenge(order++, buildPracticePhrase(mainWord, lesson)));
-        challenges.add(buildChallenge("TYPE", order++, buildTypeQuestion(reviewWord), words, reviewWord));
-        challenges.add(buildChallenge("SELECT", order++, buildMeaningQuestion(typeWord, lesson), words, typeWord));
-        challenges.add(buildChallenge("LISTEN", order++, buildListeningQuestion(selectWord), words, selectWord));
+        for (String template : QuestionGenerationPolicy.defaultLessonSequence()) {
+            int variant = order;
+            switch (template) {
+                case "COMMUNICATION_SELECT":
+                    challenges.add(buildConversationChoiceChallenge(order++, lesson));
+                    break;
+                case "COMMUNICATION_ARRANGE":
+                    challenges.add(buildConversationArrangeChallenge(order++, lesson));
+                    break;
+                case "COMMUNICATION_SPEAK":
+                    challenges.add(buildConversationSpeakingChallenge(order++, lesson));
+                    break;
+                case "MATCH":
+                    challenges.add(buildMatchChallenge(order++, words));
+                    break;
+                case "ARRANGE":
+                    challenges.add(buildArrangeChallenge(order++, buildPracticePhrase(mainWord, lesson)));
+                    break;
+                case "TYPE":
+                    String typeTarget = variant % 3 == 0 ? reviewWord : (variant % 2 == 0 ? typeWord : selectWord);
+                    challenges.add(buildChallenge("TYPE", order++, buildTypeQuestion(typeTarget, lesson, variant), words, typeTarget));
+                    break;
+                case "LISTEN":
+                    String listenTarget = variant % 2 == 0 ? mainWord : listenWord;
+                    challenges.add(buildChallenge("LISTEN", order++, buildListeningQuestion(listenTarget, lesson, variant), words, listenTarget));
+                    break;
+                case "SELECT":
+                default:
+                    String selectTarget = variant % 3 == 0 ? typeWord : (variant % 2 == 0 ? reviewWord : mainWord);
+                    challenges.add(buildChallenge("SELECT", order++, buildMeaningQuestion(selectTarget, lesson, variant), words, selectTarget));
+                    break;
+            }
+        }
 
         return challenges;
     }
@@ -375,7 +435,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         challenge.setOrderNum(orderNum);
         challenge.setQuestion(question);
         challenge.setOptions(buildOptions(words, correctWord));
-        return challenge;
+        return annotateChallenge(challenge, correctWord);
     }
 
     private Challenge buildSingleOptionChallenge(String type, int orderNum, String question, String correctWord) {
@@ -388,7 +448,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         option.setText(correctWord);
         option.setCorrect(true);
         challenge.setOptions(Collections.singletonList(option));
-        return challenge;
+        return annotateChallenge(challenge, correctWord);
     }
 
     private Challenge buildMatchChallenge(int orderNum, List<String> words) {
@@ -397,7 +457,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         challenge.setOrderNum(orderNum);
         challenge.setQuestion("Nối từ với nghĩa tiếng Việt.");
         challenge.setOptions(buildAllCorrectOptions(words, 4));
-        return challenge;
+        return annotateChallenge(challenge, joinTargets(words, 4));
     }
 
     private Challenge buildArrangeChallenge(int orderNum, String sentence) {
@@ -410,7 +470,7 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         option.setText(sentence);
         option.setCorrect(true);
         challenge.setOptions(Collections.singletonList(option));
-        return challenge;
+        return annotateChallenge(challenge, sentence);
     }
 
     private Challenge buildSpeakingChallenge(int orderNum, String word, Lesson lesson) {
@@ -423,7 +483,108 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
         option.setText("Tôi đã nói");
         option.setCorrect(true);
         challenge.setOptions(Collections.singletonList(option));
+        return annotateChallenge(challenge, buildPracticePhrase(word, lesson));
+    }
+
+    private Challenge buildConversationChoiceChallenge(int orderNum, Lesson lesson) {
+        String question;
+        String correct;
+        List<String> answers;
+        if ("Work".equals(selectedGoal)) {
+            question = "Hội thoại tại nơi làm việc:\nA: Could you send me the report this afternoon?\nB: ___";
+            correct = "Sure, I'll send it before 3 p.m.";
+            answers = Arrays.asList(correct, "The report is a blue color.", "I sent a sandwich.", "Afternoon is next week.");
+        } else if ("Travel".equals(selectedGoal)) {
+            question = "Hội thoại khi đi du lịch:\nA: May I see your passport, please?\nB: ___";
+            correct = "Of course. Here you are.";
+            answers = Arrays.asList(correct, "I don't see the weather.", "The hotel is delicious.", "My passport can swim.");
+        } else if ("Exam".equals(selectedGoal)) {
+            question = "Hội thoại trong lớp học:\nA: Could you explain this question again?\nB: ___";
+            correct = "Of course. Let's go through it together.";
+            answers = Arrays.asList(correct, "The question is on Tuesday.", "I explain a sandwich.", "No, the classroom is blue.");
+        } else {
+            question = "Hội thoại hằng ngày:\nA: Hi! Is this your first time here?\nB: ___";
+            correct = "Yes, it is. Nice to meet you.";
+            answers = Arrays.asList(correct, "I am here at five kilos.", "No, I don't first.", "The weather meets you.");
+        }
+        return buildChoiceWithAnswers(orderNum, question, answers, correct);
+    }
+
+    private Challenge buildConversationArrangeChallenge(int orderNum, Lesson lesson) {
+        String sentence;
+        if ("Work".equals(selectedGoal)) {
+            sentence = "Could you clarify that point, please?";
+        } else if ("Travel".equals(selectedGoal)) {
+            sentence = "Could you tell me how to get to the station?";
+        } else if ("Exam".equals(selectedGoal)) {
+            sentence = "Could you explain this question, please?";
+        } else {
+            sentence = "What do you like to do on weekends?";
+        }
+        Challenge challenge = buildArrangeChallenge(orderNum, sentence);
+        challenge.setQuestion("Tình huống giao tiếp: Sắp xếp thành một câu tự nhiên.");
         return challenge;
+    }
+
+    private Challenge buildConversationSpeakingChallenge(int orderNum, Lesson lesson) {
+        String sentence;
+        if ("Work".equals(selectedGoal)) {
+            sentence = "Could we discuss this after the meeting?";
+        } else if ("Travel".equals(selectedGoal)) {
+            sentence = "Excuse me, could you help me find my hotel?";
+        } else if ("Exam".equals(selectedGoal)) {
+            sentence = "Could you give me a moment to think?";
+        } else {
+            sentence = "It's nice to meet you. How are you today?";
+        }
+        Challenge challenge = new Challenge();
+        challenge.setType("SPEAK");
+        challenge.setOrderNum(orderNum);
+        challenge.setQuestion("Luyện giao tiếp: Hãy nói câu này thành tiếng:\n" + sentence);
+        Challenge.ChallengeOption option = new Challenge.ChallengeOption();
+        option.setText("Tôi đã nói");
+        option.setCorrect(true);
+        challenge.setOptions(Collections.singletonList(option));
+        return annotateChallenge(challenge, sentence);
+    }
+
+    private Challenge buildChoiceWithAnswers(int orderNum, String question, List<String> answers, String correct) {
+        Challenge challenge = new Challenge();
+        challenge.setType("SELECT");
+        challenge.setOrderNum(orderNum);
+        challenge.setQuestion(question);
+        List<Challenge.ChallengeOption> options = new ArrayList<>();
+        for (String answer : answers) {
+            Challenge.ChallengeOption option = new Challenge.ChallengeOption();
+            option.setText(answer);
+            option.setCorrect(answer.equals(correct));
+            options.add(option);
+        }
+        Collections.shuffle(options);
+        challenge.setOptions(options);
+        return annotateChallenge(challenge, correct);
+    }
+
+    private Challenge annotateChallenge(Challenge challenge, String targetText) {
+        QuestionGenerationPolicy.applyMetadata(
+                challenge,
+                selectedLevel,
+                QuestionGenerationPolicy.inferSkill(challenge.getType()),
+                targetText,
+                challenge.getOrderNum()
+        );
+        return challenge;
+    }
+
+    private String joinTargets(List<String> words, int maxCount) {
+        if (words == null || words.isEmpty()) return "";
+        List<String> targets = new ArrayList<>();
+        for (String word : words) {
+            if (word == null || word.trim().isEmpty()) continue;
+            targets.add(word.trim());
+            if (targets.size() >= maxCount) break;
+        }
+        return String.join(",", targets);
     }
 
     private String buildIntroQuestion(Lesson lesson, String word) {
@@ -431,11 +592,11 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
     }
 
     private String buildMeaningQuestion(String word, Lesson lesson) {
-        return "Chọn từ có nghĩa là \"" + getWordVietnameseMeaning(word) + "\".";
+        return "Choose the word that best fits the clue.";
     }
 
     private String buildTypeQuestion(String word) {
-        return "Viết từ có nghĩa là \"" + getWordVietnameseMeaning(word) + "\".";
+        return "Complete the sentence with the missing word.";
     }
 
     private String buildListeningQuestion(String word) {
@@ -443,7 +604,106 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
     }
 
     private String buildReviewQuestion(String word, Lesson lesson) {
-        return "Ôn lại: chọn từ tương ứng với nghĩa \"" + getWordVietnameseMeaning(word) + "\".";
+        return "Review: choose the word that fits this lesson clue.";
+    }
+
+    private String buildMeaningQuestion(String word, Lesson lesson, int variant) {
+        String context = getLessonContext(lesson);
+        switch (variant % 4) {
+            case 0:
+                return "In " + context + ", which word best fits this clue?";
+            case 1:
+                return "Choose the best word for this situation: " + buildSituationPrompt(word, lesson);
+            case 2:
+                return "You need a useful word during " + context + ". Which word fits?";
+            default:
+                return "Pick the word that completes this idea: " + buildClozeSentence(word, lesson);
+        }
+    }
+
+    private String buildTypeQuestion(String word, Lesson lesson, int variant) {
+        switch (variant % 4) {
+            case 0:
+                return "Complete the sentence\n" + buildClozeSentence(word, lesson, variant);
+            case 1:
+                return "Type the missing word\n" + buildClozeSentence(word, lesson, variant);
+            case 2:
+                return "Complete the sentence\n" + buildClozeSentence(word, lesson, variant + 1);
+            default:
+                return "Write the missing English word\n" + buildClozeSentence(word, lesson, variant + 2);
+        }
+    }
+
+    private String buildListeningQuestion(String word, Lesson lesson, int variant) {
+        if (variant % 2 == 0) {
+            return "Listen and choose the keyword used in a " + getGoalLabelForPrompt() + " context.";
+        }
+        return "Listen for the word connected to this situation: " + getLessonContext(lesson) + ".";
+    }
+
+    private String buildSituationPrompt(String word, Lesson lesson) {
+        String context = getLessonContext(lesson);
+        if ("Work".equals(selectedGoal)) {
+            return "Your manager needs the right word in " + context + ".";
+        } else if ("Travel".equals(selectedGoal)) {
+            return "You are at a travel desk and need the right travel word.";
+        } else if ("Exam".equals(selectedGoal)) {
+            return "A test item asks for the best word in context.";
+        } else if ("Hobby".equals(selectedGoal)) {
+            return "You are chatting about " + context + " and need a natural word.";
+        }
+        return "You are practicing " + context + " and need the best word.";
+    }
+
+    private String buildClozeSentence(String word, Lesson lesson) {
+        return buildClozeSentence(word, lesson, 0);
+    }
+
+    private String buildClozeSentence(String word, Lesson lesson, int variant) {
+        String context = getLessonContext(lesson);
+        if ("Work".equals(selectedGoal)) {
+            switch (variant % 4) {
+                case 0: return "We should review the ___ before the meeting.";
+                case 1: return "Please add the ___ to today's agenda.";
+                case 2: return "The team discussed the ___ with the client.";
+                default: return "I need to prepare the ___ before the presentation.";
+            }
+        } else if ("Travel".equals(selectedGoal)) {
+            switch (variant % 4) {
+                case 0: return "I need to check the ___ before I leave.";
+                case 1: return "She packed the ___ before going to the station.";
+                case 2: return "Can you confirm the ___ at the hotel desk?";
+                default: return "We looked at the ___ before choosing a direction.";
+            }
+        } else if ("Exam".equals(selectedGoal)) {
+            switch (variant % 4) {
+                case 0: return "Read the ___ carefully before choosing an answer.";
+                case 1: return "Write the ___ at the top of your page.";
+                case 2: return "The teacher explained the ___ before the exam.";
+                default: return "Review the ___ before you submit your work.";
+            }
+        } else if ("Hobby".equals(selectedGoal)) {
+            switch (variant % 4) {
+                case 0: return "This ___ makes the activity more enjoyable.";
+                case 1: return "My favorite ___ happens on the weekend.";
+                case 2: return "We talked about the ___ after class.";
+                default: return "That ___ is part of my daily routine.";
+            }
+        }
+        switch (variant % 4) {
+            case 0: return "This ___ is useful when talking about " + context + ".";
+            case 1: return "I wrote the ___ in my notebook.";
+            case 2: return "Can you explain the ___ one more time?";
+            default: return "We practiced the ___ during the lesson.";
+        }
+    }
+
+    private String getGoalLabelForPrompt() {
+        if ("Work".equals(selectedGoal)) return "work";
+        if ("Travel".equals(selectedGoal)) return "travel";
+        if ("Exam".equals(selectedGoal)) return "exam";
+        if ("Hobby".equals(selectedGoal)) return "daily conversation";
+        return "real life";
     }
 
     private String getLessonContext(Lesson lesson) {
@@ -457,6 +717,16 @@ public class CreateCourseFlowActivity extends AppCompatActivity {
     }
 
     private String buildPracticePhrase(String word, Lesson lesson) {
+        String context = getLessonContext(lesson);
+        if ("Work".equals(selectedGoal)) {
+            return "I need to discuss the " + word + " during " + context + ".";
+        } else if ("Travel".equals(selectedGoal)) {
+            return "I ask about the " + word + " while handling " + context + ".";
+        } else if ("Exam".equals(selectedGoal)) {
+            return "I can explain the " + word + " clearly in an exam answer.";
+        } else if ("Hobby".equals(selectedGoal)) {
+            return "I talk about my " + word + " when sharing " + context + ".";
+        }
         return "I can use " + word + " in " + getLessonContext(lesson) + ".";
     }
 

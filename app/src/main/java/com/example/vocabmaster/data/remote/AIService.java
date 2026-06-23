@@ -173,21 +173,23 @@ public class AIService {
     }
 
     private String getGoalLabel(String goal) {
-        if ("Work".equals(goal)) return "work";
-        if ("Travel".equals(goal)) return "travel";
-        if ("Exam".equals(goal)) return "exam prep";
-        if ("Hobby".equals(goal)) return "daily life";
+        String normalized = goal == null ? "" : goal;
+        if (normalized.contains("Work")) return "work";
+        if (normalized.contains("Travel")) return "travel";
+        if (normalized.contains("Exam")) return "exam prep";
+        if (normalized.contains("Hobby")) return "daily life";
         return "real life";
     }
 
     private List<String> getGoalThemes(String goal) {
-        if ("Work".equals(goal)) {
+        String normalized = goal == null ? "" : goal;
+        if (normalized.contains("Work")) {
             return Arrays.asList("professional use", "clear communication", "work scenarios");
-        } else if ("Travel".equals(goal)) {
+        } else if (normalized.contains("Travel")) {
             return Arrays.asList("real travel situations", "survival phrases", "local interactions");
-        } else if ("Exam".equals(goal)) {
+        } else if (normalized.contains("Exam")) {
             return Arrays.asList("test readiness", "accuracy practice", "exam vocabulary");
-        } else if ("Hobby".equals(goal)) {
+        } else if (normalized.contains("Hobby")) {
             return Arrays.asList("casual conversation", "personal interests", "daily enjoyment");
         }
         return Arrays.asList("daily use", "guided practice", "confidence building");
@@ -224,13 +226,14 @@ public class AIService {
     }
 
     private List<String> getGoalWords(String goal) {
-        if ("Work".equals(goal)) {
+        String normalized = goal == null ? "" : goal;
+        if (normalized.contains("Work")) {
             return Arrays.asList("agenda", "client", "report", "presentation");
-        } else if ("Travel".equals(goal)) {
+        } else if (normalized.contains("Travel")) {
             return Arrays.asList("arrival", "departure", "booking", "itinerary");
-        } else if ("Exam".equals(goal)) {
+        } else if (normalized.contains("Exam")) {
             return Arrays.asList("question", "answer", "score", "strategy");
-        } else if ("Hobby".equals(goal)) {
+        } else if (normalized.contains("Hobby")) {
             return Arrays.asList("favorite", "enjoy", "weekend", "activity");
         }
         return Arrays.asList("daily", "useful", "simple", "confident");

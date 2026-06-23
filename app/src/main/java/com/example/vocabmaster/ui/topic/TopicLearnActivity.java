@@ -13,7 +13,6 @@ import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.GamificationRepository;
 import com.example.vocabmaster.databinding.ActivityTopicLearnBinding;
-import com.example.vocabmaster.ui.common.GamificationStatusBinder;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ public class TopicLearnActivity extends AppCompatActivity {
     private ActivityTopicLearnBinding binding;
     private VocabularyDao vocabularyDao;
     private GamificationRepository gamificationRepository;
-    private GamificationStatusBinder gamificationStatusBinder;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -75,8 +73,6 @@ public class TopicLearnActivity extends AppCompatActivity {
 
         vocabularyDao = AppDatabase.getDatabase(this).vocabularyDao();
         gamificationRepository = new GamificationRepository(this);
-        gamificationStatusBinder = new GamificationStatusBinder(this, binding.getRoot());
-        gamificationStatusBinder.start();
         mediaPlayer = new MediaPlayer();
         LearnStepFragment.sSharedMediaPlayer = mediaPlayer;
 
@@ -256,6 +252,5 @@ public class TopicLearnActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
-        if (gamificationStatusBinder != null) gamificationStatusBinder.stop();
     }
 }
