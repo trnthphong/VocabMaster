@@ -60,4 +60,7 @@ public interface VocabularyDao {
 
     @Query("SELECT * FROM vocabularies_local ORDER BY RANDOM() LIMIT :limit")
     List<Vocabulary> getRandomVocabularies(int limit);
+
+    @Query("SELECT * FROM vocabularies_local WHERE learnStatus > 0 ORDER BY RANDOM() LIMIT :limit")
+    List<Vocabulary> getRandomLearnedVocabularies(int limit);
 }

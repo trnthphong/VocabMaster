@@ -1,9 +1,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env.local"), override: true });
 
 const app = express();
 app.use(cors());
@@ -168,7 +170,7 @@ function ensureCourseShape(data, profile) {
 async function generateContentAI(prompt) {
   if (!process.env.GEMINI_API_KEY) throw new Error("MISSING_KEY");
 
-  const models = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest"];
+  const models = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
   for (const modelName of models) {
     try {
       console.log(`Trying AI model: ${modelName}`);

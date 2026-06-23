@@ -22,7 +22,7 @@ public class GeminiTranslator {
     private final Executor executor = Executors.newSingleThreadExecutor();
 
     public GeminiTranslator() {
-        GenerativeModel gm = new GenerativeModel("gemini-2.0-flash-lite", BuildConfig.GEMINI_API_KEY);
+        GenerativeModel gm = new GenerativeModel("gemini-2.5-flash-lite", BuildConfig.GEMINI_API_KEY);
         model = GenerativeModelFutures.from(gm);
     }
 
