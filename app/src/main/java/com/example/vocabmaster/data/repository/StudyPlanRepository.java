@@ -47,9 +47,18 @@ public class StudyPlanRepository {
         calendar.setTime(plan.getStartDate());
         int lessonIndex = 0;
         int totalLessons = allLessons.size();
+        int sessionsPerWeek = Math.max(1, Math.min(7, plan.getSessionsPerWeek()));
+        int currentWeek = calendar.get(Calendar.WEEK_OF_YEAR);
+        int sessionsThisWeek = 0;
         while (lessonIndex < totalLessons) {
+            int week = calendar.get(Calendar.WEEK_OF_YEAR);
+            if (week != currentWeek) {
+                currentWeek = week;
+                sessionsThisWeek = 0;
+            }
+
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-            if (plan.getDaysOfWeek().contains(dayOfWeek)) {
+            if (sessionsThisWeek < sessionsPerWeek && plan.getDaysOfWeek().contains(dayOfWeek)) {
                 CourseScheduleDay scheduleDay = new CourseScheduleDay();
                 scheduleDay.setUserId(plan.getUserId());
                 scheduleDay.setCourseId(plan.getCourseId());
@@ -62,6 +71,7 @@ public class StudyPlanRepository {
                 }
                 scheduleDay.setLessonIds(lessonIdsForDay);
                 scheduleDays.add(scheduleDay);
+                sessionsThisWeek++;
             }
             calendar.add(Calendar.DAY_OF_YEAR, 1);
             if (scheduleDays.size() > 1000) break; 

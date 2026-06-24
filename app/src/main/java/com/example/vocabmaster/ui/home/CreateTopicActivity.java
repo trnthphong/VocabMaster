@@ -31,6 +31,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -402,6 +407,20 @@ public class CreateTopicActivity extends AppCompatActivity {
         binding.btnSaveTopic.setEnabled(false);
         binding.btnGenerateAiCards.setEnabled(false);
         binding.btnSaveTopic.setText("Đang lưu...");
+        // Thay đổi source.unsplash.com (đã ngừng hoạt động) sang loremflickr.com
+        String imageUrl;
+        if (selectedImageUri != null) {
+            imageUrl = saveTopicCoverToInternalStorage(selectedImageUri);
+            if (imageUrl == null) {
+                Toast.makeText(this, "Khong the luu anh bo tu", Toast.LENGTH_SHORT).show();
+                resetBtn();
+                return;
+            }
+        } else {
+            imageUrl = existingImageUrl != null && !existingImageUrl.isEmpty()
+                    ? existingImageUrl
+                    : "https://loremflickr.com/600/400/education," + Uri.encode(name);
+        }
 
         Map<String, Object> topicData = new HashMap<>();
         topicData.put("name", name);
@@ -539,5 +558,27 @@ public class CreateTopicActivity extends AppCompatActivity {
 
     private interface GeneratedCardsCallback {
         void onComplete(List<GeneratedFlashcard> cards);
+    }
+
+    private String saveTopicCoverToInternalStorage(Uri sourceUri) {
+        File coverDir = new File(getFilesDir(), "topic_covers");
+        if (!coverDir.exists() && !coverDir.mkdirs()) {
+            return null;
+        }
+
+        File targetFile = new File(coverDir, "topic_cover_" + UUID.randomUUID() + ".jpg");
+        try (InputStream input = getContentResolver().openInputStream(sourceUri);
+             FileOutputStream output = new FileOutputStream(targetFile)) {
+            if (input == null) return null;
+
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+            return Uri.fromFile(targetFile).toString();
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

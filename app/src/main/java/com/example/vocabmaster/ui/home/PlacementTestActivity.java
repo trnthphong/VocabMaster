@@ -28,7 +28,7 @@ public class PlacementTestActivity extends AppCompatActivity {
     private String currentQuestionId;
     private String selectedAnswer;
     private int questionCount = 0;
-    private final int MAX_QUESTIONS = 15;
+    private int totalQuestions = 15;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +60,10 @@ public class PlacementTestActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Map<String, Object> result) {
                 testId = (String) result.get("test_id");
+                Object total = result.get("total_questions");
+                if (total instanceof Number) {
+                    totalQuestions = Math.max(1, ((Number) total).intValue());
+                }
                 displayQuestion((Map<String, Object>) result.get("first_question"));
             }
 
@@ -73,8 +77,9 @@ public class PlacementTestActivity extends AppCompatActivity {
     private void displayQuestion(Map<String, Object> questionData) {
         if (questionData == null) return;
         
+        selectedAnswer = null;
         questionCount++;
-        binding.testProgress.setProgress((questionCount * 100) / MAX_QUESTIONS);
+        binding.testProgress.setProgress((questionCount * 100) / totalQuestions);
         
         currentQuestionId = (String) questionData.get("id");
         binding.textSkillTag.setText((String) questionData.get("skill"));
@@ -124,7 +129,7 @@ public class PlacementTestActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Map<String, Object> result) {
                 boolean isFinished = (boolean) result.getOrDefault("is_finished", false);
-                if (isFinished || questionCount >= MAX_QUESTIONS) {
+                if (isFinished || questionCount >= totalQuestions) {
                     completeTest();
                 } else {
                     displayQuestion((Map<String, Object>) result.get("next_question"));

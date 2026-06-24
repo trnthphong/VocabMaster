@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#4046d8"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/text_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Từ vựng bị trùng"
+        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+        android:textColor="@color/white"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/text_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Các từ đã có sẵn bạn có muốn thêm bản sao không?"
+        android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/text_duplicate_words"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_rect_border"
+        android:padding="12dp"
+        android:text="bottle, cup"
+        android:textAppearance="@style/TextAppearance.VocabMaster.BodyLarge"
+        android:textColor="@color/brand_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_add_copies"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/button_login_neumorph"
+        android:text="Thêm bản sao"
+        android:textAllCaps="false"
+        android:textColor="@color/bg_grey"
+        app:backgroundTint="@null" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_skip_duplicates"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Bỏ qua từ trùng"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        app:backgroundTint="@android:color/transparent"
+        app:strokeColor="@color/white"
+        app:strokeWidth="1dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_red"
+        android:layout_marginTop="12dp"
+        android:text="Hủy"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        app:backgroundTint="@null" />
+</LinearLayout>

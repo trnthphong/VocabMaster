@@ -46,8 +46,14 @@ public class CourseAdapter extends ListAdapter<Course, CourseAdapter.CourseViewH
 
             @Override
             public boolean areContentsTheSame(@NonNull Course oldItem, @NonNull Course newItem) {
-                return oldItem.getTitle().equals(newItem.getTitle()) &&
-                        oldItem.getLevel() == newItem.getLevel();
+                String oldLevel = oldItem.getProficiencyLevel() != null ? oldItem.getProficiencyLevel() : "";
+                String newLevel = newItem.getProficiencyLevel() != null ? newItem.getProficiencyLevel() : "";
+                String oldTitle = oldItem.getTitle() != null ? oldItem.getTitle() : "";
+                String newTitle = newItem.getTitle() != null ? newItem.getTitle() : "";
+                return oldTitle.equals(newTitle) &&
+                        oldItem.getFlashcardCount() == newItem.getFlashcardCount() &&
+                        oldItem.getLevel() == newItem.getLevel() &&
+                        oldLevel.equals(newLevel);
             }
         });
         this.listener = listener;
@@ -139,8 +145,15 @@ public class CourseAdapter extends ListAdapter<Course, CourseAdapter.CourseViewH
 
         public void bind(Course course, boolean isSelectionMode, boolean isSelected) {
             binding.textCourseTitle.setText(course.getTitle());
-            binding.textFlashcardCount.setText(course.getFlashcardCount() + " cards");
-            binding.textCourseLevel.setText("Lvl " + course.getLevel());
+            if (course.isTopic()) {
+                binding.textFlashcardCount.setText(course.getFlashcardCount() + " cards");
+            } else {
+                binding.textFlashcardCount.setText(course.getFlashcardCount() + " lessons");
+            }
+            String levelText = course.getProficiencyLevel() != null && !course.getProficiencyLevel().trim().isEmpty()
+                    ? course.getProficiencyLevel()
+                    : "Lvl " + course.getLevel();
+            binding.textCourseLevel.setText(levelText);
             
             // Selection UI
             binding.getRoot().setChecked(isSelected);

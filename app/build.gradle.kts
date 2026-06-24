@@ -23,6 +23,9 @@ android {
         if (localFile.exists()) localProps.load(localFile.inputStream())
         buildConfigField("String", "GEMINI_API_KEY", "\"${localProps.getProperty("GEMINI_API_KEY", "")}\"")
         buildConfigField("String", "UNSPLASH_ACCESS_KEY", "\"${localProps.getProperty("UNSPLASH_ACCESS_KEY", "")}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${localProps.getProperty("API_BASE_URL", "http://10.0.2.2:3000/")}\"")
+        buildConfigField("boolean", "USE_REMOTE_COURSE_GENERATION", localProps.getProperty("USE_REMOTE_COURSE_GENERATION", "true"))
+        buildConfigField("boolean", "USE_REMOTE_PLACEMENT_TEST", localProps.getProperty("USE_REMOTE_PLACEMENT_TEST", "false"))
     }
 
     buildTypes {
@@ -93,6 +96,7 @@ dependencies {
     // AI
     implementation(libs.generativeai)
     implementation("com.google.guava:guava:33.0.0-android")
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
 
     // QR Code
     implementation(libs.zxing)

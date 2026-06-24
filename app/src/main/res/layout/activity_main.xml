@@ -42,6 +42,7 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
                 android:background="@android:color/transparent"
+                android:visibility="gone"
                 app:labelVisibilityMode="unlabeled"
                 app:itemIconTint="@color/nav_item_color"
                 app:itemTextColor="@color/nav_item_color"
@@ -49,6 +50,86 @@
                 app:itemActiveIndicatorStyle="@null"
                 app:menu="@menu/bottom_nav_menu"
                 app:paddingBottomSystemWindowInsets="false" />
+
+            <LinearLayout
+                android:id="@+id/custom_bottom_nav"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="6dp">
+
+                <ImageButton
+                    android:id="@+id/btn_nav_home"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Home"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/home" />
+
+                <ImageButton
+                    android:id="@+id/btn_bottom_camera"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="YOLO camera"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/camera" />
+
+                <ImageButton
+                    android:id="@+id/btn_nav_library"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Library"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/library" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_nav_social"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Social"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/share" />
+
+                <ImageButton
+                    android:id="@+id/btn_bottom_qr_scan"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Scan friend QR"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/scan" />
+
+                <ImageButton
+                    android:id="@+id/btn_nav_profile"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Profile"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/user" />
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton

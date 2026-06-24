@@ -4,44 +4,53 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_main"
+    android:background="#4046d8"
     android:padding="@dimen/spacing_24">
+
+    <nl.dionsegijn.konfetti.xml.KonfettiView
+        android:id="@+id/konfettiView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Celebration Header -->
     <TextView
         android:id="@+id/text_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_64"
-        android:text="Session Complete!"
+        android:layout_marginTop="@dimen/spacing_24"
+        android:text="Bài học hoàn tất!"
         android:textAppearance="@style/TextAppearance.VocabMaster.H1"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Visual Achievement (Illustration Placeholder) -->
+    <!-- Visual Achievement -->
     <ImageView
         android:id="@+id/img_trophy"
         android:layout_width="120dp"
         android:layout_height="120dp"
-        android:layout_marginTop="@dimen/spacing_32"
-        android:src="@android:drawable/btn_star_big_on"
+        android:layout_marginTop="@dimen/spacing_16"
+        android:src="@drawable/cong"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/text_title"
-        app:tint="@color/warning" />
+        app:layout_constraintTop_toBottomOf="@id/text_title" />
 
     <!-- Main Results Card (Glass) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_results"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_48"
-        app:cardBackgroundColor="@color/glass_white_20"
-        app:cardCornerRadius="@dimen/radius_huge"
+        android:layout_marginTop="@dimen/spacing_24"
+        app:cardBackgroundColor="@color/light_blue"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
         app:layout_constraintTop_toBottomOf="@id/img_trophy"
-        app:strokeColor="@color/glass_white_40"
+        app:strokeColor="@color/blue"
         app:strokeWidth="1dp">
 
         <LinearLayout
@@ -55,8 +64,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="92%"
-                android:textColor="@color/white"
+                android:text="100%"
+                android:textColor="@color/brand_primary"
                 android:textSize="64sp"
                 android:textStyle="bold" />
 
@@ -64,15 +73,35 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="ACCURACY"
-                android:textColor="@color/glass_white_40"
+                android:text="ĐỘ CHÍNH XÁC"
+                android:textColor="@color/text_secondary"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_stars_earned"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/spacing_12"
+                android:text="★★★"
+                android:textColor="@color/warning"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                tools:text="★★☆" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Sao đạt được"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_caption" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginVertical="@dimen/spacing_24"
-                android:background="@color/glass_white_20" />
+                android:background="@color/blue" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -90,15 +119,15 @@
                         android:id="@+id/text_correct"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="14/15"
-                        android:textColor="@color/white"
+                        android:text="Hoàn thành!"
+                        android:textColor="@color/text_primary"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Correct"
-                        android:textColor="@color/glass_white_40"
+                        android:text="Kết quả"
+                        android:textColor="@color/text_secondary"
                         android:textSize="@dimen/text_caption" />
                 </LinearLayout>
 
@@ -115,19 +144,45 @@
                         android:id="@+id/text_xp_earned"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="+75 XP"
-                        android:textColor="@color/brand_secondary"
+                        android:text="+20 XP"
+                        android:textColor="@color/success"
                         android:textAppearance="@style/TextAppearance.VocabMaster.H3" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Total Earned"
-                        android:textColor="@color/glass_white_40"
+                        android:text="Điểm kinh nghiệm"
+                        android:textColor="@color/text_secondary"
                         android:textSize="@dimen/text_caption" />
                 </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:id="@+id/stats_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/spacing_20"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/text_completion_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="03:24"
+                    android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+                    android:textColor="@color/brand_primary"
+                    tools:text="03:24" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thời gian hoàn thành"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_caption" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/text_hearts_impact"
@@ -135,26 +190,48 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginTop="@dimen/spacing_24"
-                android:drawableStart="@android:drawable/ic_delete"
-                android:drawablePadding="8dp"
-                android:text="Hearts lost: 0"
-                android:textColor="@color/error"
-                android:textSize="@dimen/text_body_medium"
-                app:drawableTint="@color/error" />
+                android:text="Bạn thật tuyệt vời!"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_body_medium" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_done"
+    <!-- Actions -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="@dimen/spacing_48"
         android:layout_marginBottom="@dimen/spacing_32"
-        android:text="CONTINUE"
-        android:textAppearance="@style/TextAppearance.VocabMaster.H3"
-        app:backgroundTint="@color/white"
-        app:cornerRadius="@dimen/radius_large"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:textColor="@color/brand_primary" />
+        app:layout_constraintTop_toBottomOf="@id/card_results">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_next_lesson"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="BÀI TIẾP THEO"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            app:backgroundTint="@color/light_green"
+            app:cornerRadius="@dimen/radius_large"
+            android:textColor="@color/bg_grey"
+            android:layout_marginBottom="@dimen/spacing_16"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_done"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="VỀ TRANG CHỦ"
+            android:textAppearance="@style/TextAppearance.VocabMaster.H3"
+            app:backgroundTint="@color/light_blue"
+            app:strokeColor="@color/white"
+            app:strokeWidth="2dp"
+            app:cornerRadius="@dimen/radius_large"
+            android:textColor="@color/bg_grey" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

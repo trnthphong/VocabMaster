@@ -249,6 +249,18 @@
                         android:textColor="#4046d8"
                         android:textStyle="bold" />
                 </RadioGroup>
+
+                <TextView
+                    android:id="@+id/text_goal_detail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_glass_card"
+                    android:backgroundTint="#26FFFFFF"
+                    android:padding="16dp"
+                    android:text="Chon muc tieu de VocabMaster dieu chinh tinh huong, tu vung va dang cau hoi."
+                    android:textAppearance="@style/TextAppearance.VocabMaster.BodyMedium"
+                    android:textColor="@color/white" />
             </LinearLayout>
 
             <!-- Step 3: Proficiency Level -->
