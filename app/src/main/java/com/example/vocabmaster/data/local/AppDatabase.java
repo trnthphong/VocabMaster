@@ -10,11 +10,12 @@ import androidx.room.TypeConverters;
 import com.example.vocabmaster.data.model.Course;
 import com.example.vocabmaster.data.model.Flashcard;
 import com.example.vocabmaster.data.model.LearningProfile;
+import com.example.vocabmaster.data.model.PendingUserProgress;
 import com.example.vocabmaster.data.model.StudyPlan;
 import com.example.vocabmaster.data.model.CourseScheduleDay;
 import com.example.vocabmaster.data.model.Vocabulary;
 
-@Database(entities = {Course.class, Flashcard.class, LearningProfile.class, StudyPlan.class, CourseScheduleDay.class, Vocabulary.class}, version = 13, exportSchema = false)
+@Database(entities = {Course.class, Flashcard.class, LearningProfile.class, StudyPlan.class, CourseScheduleDay.class, Vocabulary.class, PendingUserProgress.class}, version = 14, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;
@@ -25,6 +26,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract StudyPlanDao studyPlanDao();
     public abstract CourseScheduleDayDao courseScheduleDayDao();
     public abstract VocabularyDao vocabularyDao();
+    public abstract PendingUserProgressDao pendingUserProgressDao();
 
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {

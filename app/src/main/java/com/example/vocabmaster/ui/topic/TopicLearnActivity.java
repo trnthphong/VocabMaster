@@ -12,6 +12,8 @@ import com.example.vocabmaster.data.local.AppDatabase;
 import com.example.vocabmaster.data.local.VocabularyDao;
 import com.example.vocabmaster.data.model.Vocabulary;
 import com.example.vocabmaster.data.repository.GamificationRepository;
+import com.example.vocabmaster.data.repository.OfflineProgressRepository;
+import com.example.vocabmaster.data.sync.OfflineSyncWorker;
 import com.example.vocabmaster.databinding.ActivityTopicLearnBinding;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -28,6 +30,7 @@ public class TopicLearnActivity extends AppCompatActivity {
     private ActivityTopicLearnBinding binding;
     private VocabularyDao vocabularyDao;
     private GamificationRepository gamificationRepository;
+    private OfflineProgressRepository offlineProgressRepository;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -73,6 +76,7 @@ public class TopicLearnActivity extends AppCompatActivity {
 
         vocabularyDao = AppDatabase.getDatabase(this).vocabularyDao();
         gamificationRepository = new GamificationRepository(this);
+        offlineProgressRepository = new OfflineProgressRepository(this);
         mediaPlayer = new MediaPlayer();
         LearnStepFragment.sSharedMediaPlayer = mediaPlayer;
 
@@ -80,6 +84,7 @@ public class TopicLearnActivity extends AppCompatActivity {
         if (json != null) {
             batch = new com.google.gson.Gson().fromJson(json,
                     new com.google.gson.reflect.TypeToken<List<Vocabulary>>(){}.getType());
+            markBatchAsLearning();
             buildQueue();
             showCurrentStep();
         }
@@ -175,6 +180,7 @@ public class TopicLearnActivity extends AppCompatActivity {
             doneSteps++;
             if (correct) {
                 correctCount++;
+                saveWordProgress(step.vocab, "learning");
             } else if (step.retryCount < 2) {
                 // Sai → đẩy lại vào cuối queue (tối đa 2 lần retry)
                 step.retryCount++;
@@ -203,6 +209,7 @@ public class TopicLearnActivity extends AppCompatActivity {
             long now = System.currentTimeMillis();
             for (Vocabulary v : batch) {
                 vocabularyDao.updateLearnStatus(v.getVocabularyId(), 2, now);
+                saveWordProgress(v, "mastered");
             }
             awardTopicCompletion(batch.size() * 5);
         });
@@ -237,12 +244,39 @@ public class TopicLearnActivity extends AppCompatActivity {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
         gamificationRepository.awardStudyCompletion(uid, xp);
+        OfflineSyncWorker.enqueue(this);
+    }
+
+    private void markBatchAsLearning() {
+        executor.execute(() -> {
+            long now = System.currentTimeMillis();
+            for (Vocabulary v : batch) {
+                if (v.getLearnStatus() == 0) {
+                    vocabularyDao.updateLearnStatus(v.getVocabularyId(), 1, now);
+                    saveWordProgress(v, "learning");
+                }
+            }
+            OfflineSyncWorker.enqueue(this);
+        });
+    }
+
+    private void saveWordProgress(Vocabulary vocabulary, String status) {
+        if (vocabulary == null) return;
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        String topicKey = isPersonal ? topicId : topicId.toLowerCase();
+        offlineProgressRepository.enqueueTopicProgress(
+                uid,
+                "topic_" + topicKey,
+                vocabulary.getVocabularyId(),
+                status,
+                System.currentTimeMillis());
     }
 
     private void confirmExit() {
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Thoát bài học?")
-                .setMessage("Tiến độ bài học này sẽ không được lưu.")
+                .setMessage("Các từ đã bắt đầu học sẽ được lưu cục bộ và tự đồng bộ khi có mạng.")
                 .setPositiveButton("Thoát", (d, w) -> finish())
                 .setNegativeButton("Tiếp tục học", null)
                 .show();

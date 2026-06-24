@@ -115,6 +115,7 @@ public class FlashcardStudyRepository {
     private final FlashcardDao flashcardDao;
     private final VocabularyDao vocabularyDao;
     private final FirestoreRepository firestoreRepository;
+    private final OfflineProgressRepository offlineProgressRepository;
     private final FirebaseFirestore firestore;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -124,6 +125,7 @@ public class FlashcardStudyRepository {
         this.flashcardDao = database.flashcardDao();
         this.vocabularyDao = database.vocabularyDao();
         this.firestoreRepository = new FirestoreRepository();
+        this.offlineProgressRepository = new OfflineProgressRepository(application);
         this.firestore = FirebaseFirestore.getInstance();
     }
 
@@ -213,10 +215,13 @@ public class FlashcardStudyRepository {
         SpacedRepetitionCalculator.ReviewResult result =
                 SpacedRepetitionCalculator.calculate(studyCard.getProgress(), rating, System.currentTimeMillis());
         SpacedRepetitionCalculator.applyResult(progress, result);
+        progress.setProgressId(uid + "_" + studyCard.getCardId());
+        progress.setLastReviewed(Timestamp.now());
+        offlineProgressRepository.enqueue(progress);
 
         firestoreRepository.saveUserProgress(progress)
                 .addOnSuccessListener(unused -> source.setResult(progress))
-                .addOnFailureListener(source::setException);
+                .addOnFailureListener(e -> source.setResult(progress));
         return source.getTask();
     }
 
