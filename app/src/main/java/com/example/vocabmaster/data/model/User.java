@@ -35,6 +35,8 @@ public class User {
     private boolean darkMode;
     private String language;
     private boolean notificationsEnabled;
+    private int reminderHour = 20;
+    private int reminderMinute = 0;
     private boolean soundEffectsEnabled = true;
     private String currentUnitTitle;
     
@@ -134,6 +136,10 @@ public class User {
     public void setLanguage(String language) { this.language = language; }
     public boolean isNotificationsEnabled() { return notificationsEnabled; }
     public void setNotificationsEnabled(boolean notificationsEnabled) { this.notificationsEnabled = notificationsEnabled; }
+    public int getReminderHour() { return reminderHour; }
+    public void setReminderHour(int reminderHour) { this.reminderHour = reminderHour; }
+    public int getReminderMinute() { return reminderMinute; }
+    public void setReminderMinute(int reminderMinute) { this.reminderMinute = reminderMinute; }
     public boolean isSoundEffectsEnabled() { return soundEffectsEnabled; }
     public void setSoundEffectsEnabled(boolean soundEffectsEnabled) { this.soundEffectsEnabled = soundEffectsEnabled; }
     public String getCurrentUnitTitle() { return currentUnitTitle; }

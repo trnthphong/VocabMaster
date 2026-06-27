@@ -83,6 +83,9 @@ public class RegisterActivity extends AppCompatActivity {
                             user.put("timezone", TimeZone.getDefault().getID());
                             user.put("role", "user");
                             user.put("darkMode", false);
+                            user.put("notificationsEnabled", false);
+                            user.put("reminderHour", 20);
+                            user.put("reminderMinute", 0);
                             user.put("soundEffectsEnabled", true);
                             user.put("dailyGoal", 20);
                             user.put("createdAt", FieldValue.serverTimestamp());

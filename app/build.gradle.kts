@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.database) // Version managed by BOM
+    implementation(libs.firebase.messaging)
 
     // Glide
     implementation(libs.glide)

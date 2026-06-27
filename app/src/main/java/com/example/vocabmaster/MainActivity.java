@@ -1,5 +1,6 @@
 package com.example.vocabmaster;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -12,6 +13,8 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -31,6 +34,9 @@ import com.example.vocabmaster.ui.admin.AdminActivity;
 import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.home.YoloVocabularyActivity;
 import com.example.vocabmaster.ui.social.QrFriendScanActivity;
+import com.example.vocabmaster.util.FcmTokenManager;
+import com.example.vocabmaster.util.NotificationPermissionHelper;
+import com.example.vocabmaster.util.StudyReminderScheduler;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -38,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
     private NavController navController;
     private ActivityMainBinding binding;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
     private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
     private final int[] avatarResIds = {
             R.drawable.bear, R.drawable.cat, R.drawable.dog,
@@ -48,6 +55,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState) ;
+
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    updateNotificationPreference(granted);
+                    if (granted) {
+                        StudyReminderScheduler.scheduleDailyReminder(this);
+                        FcmTokenManager.syncCurrentUserToken();
+                    } else {
+                        StudyReminderScheduler.cancelDailyReminder(this);
+                    }
+                }
+        );
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
@@ -98,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
 
         setupNavHeader();
         setupSidebarListeners();
+        setupNotifications();
         
         binding.drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
             @Override
@@ -188,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logout() {
+        StudyReminderScheduler.cancelDailyReminder(this);
         FirebaseAuth.getInstance().signOut();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -252,6 +274,55 @@ public class MainActivity extends AppCompatActivity {
                         if (avatarImg != null) avatarImg.setImageResource(resId);
                     }
                 });
+    }
+
+    private void setupNotifications() {
+        FcmTokenManager.syncCurrentUserToken();
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                .addOnSuccessListener(snapshot -> {
+                    Boolean enabled = snapshot.getBoolean("notificationsEnabled");
+                    if (Boolean.TRUE.equals(enabled)) {
+                        int hour = readInt(snapshot.get("reminderHour"), StudyReminderScheduler.DEFAULT_REMINDER_HOUR);
+                        int minute = readInt(snapshot.get("reminderMinute"), StudyReminderScheduler.DEFAULT_REMINDER_MINUTE);
+                        ensureNotificationPermissionThenSchedule(hour, minute);
+                    } else if (NotificationPermissionHelper.shouldShowStartupDialog(this)) {
+                        NotificationPermissionHelper.showPermissionDialog(
+                                this,
+                                () -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS),
+                                () -> updateNotificationPreference(false)
+                        );
+                    }
+                });
+    }
+
+    private void ensureNotificationPermissionThenSchedule(int hour, int minute) {
+        if (NotificationPermissionHelper.hasPermission(this)) {
+            StudyReminderScheduler.scheduleDailyReminder(this, hour, minute);
+            return;
+        }
+
+        NotificationPermissionHelper.showPermissionDialog(
+                this,
+                () -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS),
+                () -> {
+                    updateNotificationPreference(false);
+                    StudyReminderScheduler.cancelDailyReminder(this);
+                }
+        );
+    }
+
+    private void updateNotificationPreference(boolean enabled) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        FirebaseFirestore.getInstance().collection("users").document(uid)
+                .update("notificationsEnabled", enabled);
+    }
+
+    private int readInt(Object value, int fallback) {
+        return value instanceof Number ? ((Number) value).intValue() : fallback;
     }
 
     @Override
