@@ -104,6 +104,8 @@ public class AllTopicsActivity extends AppCompatActivity {
                     if (snapshot != null) {
                         topicList.clear();
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            Boolean hidden = doc.getBoolean("hidden");
+                            if (Boolean.TRUE.equals(hidden)) continue;
                             Topic t = doc.toObject(Topic.class);
                             if (t != null) {
                                 t.setId(doc.getId());

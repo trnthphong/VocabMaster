@@ -29,12 +29,16 @@ import com.example.vocabmaster.databinding.ItemFlashcardHorizontalBinding;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -64,9 +68,14 @@ public class TopicDetailActivity extends AppCompatActivity {
 
         binding.toolbar.setNavigationOnClickListener(v -> finish());
         binding.toolbar.inflateMenu(R.menu.menu_topic_detail);
+        binding.toolbar.getMenu().findItem(R.id.action_delete_topic).setVisible(isPersonal);
+        binding.toolbar.getMenu().findItem(R.id.action_report_topic).setVisible(!isPersonal);
         binding.toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_delete_topic) {
                 confirmDelete();
+                return true;
+            } else if (item.getItemId() == R.id.action_report_topic) {
+                showReportDialog();
                 return true;
             }
             return false;
@@ -454,6 +463,36 @@ public class TopicDetailActivity extends AppCompatActivity {
         intent.putExtra("topic_title", topicTitle);
         intent.putExtra("is_personal_topic", isPersonal);
         startActivityForResult(intent, REQUEST_EDIT_TOPIC);
+    }
+
+    private void showReportDialog() {
+        String[] reasons = {"spam", "phản cảm", "sai sự thật"};
+        final int[] selected = {0};
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Báo cáo nội dung vi phạm")
+                .setSingleChoiceItems(reasons, selected[0], (dialog, which) -> selected[0] = which)
+                .setNegativeButton("Hủy", null)
+                .setPositiveButton("Gửi báo cáo", (dialog, which) -> submitReport(reasons[selected[0]]))
+                .show();
+    }
+
+    private void submitReport(String reason) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
+            Toast.makeText(this, "Bạn cần đăng nhập để báo cáo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Map<String, Object> report = new HashMap<>();
+        report.put("reporterId", uid);
+        report.put("targetId", topicId);
+        report.put("targetTitle", topicTitle);
+        report.put("targetType", "topic");
+        report.put("reason", reason);
+        report.put("status", "pending");
+        report.put("createdAt", FieldValue.serverTimestamp());
+        db.collection("reports").add(report)
+                .addOnSuccessListener(doc -> Toast.makeText(this, "Đã gửi báo cáo", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Không gửi được báo cáo", Toast.LENGTH_SHORT).show());
     }
 
     @Override

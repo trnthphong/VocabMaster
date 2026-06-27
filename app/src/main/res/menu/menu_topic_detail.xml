@@ -7,4 +7,10 @@
         android:icon="@drawable/trash"
         app:iconTint="@color/white"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_report_topic"
+        android:title="Báo cáo"
+        android:icon="@drawable/info"
+        app:iconTint="@color/white"
+        app:showAsAction="ifRoom" />
 </menu>
