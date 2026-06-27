@@ -4,6 +4,7 @@ import android.app.Application;
 import android.util.Log;
 
 import com.example.vocabmaster.data.sync.OfflineSyncWorker;
+import com.example.vocabmaster.util.NotificationHelper;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
@@ -15,6 +16,7 @@ public class VocabMasterApplication extends Application {
     public void onCreate() {
         super.onCreate();
         FirebaseApp.initializeApp(this);
+        NotificationHelper.createNotificationChannels(this);
         configureFirestoreOfflineCache();
         OfflineSyncWorker.enqueue(this);
     }

@@ -1,5 +1,7 @@
 package com.example.vocabmaster.ui.profile;
 
+import android.Manifest;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -19,16 +23,27 @@ import com.example.vocabmaster.data.model.User;
 import com.example.vocabmaster.databinding.FragmentSettingsBinding;
 import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.common.UiFeedback;
+import com.example.vocabmaster.util.FcmTokenManager;
+import com.example.vocabmaster.util.NotificationPermissionHelper;
 import com.example.vocabmaster.util.SoundEffectManager;
+import com.example.vocabmaster.util.StudyReminderScheduler;
 import com.example.vocabmaster.util.ThemeUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class SettingsFragment extends Fragment {
     private FragmentSettingsBinding binding;
     private FirebaseFirestore db;
     private User currentUser;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+    private boolean applyingNotificationSetting;
     private boolean applyingSoundEffectsSetting;
+    private int reminderHour = StudyReminderScheduler.DEFAULT_REMINDER_HOUR;
+    private int reminderMinute = StudyReminderScheduler.DEFAULT_REMINDER_MINUTE;
 
     private final String[] avatarValues = {"bear", "cat", "dog", "bird", "snake", "tiger", "rabbit"};
     private final int[] avatarResIds = {
@@ -46,6 +61,21 @@ public class SettingsFragment extends Fragment {
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (binding == null || !isAdded()) return;
+                    applyingNotificationSetting = true;
+                    binding.switchNotifications.setChecked(granted);
+                    applyingNotificationSetting = false;
+                    applyNotificationSetting(granted);
+                }
+        );
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
@@ -60,7 +90,11 @@ public class SettingsFragment extends Fragment {
             ThemeUtils.applyTheme(isChecked);
             saveSetting("darkMode", isChecked);
         });
-        binding.switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("notificationsEnabled", isChecked));
+        binding.switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (applyingNotificationSetting) return;
+            handleNotificationToggle(isChecked);
+        });
+        binding.layoutReminderTime.setOnClickListener(v -> showReminderTimePicker());
         binding.switchSoundEffects.setChecked(SoundEffectManager.isEnabled(requireContext()));
         binding.switchSoundEffects.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (applyingSoundEffectsSetting) return;
@@ -153,7 +187,12 @@ public class SettingsFragment extends Fragment {
                 currentUser = snapshot.toObject(User.class);
                 if (currentUser != null) {
                     binding.switchDarkMode.setChecked(currentUser.isDarkMode());
+                    applyingNotificationSetting = true;
                     binding.switchNotifications.setChecked(currentUser.isNotificationsEnabled());
+                    applyingNotificationSetting = false;
+                    reminderHour = normalizeHour(currentUser.getReminderHour());
+                    reminderMinute = normalizeMinute(currentUser.getReminderMinute());
+                    updateReminderTimeText();
                     applyingSoundEffectsSetting = true;
                     binding.switchSoundEffects.setChecked(currentUser.isSoundEffectsEnabled());
                     applyingSoundEffectsSetting = false;
@@ -170,6 +209,82 @@ public class SettingsFragment extends Fragment {
                 .addOnSuccessListener(unused -> {
                     if (isAdded()) UiFeedback.showSnack(binding.getRoot(), "Đã cập nhật cài đặt");
                 });
+    }
+
+    private void handleNotificationToggle(boolean enabled) {
+        if (!enabled) {
+            applyNotificationSetting(false);
+            return;
+        }
+
+        if (NotificationPermissionHelper.hasPermission(requireContext())) {
+            applyNotificationSetting(true);
+            return;
+        }
+
+        NotificationPermissionHelper.showPermissionDialog(
+                requireContext(),
+                () -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS),
+                () -> {
+                    applyingNotificationSetting = true;
+                    binding.switchNotifications.setChecked(false);
+                    applyingNotificationSetting = false;
+                    applyNotificationSetting(false);
+                }
+        );
+    }
+
+    private void applyNotificationSetting(boolean enabled) {
+        saveSetting("notificationsEnabled", enabled);
+        if (enabled) {
+            StudyReminderScheduler.scheduleDailyReminder(requireContext(), reminderHour, reminderMinute);
+            FcmTokenManager.syncCurrentUserToken();
+        } else {
+            StudyReminderScheduler.cancelDailyReminder(requireContext());
+        }
+    }
+
+    private void showReminderTimePicker() {
+        new TimePickerDialog(
+                requireContext(),
+                (view, hourOfDay, minute) -> {
+                    reminderHour = normalizeHour(hourOfDay);
+                    reminderMinute = normalizeMinute(minute);
+                    updateReminderTimeText();
+                    saveReminderTime();
+                    if (binding.switchNotifications.isChecked()) {
+                        StudyReminderScheduler.scheduleDailyReminder(requireContext(), reminderHour, reminderMinute);
+                    }
+                },
+                reminderHour,
+                reminderMinute,
+                true
+        ).show();
+    }
+
+    private void saveReminderTime() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        Map<String, Object> update = new HashMap<>();
+        update.put("reminderHour", reminderHour);
+        update.put("reminderMinute", reminderMinute);
+        db.collection("users").document(uid).update(update)
+                .addOnSuccessListener(unused -> {
+                    if (isAdded()) UiFeedback.showSnack(binding.getRoot(), "Đã cập nhật giờ nhắc học");
+                });
+    }
+
+    private void updateReminderTimeText() {
+        if (binding == null) return;
+        binding.textReminderTime.setText(String.format(Locale.US, "%02d:%02d", reminderHour, reminderMinute));
+    }
+
+    private int normalizeHour(int hour) {
+        return Math.max(0, Math.min(23, hour));
+    }
+
+    private int normalizeMinute(int minute) {
+        return Math.max(0, Math.min(59, minute));
     }
 
     private void showLogoutConfirmation() {
