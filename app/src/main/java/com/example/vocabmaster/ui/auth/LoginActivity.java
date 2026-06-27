@@ -9,13 +9,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.vocabmaster.MainActivity;
 import com.example.vocabmaster.databinding.ActivityLoginBinding;
+import com.example.vocabmaster.ui.admin.AdminActivity;
 import com.example.vocabmaster.ui.common.MotionSystem;
 import com.example.vocabmaster.ui.common.UiFeedback;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String SUPER_ADMIN_EMAIL = "23521406@gm.uit.edu.vn";
     private ActivityLoginBinding binding;
     private FirebaseAuth mAuth;
 
@@ -31,8 +34,7 @@ public class LoginActivity extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             if (currentUser.isEmailVerified()) {
-                startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                finish();
+                routeVerifiedUser(currentUser);
             } else {
                 // Nếu user chưa verify mà lỡ kẹt ở đây thì yêu cầu verify
                 UiFeedback.showSnack(binding.getRoot(), "Please verify your email to continue.");
@@ -72,8 +74,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null && user.isEmailVerified()) {
-                            MotionSystem.startScreen(this, new Intent(LoginActivity.this, MainActivity.class));
-                            finish();
+                            routeVerifiedUser(user);
                         } else {
                             UiFeedback.showErrorDialog(this, "Email not verified",
                                     "Please check your inbox and verify your email address before logging in.");
@@ -84,5 +85,45 @@ public class LoginActivity extends AppCompatActivity {
                                 task.getException() != null ? task.getException().getMessage() : "Unknown error");
                     }
                 });
+    }
+
+    private void routeVerifiedUser(FirebaseUser user) {
+        binding.progressBar.setVisibility(View.VISIBLE);
+        FirebaseFirestore.getInstance().collection("users").document(user.getUid()).get()
+                .addOnSuccessListener(snapshot -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    Boolean banned = snapshot.getBoolean("banned");
+                    Boolean disabled = snapshot.getBoolean("disabled");
+                    String accountStatus = snapshot.getString("accountStatus");
+                    if (Boolean.TRUE.equals(banned)
+                            || Boolean.TRUE.equals(disabled)
+                            || "banned".equalsIgnoreCase(accountStatus)) {
+                        mAuth.signOut();
+                        UiFeedback.showErrorDialog(this, "Account locked",
+                                "Your account has been locked by the administrator.");
+                        return;
+                    }
+
+                    String role = snapshot.getString("role");
+                    Intent intent = (isAdminRole(role) || isSeedSuperAdmin(user))
+                            ? new Intent(LoginActivity.this, AdminActivity.class)
+                            : new Intent(LoginActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    MotionSystem.startScreen(this, intent);
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    UiFeedback.showErrorDialog(this, "Sign in failed",
+                            e.getMessage() != null ? e.getMessage() : "Could not verify account status");
+                });
+    }
+
+    private boolean isAdminRole(String role) {
+        return "admin".equalsIgnoreCase(role) || "super_admin".equalsIgnoreCase(role);
+    }
+
+    private boolean isSeedSuperAdmin(FirebaseUser user) {
+        return user.getEmail() != null && SUPER_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail().trim());
     }
 }

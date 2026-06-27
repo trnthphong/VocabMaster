@@ -11,6 +11,7 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -53,6 +54,17 @@ public interface VocabMasterApiService {
 
     @POST("ai/tts")
     Call<Map<String, String>> getSpeechUrl(@Body Map<String, String> data);
+
+    // --- Admin permission APIs ---
+    @POST("admin/bootstrap-super-admin")
+    Call<Map<String, Object>> bootstrapSuperAdmin(@Header("Authorization") String authorization);
+
+    @POST("admin/users/{uid}/role")
+    Call<Map<String, Object>> updateUserRole(
+            @Header("Authorization") String authorization,
+            @Path("uid") String uid,
+            @Body Map<String, String> data
+    );
 
     // --- 6.4 Study Plan & Schedule ---
     @POST("plans")

@@ -78,6 +78,7 @@
         <activity android:name=".ui.home.PlacementTestActivity" />
         <activity android:name=".ui.home.AllTopicsActivity" />
         <activity android:name=".ui.home.CreateTopicActivity" />
+        <activity android:name=".ui.admin.AdminActivity" />
 
         <meta-data
             android:name="preloaded_fonts"

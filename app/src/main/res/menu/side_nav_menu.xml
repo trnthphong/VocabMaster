@@ -24,6 +24,10 @@
             android:id="@+id/navigation_manage_plans"
             android:icon="@drawable/cart"
             android:title="Quản lý gói cước" />
+        <item
+            android:id="@+id/nav_admin"
+            android:icon="@drawable/setting"
+            android:title="Admin" />
     </group>
 
     <!-- Nhóm 2: Cài đặt và Tài khoản -->

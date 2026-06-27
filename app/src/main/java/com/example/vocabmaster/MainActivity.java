@@ -27,6 +27,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.vocabmaster.databinding.ActivityMainBinding;
+import com.example.vocabmaster.ui.admin.AdminActivity;
 import com.example.vocabmaster.ui.auth.LoginActivity;
 import com.example.vocabmaster.ui.home.YoloVocabularyActivity;
 import com.example.vocabmaster.ui.social.QrFriendScanActivity;
@@ -159,6 +160,11 @@ public class MainActivity extends AppCompatActivity {
                 logout();
                 return true;
             }
+            if (id == R.id.nav_admin) {
+                startActivity(new Intent(this, AdminActivity.class));
+                binding.drawerLayout.closeDrawer(GravityCompat.START);
+                return true;
+            }
             
             boolean handled = NavigationUI.onNavDestinationSelected(item, navController);
             if (handled) {
@@ -211,6 +217,8 @@ public class MainActivity extends AppCompatActivity {
         if (uid == null) return;
 
         if (binding.navSidebar.getHeaderCount() == 0) return;
+        MenuItem adminMenuItem = binding.navSidebar.getMenu().findItem(R.id.nav_admin);
+        if (adminMenuItem != null) adminMenuItem.setVisible(false);
         
         View headerView = binding.navSidebar.getHeaderView(0);
         ImageView avatarImg = headerView.findViewById(R.id.nav_header_avatar);
@@ -223,6 +231,11 @@ public class MainActivity extends AppCompatActivity {
                         String name = snapshot.getString("name");
                         String shortId = snapshot.getString("shortId");
                         String avatar = snapshot.getString("avatar");
+                        String role = snapshot.getString("role");
+                        if (adminMenuItem != null) {
+                            adminMenuItem.setVisible("admin".equalsIgnoreCase(role)
+                                    || "super_admin".equalsIgnoreCase(role));
+                        }
 
                         if (nameText != null) nameText.setText(name != null ? name : "Người dùng");
                         if (uidText != null) uidText.setText("ID: " + (shortId != null ? shortId : "N/A"));

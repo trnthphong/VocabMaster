@@ -1,6 +1,9 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+const firebaseAdmin = require("firebase-admin");
 const { GoogleGenAI } = require("@google/genai");
 
 dotenv.config();
@@ -9,8 +12,137 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const SUPER_ADMIN_EMAIL = "23521406@gm.uit.edu.vn";
 const activeGeminiKey = process.env.GEMINI_API_KEY_TEST || process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenAI({ apiKey: activeGeminiKey });
+
+function initializeFirebaseAdmin() {
+  if (firebaseAdmin.apps.length > 0) return firebaseAdmin;
+
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH
+    || process.env.GOOGLE_APPLICATION_CREDENTIALS
+    || path.join(__dirname, "your-firebase-service-account.json");
+
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = require(serviceAccountPath);
+    firebaseAdmin.initializeApp({
+      credential: firebaseAdmin.credential.cert(serviceAccount),
+    });
+  } else {
+    firebaseAdmin.initializeApp({
+      credential: firebaseAdmin.credential.applicationDefault(),
+    });
+  }
+
+  return firebaseAdmin;
+}
+
+const admin = initializeFirebaseAdmin();
+
+function isAdminRole(role) {
+  return ["admin", "super_admin"].includes(String(role || "").toLowerCase());
+}
+
+function isSuperAdminRole(role) {
+  return String(role || "").toLowerCase() === "super_admin";
+}
+
+function isSeedSuperAdminEmail(email) {
+  return String(email || "").trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
+function roleClaims(role) {
+  const normalized = String(role || "user").toLowerCase();
+  return {
+    role: normalized,
+    admin: isAdminRole(normalized),
+    super_admin: isSuperAdminRole(normalized),
+  };
+}
+
+async function applyUserRole(targetUid, role, actorUid) {
+  const normalized = String(role || "user").toLowerCase();
+  if (!["user", "admin", "super_admin"].includes(normalized)) {
+    const error = new Error("INVALID_ROLE");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const userRecord = await admin.auth().getUser(targetUid);
+  if (isSeedSuperAdminEmail(userRecord.email) && normalized !== "super_admin") {
+    const error = new Error("CANNOT_DEMOTE_SEED_SUPER_ADMIN");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const existingClaims = userRecord.customClaims || {};
+  await admin.auth().setCustomUserClaims(targetUid, {
+    ...existingClaims,
+    ...roleClaims(normalized),
+  });
+
+  await admin.firestore().collection("users").doc(targetUid).set({
+    email: userRecord.email || "",
+    role: normalized,
+    isAdmin: isAdminRole(normalized),
+    admin: isAdminRole(normalized),
+    superAdmin: isSuperAdminRole(normalized),
+    roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    roleUpdatedBy: actorUid || "system",
+  }, { merge: true });
+
+  await admin.firestore().collection("admin_audit_logs").add({
+    action: "set_user_role",
+    targetUid,
+    targetEmail: userRecord.email || "",
+    role: normalized,
+    actorUid: actorUid || "system",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { uid: targetUid, email: userRecord.email || "", role: normalized };
+}
+
+async function authenticateFirebaseUser(req, res, next) {
+  const header = req.headers.authorization || "";
+  const match = header.match(/^Bearer (.+)$/);
+  if (!match) {
+    return res.status(401).json({ error: "Missing Firebase ID token" });
+  }
+
+  try {
+    req.authUser = await admin.auth().verifyIdToken(match[1]);
+    return next();
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid Firebase ID token" });
+  }
+}
+
+async function ensureSuperAdmin(req, res, next) {
+  try {
+    const uid = req.authUser.uid;
+    const tokenRole = req.authUser.role;
+    const email = req.authUser.email || "";
+    let role = tokenRole;
+
+    const userDoc = await admin.firestore().collection("users").doc(uid).get();
+    if (userDoc.exists) role = role || userDoc.get("role");
+
+    if (isSeedSuperAdminEmail(email)) {
+      req.adminRole = "super_admin";
+      return next();
+    }
+
+    if (!isSuperAdminRole(role)) {
+      return res.status(403).json({ error: "Super admin permission required" });
+    }
+
+    req.adminRole = "super_admin";
+    return next();
+  } catch (error) {
+    return res.status(500).json({ error: "Could not verify admin permission" });
+  }
+}
 
 const LANGUAGE_LABELS = {
   english: "English",
@@ -288,6 +420,31 @@ app.post("/ai/analyze-performance", (req, res) => {
 
 app.post("/ai/tts", (req, res) => {
   res.json({ speechUrl: "" });
+});
+
+app.post("/admin/bootstrap-super-admin", authenticateFirebaseUser, async (req, res) => {
+  try {
+    if (!isSeedSuperAdminEmail(req.authUser.email)) {
+      return res.status(403).json({ error: "Only the seeded super admin can use this endpoint" });
+    }
+
+    const result = await applyUserRole(req.authUser.uid, "super_admin", req.authUser.uid);
+    return res.json({ success: true, user: result });
+  } catch (error) {
+    console.error("Bootstrap super admin failed:", error);
+    return res.status(error.statusCode || 500).json({ error: error.message || "Could not bootstrap super admin" });
+  }
+});
+
+app.post("/admin/users/:uid/role", authenticateFirebaseUser, ensureSuperAdmin, async (req, res) => {
+  try {
+    const role = String(req.body?.role || "").toLowerCase();
+    const result = await applyUserRole(req.params.uid, role, req.authUser.uid);
+    return res.json({ success: true, user: result });
+  } catch (error) {
+    console.error("Set user role failed:", error);
+    return res.status(error.statusCode || 500).json({ error: error.message || "Could not set user role" });
+  }
 });
 
 if (require.main === module) {
